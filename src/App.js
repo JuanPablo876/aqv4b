@@ -37,7 +37,10 @@ const App = () => {
   const handleAddModule = () => {
     const newName = prompt('Nombre del nuevo módulo:');
     if (newName) {
-      setModules([...modules, { name: newName, description: 'Módulo personalizado' }]);
+      setModules(prevModules => [
+        ...prevModules,
+        { name: newName, description: 'Módulo personalizado' }
+      ]);
     }
   };
 
@@ -103,7 +106,7 @@ const App = () => {
         {/* Contenido central */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <LayoutHeader title={getPageTitle()} />
-          <main className="flex-1 overflow-y-auto pt-16 pl-64 pr-60"> {/* 👈 le damos espacio al ModuleSidebar */}
+          <main className="flex-1 overflow-y-auto pt-16 pl-64 pr-64"> {/* 👈 espacio para ModuleSidebar */}
             {renderPageContent()}
           </main>
         </div>
