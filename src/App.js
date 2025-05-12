@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LayoutSidebar from './components/LayoutSidebar';
 import LayoutHeader from './components/LayoutHeader';
-import VenetianBackground from './components/VenetianBackground';
-import ModuleSidebar from './components/ModuleSidebar';
-
 import DashboardPage from './components/DashboardPage';
 import ClientsPage from './components/ClientsPage';
 import ProductsPage from './components/ProductsPage';
@@ -16,7 +13,8 @@ import EmployeesPage from './components/EmployeesPage';
 import FinancePage from './components/FinancePage';
 import ReportsPage from './components/ReportsPage';
 import SettingsPage from './components/SettingsPage';
-
+import VenetianBackground from './components/VenetianBackground';
+import ModuleSidebar from './components/ModuleSidebar';
 import { isStorageAvailable } from './utils/storage';
 import { clients } from './mock/clients';
 import { products } from './mock/products';
@@ -33,97 +31,79 @@ const App = () => {
   const [modules, setModules] = useState([
     { name: 'Finanzas', description: 'Control financiero' },
     { name: 'Inventario', description: 'Gestión de inventario' },
-    { name: 'Clientes', description: 'Gestión de clientes' },
+    { name: 'Clientes', description: 'Gestión de clientes' }
   ]);
 
   const handleAddModule = () => {
     const newName = prompt('Nombre del nuevo módulo:');
-    if (newName && newName.trim() !== '') {
-      setModules((prevModules) => [
-        ...prevModules,
-        { name: newName.trim(), description: 'Módulo personalizado' },
-      ]);
+    if (newName) {
+      setModules(prevModules => [...prevModules, { name: newName, description: 'Módulo personalizado' }]);
     }
   };
 
   useEffect(() => {
-    if (!isStorageAvailable()) return;
-
-    const mockData = [
-      { key: 'clients', value: clients },
-      { key: 'products', value: products },
-      { key: 'inventory', value: inventory },
-      { key: 'quotes', value: quotes },
-      { key: 'orders', value: orders },
-      { key: 'maintenances', value: maintenances },
-      { key: 'maintenanceHistory', value: maintenanceHistory },
-      { key: 'suppliers', value: suppliers },
-      { key: 'employees', value: employees },
-      { key: 'bankAccounts', value: bankAccounts },
-      { key: 'cashBoxes', value: cashBoxes },
-      { key: 'transactions', value: transactions },
-    ];
-
-    mockData.forEach(({ key, value }) => {
-      try {
-        if (!localStorage.getItem(key)) {
-          localStorage.setItem(key, JSON.stringify(value));
-        }
-      } catch (error) {
-        console.error(`Error guardando ${key} en localStorage:`, error);
-      }
-    });
+    if (isStorageAvailable()) {
+      if (!localStorage.getItem('clients')) localStorage.setItem('clients', JSON.stringify(clients));
+      if (!localStorage.getItem('products')) localStorage.setItem('products', JSON.stringify(products));
+      if (!localStorage.getItem('inventory')) localStorage.setItem('inventory', JSON.stringify(inventory));
+      if (!localStorage.getItem('quotes')) localStorage.setItem('quotes', JSON.stringify(quotes));
+      if (!localStorage.getItem('orders')) localStorage.setItem('orders', JSON.stringify(orders));
+      if (!localStorage.getItem('maintenances')) localStorage.setItem('maintenances', JSON.stringify(maintenances));
+      if (!localStorage.getItem('maintenanceHistory')) localStorage.setItem('maintenanceHistory', JSON.stringify(maintenanceHistory));
+      if (!localStorage.getItem('suppliers')) localStorage.setItem('suppliers', JSON.stringify(suppliers));
+      if (!localStorage.getItem('employees')) localStorage.setItem('employees', JSON.stringify(employees));
+      if (!localStorage.getItem('bankAccounts')) localStorage.setItem('bankAccounts', JSON.stringify(bankAccounts));
+      if (!localStorage.getItem('cashBoxes')) localStorage.setItem('cashBoxes', JSON.stringify(cashBoxes));
+      if (!localStorage.getItem('transactions')) localStorage.setItem('transactions', JSON.stringify(transactions));
+    }
   }, []);
 
-  const pageTitles = {
-    dashboard: 'Dashboard',
-    clients: 'Clientes',
-    products: 'Productos',
-    inventory: 'Inventario',
-    quotes: 'Cotizaciones',
-    orders: 'Pedidos',
-    maintenances: 'Mantenimientos',
-    suppliers: 'Proveedores',
-    employees: 'Empleados',
-    finance: 'Finanzas',
-    reports: 'Reportes',
-    settings: 'Configuración',
+  const getPageTitle = () => {
+    switch (activePage) {
+      case 'dashboard': return 'Dashboard';
+      case 'clients': return 'Clientes';
+      case 'products': return 'Productos';
+      case 'inventory': return 'Inventario';
+      case 'quotes': return 'Cotizaciones';
+      case 'orders': return 'Pedidos';
+      case 'maintenances': return 'Mantenimientos';
+      case 'suppliers': return 'Proveedores';
+      case 'employees': return 'Empleados';
+      case 'finance': return 'Finanzas';
+      case 'reports': return 'Reportes';
+      case 'settings': return 'Configuración';
+      default: return 'Dashboard';
+    }
   };
 
-  const pageComponents = {
-    dashboard: <DashboardPage setActivePage={setActivePage} />,
-    clients: <ClientsPage />,
-    products: <ProductsPage />,
-    inventory: <InventoryPage />,
-    quotes: <QuotesPage />,
-    orders: <OrdersPage />,
-    maintenances: <MaintenancesPage />,
-    suppliers: <SuppliersPage />,
-    employees: <EmployeesPage />,
-    finance: <FinancePage />,
-    reports: <ReportsPage />,
-    settings: <SettingsPage />,
+  const renderPageContent = () => {
+    switch (activePage) {
+      case 'dashboard': return <DashboardPage setActivePage={setActivePage} />;
+      case 'clients': return <ClientsPage />;
+      case 'products': return <ProductsPage />;
+      case 'inventory': return <InventoryPage />;
+      case 'quotes': return <QuotesPage />;
+      case 'orders': return <OrdersPage />;
+      case 'maintenances': return <MaintenancesPage />;
+      case 'suppliers': return <SuppliersPage />;
+      case 'employees': return <EmployeesPage />;
+      case 'finance': return <FinancePage />;
+      case 'reports': return <ReportsPage />;
+      case 'settings': return <SettingsPage />;
+      default: return <DashboardPage />;
+    }
   };
-
-  const currentTitle = pageTitles[activePage] ?? 'Dashboard';
-  const currentPage = pageComponents[activePage] ?? <DashboardPage />;
 
   return (
     <VenetianBackground>
       <div className="flex h-screen">
-        <LayoutSidebar
-          activePage={activePage}
-          setActivePage={setActivePage}
-          onAddModule={handleAddModule}
-        />
-
+        <LayoutSidebar activePage={activePage} setActivePage={setActivePage} onAddModule={handleAddModule} />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <LayoutHeader title={currentTitle} />
+          <LayoutHeader title={getPageTitle()} />
           <main className="flex-1 overflow-y-auto pt-16 pl-64 pr-64">
-            {currentPage}
+            {renderPageContent()}
           </main>
         </div>
-
         <ModuleSidebar modules={modules} onAddModule={handleAddModule} />
       </div>
     </VenetianBackground>
