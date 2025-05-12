@@ -38,10 +38,10 @@ const App = () => {
 
   const handleAddModule = () => {
     const newName = prompt('Nombre del nuevo módulo:');
-    if (newName) {
-      setModules(prev => [
-        ...prev,
-        { name: newName, description: 'Módulo personalizado' }
+    if (newName && newName.trim() !== '') {
+      setModules((prevModules) => [
+        ...prevModules,
+        { name: newName.trim(), description: 'Módulo personalizado' },
       ]);
     }
   };
@@ -49,7 +49,7 @@ const App = () => {
   useEffect(() => {
     if (!isStorageAvailable()) return;
 
-    const defaults = [
+    const mockData = [
       { key: 'clients', value: clients },
       { key: 'products', value: products },
       { key: 'inventory', value: inventory },
@@ -64,9 +64,13 @@ const App = () => {
       { key: 'transactions', value: transactions },
     ];
 
-    defaults.forEach(({ key, value }) => {
-      if (!localStorage.getItem(key)) {
-        localStorage.setItem(key, JSON.stringify(value));
+    mockData.forEach(({ key, value }) => {
+      try {
+        if (!localStorage.getItem(key)) {
+          localStorage.setItem(key, JSON.stringify(value));
+        }
+      } catch (error) {
+        console.error(`Error guardando ${key} en localStorage:`, error);
       }
     });
   }, []);
@@ -86,8 +90,6 @@ const App = () => {
     settings: 'Configuración',
   };
 
-  const getPageTitle = () => pageTitles[activePage] || 'Dashboard';
-
   const pageComponents = {
     dashboard: <DashboardPage setActivePage={setActivePage} />,
     clients: <ClientsPage />,
@@ -103,19 +105,22 @@ const App = () => {
     settings: <SettingsPage />,
   };
 
+  const currentTitle = pageTitles[activePage] ?? 'Dashboard';
+  const currentPage = pageComponents[activePage] ?? <DashboardPage />;
+
   return (
     <VenetianBackground>
       <div className="flex h-screen">
-        <LayoutSidebar 
-          activePage={activePage} 
-          setActivePage={setActivePage} 
-          onAddModule={handleAddModule} 
+        <LayoutSidebar
+          activePage={activePage}
+          setActivePage={setActivePage}
+          onAddModule={handleAddModule}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden">
-          <LayoutHeader title={getPageTitle()} />
+          <LayoutHeader title={currentTitle} />
           <main className="flex-1 overflow-y-auto pt-16 pl-64 pr-64">
-            {pageComponents[activePage] || <DashboardPage />}
+            {currentPage}
           </main>
         </div>
 
