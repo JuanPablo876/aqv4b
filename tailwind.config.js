@@ -7,6 +7,6 @@ module.exports = {
     extend: {},
   },
   plugins: [
-    require('@tailwindcss/scrollbar'),   // 👈 ✅ AÑADE ESTA LÍNEA
+    require('@tailwindcss/scrollbar'),   //
   ],
 }
