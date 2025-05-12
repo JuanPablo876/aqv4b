@@ -644,4 +644,3 @@ const ClientsPage = () => {
 };
 
 export default ClientsPage;
-// DONE
