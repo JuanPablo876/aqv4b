@@ -3,6 +3,7 @@ import { clients } from '../mock/clients';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import VenetianTile from './VenetianTile';
+const [showQuoteModal, setShowQuoteModal] = useState(false);
 
 const ClientsPage = () => {
   const [clientsList, setClientsList] = useState([]);
