@@ -60,6 +60,11 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule }) => {
         <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
       </svg>
     ) },
+    { id: 'settings', label: 'Configuración', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M11.3 1.046a1 1 0 011.4 0l2.598 2.598a1 1 0 010 1.4l-1.292 1.292a8.027 8.027 0 011.19 4.664 8.027 8.027 0 01-1.19 4.664l1.292 1.292a1 1 0 010 1.4l-2.598 2.598a1 1 0 01-1.4 0l-1.292-1.292a8.027 8.027 0 01-4.664 1.19 8.027 8.027 0 01-4.664-1.19L2.302 18.954a1 1 0 01-1.4-1.4l1.292-1.292a8.027 8.027 0 01-1.19-4.664 8.027 8.027 0 011.19-4.664L.902 5.044a1 1 0 010-1.4L3.5 1.046a1 1 0 011.4 0l1.292 1.292a8.027 8.027 0 014.664-1.19 8.027 8.027 0 014.664 1.19L11.3 1.046zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+      </svg>
+    )},
     { id: 'addModule', label: 'Agregar Módulo', icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
