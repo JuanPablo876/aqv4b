@@ -14,7 +14,7 @@ import FinancePage from './components/FinancePage';
 import ReportsPage from './components/ReportsPage';
 import SettingsPage from './components/SettingsPage';
 import VenetianBackground from './components/VenetianBackground';
-import ModuleSidebar from './components/ModuleSidebar'; // ✅ nuevo
+import ModuleSidebar from './components/ModuleSidebar';
 import { isStorageAvailable } from './utils/storage';
 import { clients } from './mock/clients';
 import { products } from './mock/products';
@@ -28,10 +28,6 @@ import { bankAccounts, cashBoxes, transactions } from './mock/finance';
 
 const App = () => {
   const [activePage, setActivePage] = useState('dashboard');
-  const [selectedOrderInModal, setSelectedOrderInModal] = useState(null);
-  const [selectedMaintenanceInModal, setSelectedMaintenanceInModal] = useState(null);
-
-  // ✅ estado para modules del ModuleSidebar
   const [modules, setModules] = useState([
     { name: 'Finanzas', description: 'Control financiero' },
     { name: 'Inventario', description: 'Gestión de inventario' },
@@ -82,14 +78,7 @@ const App = () => {
 
   const renderPageContent = () => {
     switch (activePage) {
-      case 'dashboard':
-        return (
-          <DashboardPage
-            setActivePage={setActivePage}
-            setSelectedOrder={setSelectedOrderInModal}
-            setSelectedMaintenance={setSelectedMaintenanceInModal}
-          />
-        );
+      case 'dashboard': return <DashboardPage setActivePage={setActivePage} />;
       case 'clients': return <ClientsPage />;
       case 'products': return <ProductsPage />;
       case 'inventory': return <InventoryPage />;
@@ -108,17 +97,18 @@ const App = () => {
   return (
     <VenetianBackground>
       <div className="flex h-screen">
+        {/* Lateral Sidebar */}
         <LayoutSidebar activePage={activePage} setActivePage={setActivePage} />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Contenido central */}
+        <div className="flex flex-1 flex-col overflow-hidden">
           <LayoutHeader title={getPageTitle()} />
-          {/* ✅ solo pl-64 sin pr-64 para evitar errores */}
-          <main className="flex-1 overflow-y-auto pt-16 pl-64">
+          <main className="flex-1 overflow-y-auto pt-16 pl-64 pr-60"> {/* 👈 le damos espacio al ModuleSidebar */}
             {renderPageContent()}
           </main>
         </div>
 
-        {/* ✅ Module Sidebar agregado */}
+        {/* Module Sidebar */}
         <ModuleSidebar modules={modules} onAddModule={handleAddModule} />
       </div>
     </VenetianBackground>
