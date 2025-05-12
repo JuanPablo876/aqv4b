@@ -64,7 +64,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
   if (!isOpen) return null;
 
   return (
-   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto overscroll-contain">
+<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-auto overscroll-contain scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
       <VenetianTile className="max-w-md w-full max-h-[90vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
         <div className="p-6 border-b border-blue-100">
           <div className="flex justify-between items-center">
