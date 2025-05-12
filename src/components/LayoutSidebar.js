@@ -103,6 +103,14 @@ const LayoutSidebar = ({ activePage, setActivePage }) => {
             </li>
           ))}
         </ul>
+        <div className="mt-4 px-4">
+  <button
+    onClick={() => window.dispatchEvent(new CustomEvent('openModuleSidebar'))}
+    className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+  >
+    Agregar Módulo
+  </button>
+</div>
       </nav>
       
       <div className="absolute bottom-0 w-full border-t border-blue-100 p-4">
