@@ -112,8 +112,8 @@ const App = () => {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <LayoutHeader title={getPageTitle()} />
-          <main className="flex-1 overflow-y-auto pt-16 pl-64 pr-[18rem]">
-
+          {/* ✅ Cambiado a pr-64 */}
+          <main className="flex-1 overflow-y-auto pt-16 pl-64 pr-64">
             {renderPageContent()}
           </main>
         </div>
