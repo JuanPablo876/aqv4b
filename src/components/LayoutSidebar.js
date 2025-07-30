@@ -1,7 +1,13 @@
 import React, { Fragment } from 'react';
 import PropTypes from 'prop-types';
 
-const LayoutSidebar = ({ activePage, setActivePage, onAddModule }) => {
+const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
+  // Extract user data from session
+  const user = session?.user;
+  const userEmail = user?.email || 'usuario@example.com';
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario';
+  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -118,13 +124,13 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule }) => {
 
       <div className="absolute bottom-0 w-full border-t venetian-border p-4 flex items-center space-x-3">
         <div className="bg-secondary text-secondary-foreground p-2 rounded-full">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
-          </svg>
+          <div className="h-5 w-5 flex items-center justify-center font-medium text-xs">
+            {userInitials}
+          </div>
         </div>
         <div>
-          <p className="text-sm font-medium text-primary">Admin</p>
-          <p className="text-xs text-muted-foreground">admin@aquapool.com</p>
+          <p className="text-sm font-medium text-primary">{userName}</p>
+          <p className="text-xs text-muted-foreground">{userEmail}</p>
         </div>
       </div>
     </div>
@@ -134,7 +140,8 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule }) => {
 LayoutSidebar.propTypes = {
   activePage: PropTypes.string,
   setActivePage: PropTypes.func,
-  onAddModule: PropTypes.func
+  onAddModule: PropTypes.func,
+  session: PropTypes.object
 };
 
 export default LayoutSidebar;

@@ -214,4 +214,14 @@
   .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
     border-color: rgb(var(--border)) !important;
   }
+  
+  /* Dropdown positioning fixes */
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    z-index: 1000;
+    min-width: 12rem;
+    margin-top: 0.5rem;
+  }
 }

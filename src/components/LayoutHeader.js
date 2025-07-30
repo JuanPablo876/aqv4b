@@ -1,13 +1,31 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
 import VenetianTile from './VenetianTile';
 import ThemeToggle from './ThemeToggle';
 
-const LayoutHeader = ({ title }) => {
+const LayoutHeader = ({ title, session }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate = useNavigate();
   
   const notificationsRef = useRef(null);
   const userMenuRef = useRef(null);
+  
+  // Extract user data from session
+  const user = session?.user;
+  const userEmail = user?.email || 'usuario@example.com';
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario';
+  const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
   
   const notifications = [
     { id: 1, text: "Nuevo pedido recibido", time: "Hace 5 minutos", unread: true },
@@ -44,7 +62,7 @@ const LayoutHeader = ({ title }) => {
   }, []);
 
   return (
-    <header className="h-16 fixed top-0 right-0 left-64 z-10 header-bg venetian-shadow transition-colors" style={{
+    <header className="h-16 fixed top-0 right-0 left-64 z-30 header-bg venetian-shadow transition-colors" style={{
       borderBottom: '1px solid var(--venetian-border)'
     }}>
       <div className="h-full px-6 flex items-center justify-between">
@@ -67,7 +85,7 @@ const LayoutHeader = ({ title }) => {
             </button>
             
             {showNotifications && (
-              <VenetianTile className="absolute right-0 mt-2 w-80 py-2 z-20">
+              <VenetianTile className="dropdown-menu w-80 py-2">
                 <div className="px-4 py-2 border-b venetian-border">
                   <div className="flex justify-between items-center">
                     <h3 className="font-medium text-primary">Notificaciones</h3>
@@ -109,16 +127,16 @@ const LayoutHeader = ({ title }) => {
               className="flex items-center space-x-2 focus:outline-none"
             >
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-medium">
-                A
+                {userInitials}
               </div>
-              <span className="text-primary">Admin</span>
+              <span className="text-primary">{userName}</span>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-muted-foreground" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </button>
             
             {showUserMenu && (
-              <VenetianTile className="absolute right-0 mt-2 w-48 py-2 z-20">
+              <VenetianTile className="dropdown-menu w-48 py-2">
                 <a href="#profile" className="block px-4 py-2 text-primary hover:bg-accent">
                   Mi Perfil
                 </a>
@@ -126,9 +144,12 @@ const LayoutHeader = ({ title }) => {
                   Configuración
                 </a>
                 <div className="border-t venetian-border my-1"></div>
-                <a href="#logout" className="block px-4 py-2 text-primary hover:bg-accent">
+                <button 
+                  onClick={handleLogout}
+                  className="block w-full text-left px-4 py-2 text-primary hover:bg-accent"
+                >
                   Cerrar Sesión
-                </a>
+                </button>
               </VenetianTile>
             )}
           </div>

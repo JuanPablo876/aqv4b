@@ -202,10 +202,11 @@ export default function Dashboard() {
         activePage={activePage} 
         setActivePage={setActivePage}
         onAddModule={handleAddModule}
+        session={session}
       />
       
       {/* Header */}
-      <LayoutHeader title={pageTitles[activePage]} />
+      <LayoutHeader title={pageTitles[activePage]} session={session} />
       
       {/* Main Content */}
       <div className="fixed top-16 left-64 right-0 bottom-0 overflow-auto">
