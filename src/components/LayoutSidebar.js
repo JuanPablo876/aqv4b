@@ -73,13 +73,12 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule }) => {
   ];
   
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg overflow-y-auto"
+    <div className="fixed left-0 top-0 h-full w-64 venetian-bg shadow-lg overflow-y-auto transition-colors"
       style={{
-        background: 'linear-gradient(135deg, #e6f7ff 0%, #ffffff 100%)',
-        borderRight: '1px solid rgba(0, 150, 255, 0.1)'
+        borderRight: '1px solid var(--venetian-border)'
       }}
     >
-      <div className="p-4 border-b border-blue-100 flex items-center space-x-2">
+      <div className="p-4 border-b venetian-border flex items-center space-x-2">
         <div className="w-10 h-10 rounded-lg overflow-hidden">
           <img
             src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc0c2ZYzyxLlIki8fCRNnvUyWdBhcZQKOVp6M0G"
@@ -87,14 +86,14 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule }) => {
             className="w-full h-full object-cover"
           />
         </div>
-        <h1 className="text-xl font-bold text-blue-800">Aqualiquim</h1>
+        <h1 className="text-xl font-bold text-primary">Aqualiquim</h1>
       </div>
 
       <ul>
         {menuItems.map((item) => (
           <Fragment key={item.id}>
             {item.id === 'reports' && (
-              <hr className="my-2 border-t border-blue-200" />
+              <hr className="my-2 border-t venetian-border" />
             )}
             <li className="mb-1">
               <button
@@ -105,8 +104,8 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule }) => {
                 }
                 className={`flex items-center w-full px-4 py-3 text-left transition-colors ${
                   activePage === item.id && item.id !== 'addModule'
-                    ? 'bg-blue-100 text-blue-600 border-r-4 border-blue-600'
-                    : 'text-blue-800 hover:bg-blue-50'
+                    ? 'bg-accent text-accent-foreground border-r-4 border-primary'
+                    : 'text-primary hover:bg-secondary'
                 }`}
               >
                 <span className="mr-3">{item.icon}</span>
@@ -117,15 +116,15 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule }) => {
         ))}
       </ul>
 
-      <div className="absolute bottom-0 w-full border-t border-blue-100 p-4 flex items-center space-x-3">
-        <div className="bg-blue-100 text-blue-600 p-2 rounded-full">
+      <div className="absolute bottom-0 w-full border-t venetian-border p-4 flex items-center space-x-3">
+        <div className="bg-secondary text-secondary-foreground p-2 rounded-full">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
           </svg>
         </div>
         <div>
-          <p className="text-sm font-medium text-blue-800">Admin</p>
-          <p className="text-xs text-blue-600">admin@aquapool.com</p>
+          <p className="text-sm font-medium text-primary">Admin</p>
+          <p className="text-xs text-muted-foreground">admin@aquapool.com</p>
         </div>
       </div>
     </div>

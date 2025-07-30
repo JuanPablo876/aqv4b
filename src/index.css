@@ -2,17 +2,216 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Global fix for any remaining blue text in dark mode */
-.dark .text-blue-50,
-.dark .text-blue-100,
-.dark .text-blue-200,
-.dark .text-blue-300,
-.dark .text-blue-400,
-.dark .text-blue-500,
-.dark .text-blue-600,
-.dark .text-blue-700,
-.dark .text-blue-800,
-.dark .text-blue-900,
-.dark .text-blue-950 {
-  color: white !important;
+/* CSS Custom Properties for Theme System */
+@layer base {
+  :root {
+    /* Light theme colors */
+    --background: 249 250 251; /* gray-50 */
+    --foreground: 17 24 39; /* gray-900 */
+    --card: 255 255 255; /* white */
+    --card-foreground: 17 24 39; /* gray-900 */
+    --primary: 30 64 175; /* blue-800 */
+    --primary-foreground: 255 255 255; /* white */
+    --secondary: 239 246 255; /* blue-50 */
+    --secondary-foreground: 30 64 175; /* blue-800 */
+    --muted: 243 244 246; /* gray-100 */
+    --muted-foreground: 107 114 128; /* gray-500 */
+    --accent: 239 246 255; /* blue-50 */
+    --accent-foreground: 30 64 175; /* blue-800 */
+    --border: 229 231 235; /* gray-200 */
+    --input: 229 231 235; /* gray-200 */
+    --ring: 59 130 246; /* blue-500 */
+    
+    /* Venetian theme specific */
+    --venetian-bg: linear-gradient(135deg, #e6f7ff 0%, #ffffff 100%);
+    --venetian-border: rgba(0, 150, 255, 0.1);
+    --venetian-shadow: rgba(0, 150, 255, 0.1);
+    --header-bg: linear-gradient(90deg, #e6f7ff 0%, rgba(255, 255, 255, 0.9) 100%);
+    --venetian-tile-bg: rgba(255, 255, 255, 0.85);
+    --venetian-tile-pattern: rgba(0, 150, 255, 0.05);
+    --venetian-tile-shadow: rgba(0, 0, 0, 0.1);
+  }
+
+  .dark {
+    /* Dark theme colors */
+    --background: 17 24 39; /* gray-900 */
+    --foreground: 243 244 246; /* gray-100 */
+    --card: 31 41 55; /* gray-800 */
+    --card-foreground: 243 244 246; /* gray-100 */
+    --primary: 147 197 253; /* blue-300 */
+    --primary-foreground: 17 24 39; /* gray-900 */
+    --secondary: 55 65 81; /* gray-700 */
+    --secondary-foreground: 147 197 253; /* blue-300 */
+    --muted: 55 65 81; /* gray-700 */
+    --muted-foreground: 156 163 175; /* gray-400 */
+    --accent: 55 65 81; /* gray-700 */
+    --accent-foreground: 147 197 253; /* blue-300 */
+    --border: 55 65 81; /* gray-700 */
+    --input: 55 65 81; /* gray-700 */
+    --ring: 147 197 253; /* blue-300 */
+    
+    /* Venetian theme specific - dark versions */
+    --venetian-bg: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    --venetian-border: rgba(147, 197, 253, 0.2);
+    --venetian-shadow: rgba(0, 0, 0, 0.3);
+    --header-bg: linear-gradient(90deg, #374151 0%, rgba(31, 41, 55, 0.95) 100%);
+    --venetian-tile-bg: rgba(31, 41, 55, 0.85);
+    --venetian-tile-pattern: rgba(147, 197, 253, 0.1);
+    --venetian-tile-shadow: rgba(0, 0, 0, 0.3);
+  }
+}
+
+/* Apply theme colors using CSS variables */
+@layer utilities {
+  .bg-background {
+    background-color: rgb(var(--background));
+  }
+  .text-foreground {
+    color: rgb(var(--foreground));
+  }
+  .bg-card {
+    background-color: rgb(var(--card));
+  }
+  .text-card-foreground {
+    color: rgb(var(--card-foreground));
+  }
+  .text-primary {
+    color: rgb(var(--primary));
+  }
+  .bg-primary {
+    background-color: rgb(var(--primary));
+  }
+  .text-primary-foreground {
+    color: rgb(var(--primary-foreground));
+  }
+  .bg-secondary {
+    background-color: rgb(var(--secondary));
+  }
+  .text-secondary-foreground {
+    color: rgb(var(--secondary-foreground));
+  }
+  .bg-muted {
+    background-color: rgb(var(--muted));
+  }
+  .text-muted-foreground {
+    color: rgb(var(--muted-foreground));
+  }
+  .bg-accent {
+    background-color: rgb(var(--accent));
+  }
+  .text-accent-foreground {
+    color: rgb(var(--accent-foreground));
+  }
+  .border-border {
+    border-color: rgb(var(--border));
+  }
+  
+  /* Venetian specific utilities */
+  .venetian-bg {
+    background: var(--venetian-bg);
+  }
+  .venetian-border {
+    border-color: var(--venetian-border);
+  }
+  .venetian-shadow {
+    box-shadow: 0 2px 10px var(--venetian-shadow);
+  }
+  .header-bg {
+    background: var(--header-bg);
+  }
+  
+  /* Venetian Tile Component */
+  .venetian-tile {
+    position: relative;
+    background-color: var(--venetian-tile-bg);
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px var(--venetian-tile-shadow),
+                0 2px 4px -1px var(--venetian-tile-shadow);
+  }
+
+  .venetian-tile::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background:
+      linear-gradient(135deg, var(--venetian-tile-pattern) 25%, transparent 25%) -10px 0,
+      linear-gradient(225deg, var(--venetian-tile-pattern) 25%, transparent 25%) -10px 0,
+      linear-gradient(315deg, var(--venetian-tile-pattern) 25%, transparent 25%),
+      linear-gradient(45deg, var(--venetian-tile-pattern) 25%, transparent 25%);
+    background-size: 20px 20px;
+    background-color: transparent;
+    opacity: 0.2;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: 0.75rem;
+  }
+
+  .venetian-tile > * {
+    position: relative;
+    z-index: 10;
+  }
+  
+  /* Global color overrides for systematic theming */
+  .text-gray-500 {
+    color: rgb(var(--muted-foreground)) !important;
+  }
+  
+  .text-gray-600 {
+    color: rgb(var(--muted-foreground)) !important;
+  }
+  
+  .text-gray-700 {
+    color: rgb(var(--foreground)) !important;
+  }
+  
+  .text-gray-800 {
+    color: rgb(var(--foreground)) !important;
+  }
+  
+  .text-gray-900 {
+    color: rgb(var(--foreground)) !important;
+  }
+  
+  .text-blue-800 {
+    color: rgb(var(--primary)) !important;
+  }
+  
+  .text-blue-600 {
+    color: rgb(var(--primary)) !important;
+  }
+  
+  .bg-white {
+    background-color: rgb(var(--card)) !important;
+  }
+  
+  .bg-gray-50 {
+    background-color: rgb(var(--background)) !important;
+  }
+  
+  .bg-gray-100 {
+    background-color: rgb(var(--muted)) !important;
+  }
+  
+  .bg-blue-50 {
+    background-color: rgb(var(--secondary)) !important;
+  }
+  
+  .bg-blue-100 {
+    background-color: rgb(var(--accent)) !important;
+  }
+  
+  .border-gray-200 {
+    border-color: rgb(var(--border)) !important;
+  }
+  
+  .border-blue-100 {
+    border-color: rgb(var(--venetian-border)) !important;
+  }
+  
+  .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgb(var(--border)) !important;
+  }
 }

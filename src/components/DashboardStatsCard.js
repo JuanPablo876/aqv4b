@@ -2,27 +2,27 @@ import React from 'react';
 import VenetianTile from './VenetianTile';
 
 const DashboardStatsCard = ({ title, value, change, icon, color, onClick }) => {
-  // Define color classes based on the color prop
+  // Define color classes based on the color prop - using CSS variables
   const colorClasses = {
     blue: {
-      bg: 'bg-blue-50',
-      text: 'text-blue-600',
-      iconBg: 'bg-blue-100'
+      bg: 'bg-secondary',
+      text: 'text-secondary-foreground',
+      iconBg: 'bg-accent'
     },
     green: {
-      bg: 'bg-green-50',
-      text: 'text-green-600',
-      iconBg: 'bg-green-100'
+      bg: 'bg-secondary',
+      text: 'text-green-600 dark:text-green-400',
+      iconBg: 'bg-accent'
     },
     purple: {
-      bg: 'bg-purple-50',
-      text: 'text-purple-600',
-      iconBg: 'bg-purple-100'
+      bg: 'bg-secondary',
+      text: 'text-purple-600 dark:text-purple-400',
+      iconBg: 'bg-accent'
     },
     amber: {
-      bg: 'bg-amber-50',
-      text: 'text-amber-600',
-      iconBg: 'bg-amber-100'
+      bg: 'bg-secondary',
+      text: 'text-amber-600 dark:text-amber-400',
+      iconBg: 'bg-accent'
     }
   };
 
@@ -35,17 +35,17 @@ const DashboardStatsCard = ({ title, value, change, icon, color, onClick }) => {
     <VenetianTile className={`p-6 cursor-pointer ${onClick ? 'hover:shadow-lg transition-shadow' : ''}`} onClick={onClick}>
       <div className="flex justify-between items-start">
         <div>
-          <p className="text-gray-500 text-sm font-medium">{title}</p>
-          <h3 className="text-2xl font-bold mt-1 text-blue-800">{value}</h3>
+          <p className="text-muted-foreground text-sm font-medium">{title}</p>
+          <h3 className="text-2xl font-bold mt-1 text-primary">{value}</h3>
           
           {change !== undefined && (
             <div className="flex items-center mt-2">
-              <span className={`text-xs font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              <span className={`text-xs font-medium ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {isPositive ? '+' : ''}{change}%
               </span>
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                className={`h-3 w-3 ml-1 ${isPositive ? 'text-green-600' : 'text-red-600'}`} 
+                className={`h-3 w-3 ml-1 ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} 
                 viewBox="0 0 20 20" 
                 fill="currentColor"
               >
@@ -58,7 +58,7 @@ const DashboardStatsCard = ({ title, value, change, icon, color, onClick }) => {
                   clipRule="evenodd" 
                 />
               </svg>
-              <span className="text-xs text-gray-500 ml-1">vs. anterior</span>
+              <span className="text-xs text-muted-foreground ml-1">vs. anterior</span>
             </div>
           )}
         </div>
