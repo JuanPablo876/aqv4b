@@ -143,6 +143,7 @@ const MaintenancesPage = () => {
     switch (status) {
       case 'pending': return 'Pendiente';
       case 'paid': return 'Pagado';
+      case 'refunded': return 'Reembolsado';
       default: return status;
     }
   };

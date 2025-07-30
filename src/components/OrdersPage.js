@@ -192,6 +192,7 @@ const OrdersPage = () => {
       case 'pending': return 'Pendiente';
       case 'processing': return 'En Proceso';
       case 'shipped': return 'Enviado';
+      case 'delivered': return 'Entregado';
       case 'completed': return 'Completado';
       case 'cancelled': return 'Cancelado';
       default: return status;
@@ -204,6 +205,7 @@ const OrdersPage = () => {
       case 'pending': return 'Pendiente';
       case 'partial': return 'Parcial';
       case 'paid': return 'Pagado';
+      case 'refunded': return 'Reembolsado';
       default: return status;
     }
   };

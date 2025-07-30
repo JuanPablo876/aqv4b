@@ -3,10 +3,14 @@ import VenetianTile from './VenetianTile';
 import { supabase } from '../lib/supabase';
 import { ToastContainer } from './ui/toast';
 import { useToast } from '../hooks/useToast';
+import { useTheme } from '../contexts/ThemeContext';
+import { ValidatedForm } from './forms/ValidatedForm';
+import { userSettingsSchema, changePasswordSchema } from '../schemas/validationSchemas';
 
 const SettingsPage = ({ session }) => {
   const [activeTab, setActiveTab] = useState('general');
   const { toasts, toast, removeToast } = useToast();
+  const { preferences, updatePreference, resetPreferences } = useTheme();
   
   // Extract user data from session
   const user = session?.user;
@@ -607,8 +611,9 @@ const SettingsPage = ({ session }) => {
         
       case 'user':
         return (
-          <div>
-            <h3 className="text-lg font-medium text-blue-800 dark:text-blue-200 mb-4">Configuración de Usuario</h3>
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-medium text-blue-800 dark:text-blue-200 mb-4">Configuración de Usuario</h3>
             
             {/* User Avatar Section */}
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
@@ -669,20 +674,284 @@ const SettingsPage = ({ session }) => {
                 </select>
               </div>
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Tema
-                </label>
-                <select
-                  name="theme"
-                  value={userSettings.theme}
-                  onChange={handleUserSettingsChange}
-                  className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="light">Claro</option>
-                  <option value="dark">Oscuro</option>
-                  <option value="system">Sistema</option>
-                </select>
+              {/* Enhanced Theme & Appearance Section */}
+              <div className="md:col-span-2">
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                  🎨 Tema y Apariencia
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tema
+                    </label>
+                    <select
+                      name="theme"
+                      value={preferences.theme}
+                      onChange={(e) => updatePreference('theme', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="light">☀️ Claro</option>
+                      <option value="dark">🌙 Oscuro</option>
+                      <option value="system">💻 Sistema</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Tamaño de Fuente
+                    </label>
+                    <select
+                      name="fontSize"
+                      value={preferences.fontSize}
+                      onChange={(e) => updatePreference('fontSize', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="small">🔍 Pequeño</option>
+                      <option value="medium">📄 Mediano</option>
+                      <option value="large">🔍 Grande</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="compactMode"
+                      checked={preferences.compactMode}
+                      onChange={(e) => updatePreference('compactMode', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="compactMode" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      📦 Modo Compacto
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="reducedMotion"
+                      checked={preferences.reducedMotion}
+                      onChange={(e) => updatePreference('reducedMotion', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="reducedMotion" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      🚫 Reducir Animaciones
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="sidebarCollapsed"
+                      checked={preferences.sidebarCollapsed}
+                      onChange={(e) => updatePreference('sidebarCollapsed', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="sidebarCollapsed" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      ➡️ Barra Lateral Contraída
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Date & Time Preferences */}
+              <div className="md:col-span-2">
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                  📅 Formato de Fecha y Hora
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Formato de Fecha
+                    </label>
+                    <select
+                      value={preferences.dateFormat}
+                      onChange={(e) => updatePreference('dateFormat', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="dd/mm/yyyy">📅 DD/MM/AAAA (30/07/2025)</option>
+                      <option value="mm/dd/yyyy">📅 MM/DD/AAAA (07/30/2025)</option>
+                      <option value="yyyy-mm-dd">📅 AAAA-MM-DD (2025-07-30)</option>
+                      <option value="relative">⏰ Relativo (hace 2 días)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Formato de Hora
+                    </label>
+                    <select
+                      value={preferences.timeFormat}
+                      onChange={(e) => updatePreference('timeFormat', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="24h">🕐 24 Horas (14:30)</option>
+                      <option value="12h">🕐 12 Horas (2:30 PM)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* View & Display Preferences */}
+              <div className="md:col-span-2">
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                  👁️ Vista y Visualización
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Vista por Defecto
+                    </label>
+                    <select
+                      value={preferences.defaultView}
+                      onChange={(e) => updatePreference('defaultView', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="table">📋 Tabla</option>
+                      <option value="grid">🔲 Cuadrícula</option>
+                      <option value="list">📝 Lista</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Elementos por Página
+                    </label>
+                    <select
+                      value={preferences.itemsPerPage}
+                      onChange={(e) => updatePreference('itemsPerPage', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value={5}>5 elementos</option>
+                      <option value={10}>10 elementos</option>
+                      <option value={25}>25 elementos</option>
+                      <option value={50}>50 elementos</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Layout del Dashboard
+                    </label>
+                    <select
+                      value={preferences.dashboardLayout}
+                      onChange={(e) => updatePreference('dashboardLayout', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="standard">📊 Estándar</option>
+                      <option value="compact">📦 Compacto</option>
+                      <option value="detailed">📋 Detallado</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Período por Defecto
+                    </label>
+                    <select
+                      value={preferences.defaultDashboardPeriod}
+                      onChange={(e) => updatePreference('defaultDashboardPeriod', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="day">📅 Día</option>
+                      <option value="week">📅 Semana</option>
+                      <option value="month">📅 Mes</option>
+                      <option value="year">📅 Año</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Behavior Preferences */}
+              <div className="md:col-span-2">
+                <h4 className="text-md font-medium text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                  ⚙️ Comportamiento
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="autoSave"
+                      checked={preferences.autoSave}
+                      onChange={(e) => updatePreference('autoSave', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="autoSave" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      💾 Guardado Automático
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="showTooltips"
+                      checked={preferences.showTooltips}
+                      onChange={(e) => updatePreference('showTooltips', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="showTooltips" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      💬 Mostrar Información
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="confirmDeletes"
+                      checked={preferences.confirmDeletes}
+                      onChange={(e) => updatePreference('confirmDeletes', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="confirmDeletes" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      ⚠️ Confirmar Eliminaciones
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="rememberFilters"
+                      checked={preferences.rememberFilters}
+                      onChange={(e) => updatePreference('rememberFilters', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="rememberFilters" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      🔍 Recordar Filtros
+                    </label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      id="showWelcomeMessage"
+                      checked={preferences.showWelcomeMessage}
+                      onChange={(e) => updatePreference('showWelcomeMessage', e.target.checked)}
+                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                    />
+                    <label htmlFor="showWelcomeMessage" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      👋 Mensaje de Bienvenida
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Reset Section */}
+              <div className="md:col-span-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    onClick={resetPreferences}
+                    className="px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    🔄 Restaurar Preferencias por Defecto
+                  </button>
+                  
+                  <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                    ℹ️ Las preferencias se guardan automáticamente
+                  </div>
+                </div>
               </div>
               
               <div className="md:col-span-2">
@@ -780,6 +1049,7 @@ const SettingsPage = ({ session }) => {
               >
                 Guardar Cambios
               </button>
+            </div>
             </div>
           </div>
         );

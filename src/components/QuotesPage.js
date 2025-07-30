@@ -128,6 +128,7 @@ const QuotesPage = () => {
       case 'pending': return 'Pendiente';
       case 'partial': return 'Parcial';
       case 'paid': return 'Pagado';
+      case 'refunded': return 'Reembolsado';
       default: return status;
     }
   };

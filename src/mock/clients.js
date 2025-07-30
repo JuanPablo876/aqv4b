@@ -1,6 +1,6 @@
 const clients = [
   {
-    id: 1,
+    id: '1',
     name: "Hotel Acapulco Resort",
     contact: "Carlos Mendoza",
     email: "carlos@acapulcoresort.com",
@@ -11,10 +11,21 @@ const clients = [
     lastPurchase: "2023-10-15",
     totalSpent: 45780.50,
     status: "active",
-    rfc: "HAR123456ABC" // Added RFC
+    rfc: "HAR123456ABC",
+    // Enhanced fields for better business logic
+    customerType: "premium",
+    paymentTerms: "30 días",
+    creditLimit: 75000,
+    poolsCount: 5,
+    poolType: "Olympic, Kids, Infinity, Spa, Adult-only",
+    lastServiceDate: "2024-07-20",
+    accountManager: "Juan Carlos López",
+    notes: "Cliente premium con 5 piscinas. Mantenimiento semanal programado.",
+    createdAt: "2023-01-15T00:00:00.000Z",
+    updatedAt: "2024-07-20T10:30:00.000Z"
   },
   {
-    id: 2,
+    id: '2',
     name: "Club Deportivo Azteca",
     contact: "Mariana Fuentes",
     email: "mariana@clubazteca.mx",
@@ -25,10 +36,20 @@ const clients = [
     lastPurchase: "2023-11-02",
     totalSpent: 32450.75,
     status: "active",
-    rfc: "CDA987654XYZ" // Added RFC
+    rfc: "CDA987654XYZ",
+    customerType: "regular",
+    paymentTerms: "15 días",
+    creditLimit: 40000,
+    poolsCount: 3,
+    poolType: "Semi-Olympic, Kids, Therapy",
+    lastServiceDate: "2024-07-18",
+    accountManager: "María González",
+    notes: "Club deportivo con alta rotación de químicos por uso intensivo.",
+    createdAt: "2023-02-20T00:00:00.000Z",
+    updatedAt: "2024-07-18T14:15:00.000Z"
   },
   {
-    id: 3,
+    id: '3',
     name: "Residencial Los Pinos",
     contact: "Roberto Vega",
     email: "admin@lospinos.com",
@@ -39,7 +60,17 @@ const clients = [
     lastPurchase: "2023-09-28",
     totalSpent: 18920.25,
     status: "inactive",
-    rfc: "RLP456789DEF" // Added RFC
+    rfc: "RLP456789DEF",
+    customerType: "basic",
+    paymentTerms: "15 días",
+    creditLimit: 20000,
+    poolsCount: 1,
+    poolType: "Residential",
+    lastServiceDate: "2023-12-15",
+    accountManager: "Pedro Ramírez",
+    notes: "Cliente residencial inactivo. Contactar para reactivación.",
+    createdAt: "2023-03-10T00:00:00.000Z",
+    updatedAt: "2023-12-15T09:45:00.000Z"
   },
   {
     id: 4,

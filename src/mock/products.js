@@ -1,6 +1,6 @@
 const products = [
   {
-    id: 1,
+    id: '1',
     name: "Bomba de filtración ProFlow 1.5HP",
     category: "Bombas",
     description: "Bomba de alta eficiencia para filtración de albercas de hasta 80,000 litros",
@@ -10,11 +10,23 @@ const products = [
     minStock: 5,
     sku: "BOM-PF-15HP",
     supplier: "AquaTech",
-    imageUrl: "https://via.placeholder.com/150",
-    status: "active"
+    supplierId: '1',
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
+    status: "active",
+    // Enhanced fields
+    brand: "ProFlow",
+    model: "PF-1500",
+    weight: "12.5",
+    dimensions: "45x30x25 cm",
+    warranty: "2 años",
+    installationRequired: true,
+    seasonalDemand: "high",
+    lastRestockDate: "2024-07-01",
+    createdAt: "2024-01-15T00:00:00.000Z",
+    updatedAt: "2024-07-01T10:00:00.000Z"
   },
   {
-    id: 2,
+    id: '2',
     name: "Filtro de arena SandMaster 24\"",
     category: "Filtros",
     description: "Filtro de arena de alta capacidad para albercas residenciales y comerciales",
@@ -24,11 +36,25 @@ const products = [
     minStock: 3,
     sku: "FIL-SM-24",
     supplier: "FilterPro",
-    imageUrl: "https://via.placeholder.com/150",
-    status: "active"
+    supplierId: '2',
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
+    status: "active",
+    // Enhanced fields
+    brand: "SandMaster",
+    model: "SM-24",
+    weight: "45.0",
+    dimensions: "65x65x80 cm",
+    warranty: "3 años",
+    installationRequired: true,
+    seasonalDemand: "moderate",
+    lastRestockDate: "2024-06-15",
+    flowRate: "540 L/min",
+    maxPressure: "2.5 bar",
+    createdAt: "2024-01-20T00:00:00.000Z",
+    updatedAt: "2024-06-15T14:30:00.000Z"
   },
   {
-    id: 3,
+    id: '3',
     name: "Cloro granulado 50kg",
     category: "Químicos",
     description: "Cloro granulado estabilizado al 90% para mantenimiento regular",
@@ -38,11 +64,27 @@ const products = [
     minStock: 10,
     sku: "QUI-CL-50KG",
     supplier: "ChemPool",
-    imageUrl: "https://via.placeholder.com/150",
-    status: "active"
+    supplierId: '3',
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
+    status: "active",
+    // Enhanced fields
+    brand: "ChemPool",
+    model: "CL-90-50",
+    weight: "50.0",
+    dimensions: "40x30x30 cm",
+    warranty: "N/A",
+    installationRequired: false,
+    seasonalDemand: "high",
+    lastRestockDate: "2024-07-10",
+    concentration: "90%",
+    chemicalType: "Hipoclorito de calcio",
+    shelfLife: "3 años",
+    storageTemp: "Ambiente seco",
+    createdAt: "2024-01-10T00:00:00.000Z",
+    updatedAt: "2024-07-10T09:15:00.000Z"
   },
   {
-    id: 4,
+    id: '4',
     name: "Limpiafondos automático Voyager",
     category: "Limpieza",
     description: "Robot limpiafondos automático con sistema de navegación inteligente",
@@ -52,11 +94,27 @@ const products = [
     minStock: 2,
     sku: "LIM-VOY-01",
     supplier: "RobotClean",
-    imageUrl: "https://via.placeholder.com/150",
-    status: "active"
+    supplierId: '4',
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
+    status: "active",
+    // Enhanced fields
+    brand: "Voyager",
+    model: "V-4000",
+    weight: "8.5",
+    dimensions: "40x45x25 cm",
+    warranty: "2 años",
+    installationRequired: false,
+    seasonalDemand: "high",
+    lastRestockDate: "2024-06-20",
+    poolSize: "Hasta 12x6m",
+    cycleTime: "2 horas",
+    cableLength: "18 metros",
+    cleaningSurfaces: "Piso, paredes, línea de agua",
+    createdAt: "2024-02-01T00:00:00.000Z",
+    updatedAt: "2024-06-20T16:45:00.000Z"
   },
   {
-    id: 5,
+    id: '5',
     name: "Regulador de pH 5L",
     category: "Químicos",
     description: "Solución para regular el pH del agua de la alberca",
@@ -66,8 +124,25 @@ const products = [
     minStock: 10,
     sku: "QUI-PH-5L",
     supplier: "ChemPool",
-    imageUrl: "https://via.placeholder.com/150",
-    status: "active"
+    supplierId: '3',
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
+    status: "active",
+    // Enhanced fields
+    brand: "ChemPool",
+    model: "pH-REG-5",
+    weight: "5.5",
+    dimensions: "25x15x30 cm",
+    warranty: "N/A",
+    installationRequired: false,
+    seasonalDemand: "moderate",
+    lastRestockDate: "2024-07-05",
+    concentration: "37%",
+    chemicalType: "Ácido muriático",
+    shelfLife: "2 años",
+    storageTemp: "Ambiente seco",
+    usage: "50ml por 10,000L",
+    createdAt: "2024-01-25T00:00:00.000Z",
+    updatedAt: "2024-07-05T11:20:00.000Z"
   },
   {
     id: 6,
@@ -80,7 +155,7 @@ const products = [
     minStock: 2,
     sku: "CAL-SOL-4X10",
     supplier: "SolarTech",
-    imageUrl: "https://via.placeholder.com/150",
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
     status: "active"
   },
   {
@@ -94,7 +169,7 @@ const products = [
     minStock: 5,
     sku: "ANA-KIT-6P",
     supplier: "TestMaster",
-    imageUrl: "https://via.placeholder.com/150",
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
     status: "active"
   },
   {
@@ -108,7 +183,7 @@ const products = [
     minStock: 3,
     sku: "ACC-ESC-3P",
     supplier: "PoolEquip",
-    imageUrl: "https://via.placeholder.com/150",
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
     status: "active"
   },
   {
@@ -122,7 +197,7 @@ const products = [
     minStock: 4,
     sku: "ACC-SKI-01",
     supplier: "PoolEquip",
-    imageUrl: "https://via.placeholder.com/150",
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
     status: "active"
   },
   {
@@ -136,7 +211,7 @@ const products = [
     minStock: 3,
     sku: "ILU-LED-RGB",
     supplier: "LightPool",
-    imageUrl: "https://via.placeholder.com/150",
+    imageUrl: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPjE1MHgxNTA8L3RleHQ+Cjwvc3ZnPg==",
     status: "active"
   }
 ];

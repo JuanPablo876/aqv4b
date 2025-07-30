@@ -16,6 +16,7 @@ import FinancePage from './components/FinancePage';
 import ReportsPage from './components/ReportsPage';
 import SettingsPage from './components/SettingsPage';
 import UserProfilePage from './components/UserProfilePage';
+import InvitationManagement from './components/InvitationManagement';
 import VenetianBackground from './components/VenetianBackground';
 import ModuleSidebar from './components/ModuleSidebar';
 import { isStorageAvailable } from './utils/storage';
@@ -70,7 +71,8 @@ export default function Dashboard() {
     finance: 'Finanzas',
     reports: 'Reportes',
     settings: 'Configuración',
-    profile: 'Mi Perfil'
+    profile: 'Mi Perfil',
+    invitations: 'Gestión de Invitaciones'
   };
 
   // Render page content based on active page
@@ -151,6 +153,8 @@ export default function Dashboard() {
         return <SettingsPage session={session} />;
       case 'profile':
         return <UserProfilePage session={session} />;
+      case 'invitations':
+        return <InvitationManagement />;
       default:
         return (
           <DashboardPage 

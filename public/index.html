@@ -3,10 +3,82 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#3b82f6">
+    <meta name="description" content="AQV4 - Comprehensive business management system for inventory, clients, orders, and finance management">
+    
+    <!-- Apple PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AQV4">
+    
+    <!-- Microsoft PWA Meta Tags -->
+    <meta name="msapplication-TileColor" content="#3b82f6">
+    <meta name="msapplication-config" content="browserconfig.xml">
+    
+    <title>AQV4 - Business Management System</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PWA Install Prompt Styles -->
+    <style>
+      .pwa-install-prompt {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: #3b82f6;
+        color: white;
+        padding: 16px;
+        border-radius: 12px;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        z-index: 10000;
+        max-width: 400px;
+        margin: 0 auto;
+      }
+      .pwa-install-prompt.show { display: flex; }
+      .pwa-install-btn {
+        background: white;
+        color: #3b82f6;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-left: 12px;
+      }
+      .pwa-close-btn {
+        background: transparent;
+        color: white;
+        border: none;
+        padding: 4px;
+        cursor: pointer;
+        margin-left: 8px;
+        font-size: 18px;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
+    
+    <!-- PWA Install Prompt -->
+    <div id="pwa-install-prompt" class="pwa-install-prompt">
+      <div>
+        <strong>Install AQV4</strong><br>
+        <small>Add to home screen for better experience</small>
+      </div>
+      <div>
+        <button id="pwa-install-btn" class="pwa-install-btn">Install</button>
+        <button id="pwa-close-btn" class="pwa-close-btn">&times;</button>
+      </div>
+    </div>
   </body>
 </html>

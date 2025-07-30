@@ -94,10 +94,32 @@ const formatCurrency = (amount) => {
   }).format(amount);
 };
 
+// Load data from localStorage
+const loadFromStorage = (key, defaultValue = []) => {
+  try {
+    const data = localStorage.getItem(key);
+    return data ? JSON.parse(data) : defaultValue;
+  } catch (error) {
+    console.error(`Error loading from storage (${key}):`, error);
+    return defaultValue;
+  }
+};
+
+// Save data to localStorage
+const saveToStorage = (key, data) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+    return true;
+  } catch (error) {
+    console.error(`Error saving to storage (${key}):`, error);
+    return false;
+  }
+};
+
 // Format date
 const formatDate = (dateString) => {
   const options = { year: 'numeric', month: 'short', day: 'numeric' };
   return new Date(dateString).toLocaleDateString('es-MX', options);
 };
 
-export { createStorage, isStorageAvailable, formatCurrency, formatDate };
+export { createStorage, isStorageAvailable, formatCurrency, formatDate, loadFromStorage, saveToStorage };

@@ -1,14 +1,14 @@
 const dashboardData = {
   salesSummary: {
-    daily: 15680.50,
-    weekly: 87450.75,
-    monthly: 342890.25,
-    annual: 4125780.50,
+    daily: 18450.75,
+    weekly: 125680.50,
+    monthly: 489650.25, // July 2025 sales
+    annual: 2935342.50, // Year to date (Jan-Jul 2025)
     comparedToPrevious: {
-      daily: 5.2,
-      weekly: -2.8,
-      monthly: 12.5,
-      annual: 8.7
+      daily: 8.5,
+      weekly: 4.2,
+      monthly: -6.9, // Down from June's high
+      annual: 12.8
     }
   },
   topProducts: [
@@ -31,25 +31,20 @@ const dashboardData = {
     { id: 2, name: "Filtro de arena SandMaster 24\"", stock: 8, minStock: 3, status: "ok" }
   ],
   recentActivity: [
-    { id: 1, type: "order", description: "Nuevo pedido #5 de Condominio Vista Hermosa", date: "2023-11-16T14:30:00", status: "pending" },
-    { id: 2, type: "quote", description: "Cotización #4 aprobada por Spa Wellness Center", date: "2023-11-16T11:15:00", status: "approved" },
-    { id: 3, type: "inventory", description: "Stock bajo de Limpiafondos automático Voyager", date: "2023-11-16T09:45:00", status: "alert" },
-    { id: 4, type: "client", description: "Nuevo cliente registrado: Gimnasio Total Fitness", date: "2023-11-15T16:20:00", status: "info" },
-    { id: 5, type: "payment", description: "Pago recibido de Hotel Acapulco Resort", date: "2023-11-15T14:10:00", status: "completed" }
+    { id: 1, type: "order", description: "Nuevo pedido #5 de Condominio Vista Hermosa", date: "2025-07-29T14:30:00", status: "pending" },
+    { id: 2, type: "quote", description: "Cotización #4 aprobada por Spa Wellness Center", date: "2025-07-29T11:15:00", status: "approved" },
+    { id: 3, type: "inventory", description: "Stock bajo de Limpiafondos automático Voyager", date: "2025-07-29T09:45:00", status: "alert" },
+    { id: 4, type: "client", description: "Nuevo cliente registrado: Gimnasio Total Fitness", date: "2025-07-28T16:20:00", status: "info" },
+    { id: 5, type: "payment", description: "Pago recibido de Hotel Acapulco Resort", date: "2025-07-28T14:10:00", status: "completed" }
   ],
   salesByMonth: [
-    { month: "Ene", sales: 280500.25 },
-    { month: "Feb", sales: 320150.75 },
-    { month: "Mar", sales: 350780.50 },
-    { month: "Abr", sales: 410250.00 },
-    { month: "May", sales: 380120.25 },
-    { month: "Jun", sales: 420580.75 },
-    { month: "Jul", sales: 450890.50 },
-    { month: "Ago", sales: 470250.25 },
-    { month: "Sep", sales: 420780.00 },
-    { month: "Oct", sales: 380450.50 },
-    { month: "Nov", sales: 342890.25 },
-    { month: "Dic", sales: 0 }
+    { month: "Ene", sales: 315250.75 },
+    { month: "Feb", sales: 298450.50 },
+    { month: "Mar", sales: 385780.25 },
+    { month: "Abr", sales: 442150.00 },
+    { month: "May", sales: 478320.50 },
+    { month: "Jun", sales: 525890.75 },
+    { month: "Jul", sales: 489650.25 },
   ],
   salesByCategory: [
     { category: "Bombas", percentage: 22 },

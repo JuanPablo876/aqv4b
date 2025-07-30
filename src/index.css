@@ -341,3 +341,44 @@ body {
     background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%9ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   }
 }
+
+/* Theme Preferences - Compact Mode */
+.compact-mode .p-6 {
+  padding: 1rem;
+}
+
+.compact-mode .p-4 {
+  padding: 0.5rem;
+}
+
+.compact-mode .mb-6 {
+  margin-bottom: 1rem;
+}
+
+.compact-mode .mb-4 {
+  margin-bottom: 0.5rem;
+}
+
+.compact-mode .space-y-4 > * + * {
+  margin-top: 0.75rem;
+}
+
+.compact-mode .space-y-6 > * + * {
+  margin-top: 1rem;
+}
+
+/* Theme Preferences - Reduced Motion */
+.reduce-motion,
+.reduce-motion * {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+.reduce-motion .transition-colors,
+.reduce-motion .transition-all,
+.reduce-motion .transition-opacity,
+.reduce-motion .transition-transform {
+  transition: none !important;
+}

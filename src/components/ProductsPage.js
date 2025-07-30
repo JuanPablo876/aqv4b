@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { products } from '../mock/products';
-import { formatCurrency } from '../utils/storage';
+import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
+import { DEFAULT_PRODUCT_IMAGE } from '../utils/placeholders';
 import VenetianTile from './VenetianTile';
 
 const ProductsPage = () => {
@@ -101,7 +102,7 @@ const ProductsPage = () => {
       cost: parseFloat(newProduct.cost) || 0,
       stock: parseInt(newProduct.stock) || 0,
       minStock: parseInt(newProduct.minStock) || 0,
-      imageUrl: newProduct.imageUrl || "https://via.placeholder.com/150" // Use uploaded image or placeholder
+      imageUrl: newProduct.imageUrl || DEFAULT_PRODUCT_IMAGE // Use uploaded image or placeholder
     };
     
     setProductsList([...productsList, formattedProduct]);

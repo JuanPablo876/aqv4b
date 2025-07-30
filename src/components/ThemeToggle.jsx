@@ -1,41 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const ThemeToggle = () => {
-  const [theme, setTheme] = useState('system');
-
-  // Initialize theme from localStorage or default to system
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('theme') || 'system';
-    setTheme(savedTheme);
-  }, []);
-
-  // Apply theme to document
-  useEffect(() => {
-    const root = document.documentElement;
-    
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else if (theme === 'light') {
-      root.classList.remove('dark');
-    } else {
-      // System theme
-      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (systemPrefersDark) {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-    }
-    
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    const themes = ['light', 'dark', 'system'];
-    const currentIndex = themes.indexOf(theme);
-    const nextIndex = (currentIndex + 1) % themes.length;
-    setTheme(themes[nextIndex]);
-  };
+  const { theme, toggleTheme } = useTheme();
 
   const getThemeIcon = () => {
     switch (theme) {
@@ -62,11 +29,25 @@ const ThemeToggle = () => {
     }
   };
 
+  const getThemeLabel = () => {
+    switch (theme) {
+      case 'light':
+        return 'Tema claro';
+      case 'dark':
+        return 'Tema oscuro';
+      case 'system':
+        return 'Tema del sistema';
+      default:
+        return theme;
+    }
+  };
+
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-full text-primary hover:bg-accent focus:outline-none transition-colors"
-      title={`Current theme: ${theme}`}
+      className="p-2 rounded-full text-primary hover:bg-accent focus:outline-none transition-colors duration-200"
+      title={`Tema actual: ${getThemeLabel()}`}
+      aria-label={`Cambiar tema. Actual: ${getThemeLabel()}`}
     >
       {getThemeIcon()}
     </button>

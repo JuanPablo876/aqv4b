@@ -7,6 +7,13 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
   const userEmail = user?.email || 'usuario@example.com';
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario';
   const userInitials = userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const userRole = user?.user_metadata?.role;
+
+  // Filter menu items based on user role
+  const isRoleAllowed = (requiredRoles) => {
+    if (!requiredRoles) return true; // No role restriction
+    return requiredRoles.includes(userRole);
+  };
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: (
@@ -55,6 +62,11 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
       </svg>
     ) },
+    { id: 'invitations', label: 'Invitaciones', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
+      </svg>
+    ), roleRequired: ['admin', 'manager'] },
     { id: 'finance', label: 'Finanzas', icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
         <path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z" />
@@ -99,7 +111,9 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
       {/* Menu Items - Scrollable */}
       <div className="flex-1 overflow-y-auto">
         <ul className="py-2">
-          {menuItems.map((item) => (
+          {menuItems
+            .filter(item => isRoleAllowed(item.roleRequired))
+            .map((item) => (
             <Fragment key={item.id}>
               {item.id === 'reports' && (
                 <hr className="my-2 border-t venetian-border" />
