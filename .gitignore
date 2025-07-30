@@ -1,1 +1,17 @@
 node_modules
+
+# Environment variables
+.env.local
+.env
+.env.production
+.env.development
+
+# Build
+/build
+/dist
+
+# Logs
+*.log
+
+# Dependencies
+package-lock.json
