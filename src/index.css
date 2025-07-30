@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global fix for any remaining blue text in dark mode */
+.dark .text-blue-50,
+.dark .text-blue-100,
+.dark .text-blue-200,
+.dark .text-blue-300,
+.dark .text-blue-400,
+.dark .text-blue-500,
+.dark .text-blue-600,
+.dark .text-blue-700,
+.dark .text-blue-800,
+.dark .text-blue-900,
+.dark .text-blue-950 {
+  color: white !important;
+}

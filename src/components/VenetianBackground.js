@@ -38,13 +38,13 @@ const VenetianBackground = ({ children }) => {
           '50px 50px, 50px 50px, 10px 10px, 10px 10px',
         backgroundPosition: 
           '-1px -1px, -1px -1px, -1px -1px, -1px -1px',
-        zIndex: 1,
+        zIndex: -1,
         pointerEvents: 'none',
-        opacity: 0.5 // Adjust opacity for the pattern
+        opacity: 0.3 // Reduced opacity to make it less intrusive
       }}></div>
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
+      <div style={{ position: 'relative', zIndex: 10 }}>
         {children}
       </div>
     </div>
