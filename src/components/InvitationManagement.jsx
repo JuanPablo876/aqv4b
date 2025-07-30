@@ -6,8 +6,9 @@ import useToast from '../hooks/useToast';
 import { useAuth } from '../AuthContext';
 
 export default function InvitationManagement() {
-  const { user } = useAuth();
-  const { addToast } = useToast();
+  const { session } = useAuth();
+  const user = session?.user;
+  const { toast } = useToast();
   
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,10 +22,14 @@ export default function InvitationManagement() {
 
   const checkPermissions = async () => {
     try {
-      const canInviteUsers = await InvitationService.canInvite(user?.id);
-      setCanInvite(canInviteUsers);
+      // Check if user has admin or manager role
+      const hasAdminRole = user?.user_metadata?.role === 'admin';
+      const hasManagerRole = user?.user_metadata?.role === 'manager';
+      
+      setCanInvite(hasAdminRole || hasManagerRole);
     } catch (error) {
       console.error('Error checking permissions:', error);
+      setCanInvite(false);
     }
   };
 
@@ -32,9 +37,11 @@ export default function InvitationManagement() {
     try {
       setLoading(true);
       const data = await InvitationService.getInvitations();
-      setInvitations(data);
+      setInvitations(data || []);
     } catch (error) {
-      addToast('Error al cargar invitaciones', 'error');
+      console.error('Error loading invitations:', error);
+      toast.error('Error al cargar invitaciones');
+      setInvitations([]);
     } finally {
       setLoading(false);
     }
@@ -49,11 +56,11 @@ export default function InvitationManagement() {
         data.message
       );
       
-      addToast('Invitación creada exitosamente', 'success');
+      toast.success('Invitación creada exitosamente');
       setShowCreateForm(false);
       loadInvitations(); // Refresh list
     } catch (error) {
-      addToast(error.message || 'Error al crear invitación', 'error');
+      toast.error(error.message || 'Error al crear invitación');
       throw error;
     }
   };
@@ -61,10 +68,10 @@ export default function InvitationManagement() {
   const handleResendInvitation = async (invitationId) => {
     try {
       await InvitationService.resendInvitation(invitationId);
-      addToast('Invitación reenviada exitosamente', 'success');
+      toast.success('Invitación reenviada exitosamente');
       loadInvitations();
     } catch (error) {
-      addToast(error.message || 'Error al reenviar invitación', 'error');
+      toast.error(error.message || 'Error al reenviar invitación');
     }
   };
 
@@ -75,10 +82,10 @@ export default function InvitationManagement() {
 
     try {
       await InvitationService.cancelInvitation(invitationId);
-      addToast('Invitación cancelada', 'success');
+      toast.success('Invitación cancelada');
       loadInvitations();
     } catch (error) {
-      addToast(error.message || 'Error al cancelar invitación', 'error');
+      toast.error(error.message || 'Error al cancelar invitación');
     }
   };
 
@@ -86,8 +93,8 @@ export default function InvitationManagement() {
     return (
       <div className="text-center py-12">
         <div className="text-6xl mb-4">🔒</div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Acceso Restringido</h2>
-        <p className="text-gray-600">No tienes permisos para gestionar invitaciones.</p>
+        <h2 className="text-2xl font-bold text-primary mb-2">Acceso Restringido</h2>
+        <p className="text-muted-foreground">No tienes permisos para gestionar invitaciones.</p>
       </div>
     );
   }
@@ -97,12 +104,12 @@ export default function InvitationManagement() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Invitaciones</h1>
-          <p className="text-gray-600">Invita nuevos usuarios a la plataforma</p>
+          <h1 className="text-2xl font-bold text-primary">Gestión de Invitaciones</h1>
+          <p className="text-muted-foreground">Invita nuevos usuarios a la plataforma</p>
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
         >
           + Nueva Invitación
         </button>
@@ -111,12 +118,12 @@ export default function InvitationManagement() {
       {/* Create Invitation Modal */}
       {showCreateForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-background rounded-lg p-6 w-full max-w-md border">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Nueva Invitación</h2>
+              <h2 className="text-xl font-bold text-primary">Nueva Invitación</h2>
               <button
                 onClick={() => setShowCreateForm(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-muted-foreground hover:text-primary"
               >
                 ✕
               </button>
@@ -168,7 +175,7 @@ export default function InvitationManagement() {
                     <button
                       type="button"
                       onClick={() => setShowCreateForm(false)}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                      className="flex-1 px-4 py-2 border border-border rounded-md text-muted-foreground hover:bg-secondary"
                     >
                       Cancelar
                     </button>
@@ -181,20 +188,20 @@ export default function InvitationManagement() {
       )}
 
       {/* Invitations List */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-medium text-gray-900">Invitaciones Enviadas</h2>
+      <div className="bg-background shadow rounded-lg border">
+        <div className="px-6 py-4 border-b border-border">
+          <h2 className="text-lg font-medium text-primary">Invitaciones Enviadas</h2>
         </div>
 
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Cargando invitaciones...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Cargando invitaciones...</p>
           </div>
         ) : invitations.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-4">📧</div>
-            <p className="text-gray-600">No hay invitaciones enviadas</p>
+            <p className="text-muted-foreground">No hay invitaciones enviadas</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

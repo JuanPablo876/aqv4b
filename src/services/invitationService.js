@@ -230,12 +230,12 @@ export class InvitationService {
   // Check if current user can invite others
   static async canInvite(userId) {
     try {
-      const { data: user } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) return false;
 
       // Check user role from metadata
-      const userRole = user.user?.user_metadata?.role;
+      const userRole = user.user_metadata?.role;
       
       return ['admin', 'manager'].includes(userRole);
     } catch (error) {

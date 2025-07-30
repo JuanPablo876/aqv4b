@@ -110,6 +110,7 @@ const MainApp = () => {
           activePage={activePage}
           setActivePage={setActivePage}
           onAddModule={handleAddModule}
+          session={session}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden">
