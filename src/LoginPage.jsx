@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from './AuthContext'
 
 const LoginComponent = () => {
   const [email, setEmail] = useState('')
@@ -8,6 +9,14 @@ const LoginComponent = () => {
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const navigate = useNavigate()
+  const { session } = useAuth()
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (session) {
+      navigate('/dashboard')
+    }
+  }, [session, navigate])
 
   const handleLogin = async (e) => {
     e.preventDefault()

@@ -90,7 +90,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 name="clientId"
                 value={newInvoice.clientId}
                 onChange={handleClientSelect}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar Cliente...</option>
                 {clientsList.map(client => (
@@ -110,7 +110,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 name="date"
                 value={newInvoice.date}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -123,7 +123,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 name="invoiceNumber"
                 value={newInvoice.invoiceNumber}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -136,7 +136,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 name="rfc"
                 value={newInvoice.rfc}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -149,7 +149,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 name="razonSocial"
                 value={newInvoice.razonSocial}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -162,7 +162,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 name="total"
                 value={newInvoice.total}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -174,7 +174,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 name="status"
                 value={newInvoice.status}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="paid">Pagada</option>
                 <option value="pending">Pendiente</option>
@@ -190,7 +190,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 name="paymentMethod"
                 value={newInvoice.paymentMethod}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -203,7 +203,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 name="orderId"
                 value={newInvoice.orderId}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -216,7 +216,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 value={newInvoice.notes}
                 onChange={handleInputChange}
                 rows="2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               ></textarea>
             </div>
           </div>
@@ -224,7 +224,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
           <div className="mt-6 flex justify-end space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Cancelar
             </button>

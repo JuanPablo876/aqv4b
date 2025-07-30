@@ -100,7 +100,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 name="name"
                 value={newProduct.name}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -112,7 +112,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 name="category"
                 value={newProduct.category}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar...</option>
                 {categories.map((category) => (
@@ -133,7 +133,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 name="sku"
                 value={newProduct.sku}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -146,7 +146,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 value={newProduct.description}
                 onChange={handleInputChange}
                 rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               ></textarea>
             </div>
             
@@ -159,7 +159,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 name="price"
                 value={newProduct.price}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -172,7 +172,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 name="cost"
                 value={newProduct.cost}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -186,7 +186,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 value={newProduct.stock}
                 onChange={handleInputChange}
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -200,7 +200,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 value={newProduct.minStock}
                 onChange={handleInputChange}
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -213,7 +213,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 name="supplier"
                 value={newProduct.supplier}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -225,7 +225,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
                 name="status"
                 value={newProduct.status}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="active">Activo</option>
                 <option value="inactive">Inactivo</option>
@@ -253,7 +253,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
           <div className="mt-6 flex justify-end space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Cancelar
             </button>

@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient';
 import VenetianTile from './VenetianTile';
 import ThemeToggle from './ThemeToggle';
 
-const LayoutHeader = ({ title, session }) => {
+const LayoutHeader = ({ title, session, setActivePage }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
@@ -25,6 +25,20 @@ const LayoutHeader = ({ title, session }) => {
     } catch (error) {
       console.error('Error logging out:', error);
     }
+  };
+
+  const handleProfileClick = () => {
+    if (setActivePage) {
+      setActivePage('profile');
+    }
+    setShowUserMenu(false);
+  };
+
+  const handleSettingsClick = () => {
+    if (setActivePage) {
+      setActivePage('settings');
+    }
+    setShowUserMenu(false);
   };
   
   const notifications = [
@@ -137,16 +151,22 @@ const LayoutHeader = ({ title, session }) => {
             
             {showUserMenu && (
               <VenetianTile className="dropdown-menu w-48 py-2">
-                <a href="#profile" className="block px-4 py-2 text-primary hover:bg-accent">
+                <button 
+                  onClick={handleProfileClick}
+                  className="block w-full text-left px-4 py-2 text-primary hover:bg-accent focus:outline-none"
+                >
                   Mi Perfil
-                </a>
-                <a href="#settings" className="block px-4 py-2 text-primary hover:bg-accent">
+                </button>
+                <button 
+                  onClick={handleSettingsClick}
+                  className="block w-full text-left px-4 py-2 text-primary hover:bg-accent focus:outline-none"
+                >
                   Configuración
-                </a>
+                </button>
                 <div className="border-t venetian-border my-1"></div>
                 <button 
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-primary hover:bg-accent"
+                  className="block w-full text-left px-4 py-2 text-primary hover:bg-accent focus:outline-none"
                 >
                   Cerrar Sesión
                 </button>

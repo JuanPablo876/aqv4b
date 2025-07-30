@@ -128,7 +128,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="clientId"
                 value={newQuote.clientId}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar Cliente...</option>
                 {clientsList.map(client => (
@@ -148,7 +148,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="date"
                 value={newQuote.date}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -161,7 +161,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="validUntil"
                 value={newQuote.validUntil}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -174,7 +174,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                 value={newQuote.notes}
                 onChange={handleInputChange}
                 rows="2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               ></textarea>
             </div>
           </div>
@@ -190,7 +190,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                 <select
                   value={selectedProductToAdd}
                   onChange={(e) => setSelectedProductToAdd(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Seleccionar Producto...</option>
                   {productsList.map(product => (
@@ -210,7 +210,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                   value={productQuantityToAdd}
                   onChange={(e) => setProductQuantityToAdd(parseInt(e.target.value) || 0)}
                   min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
               
@@ -223,7 +223,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                   value={productDiscountToAdd}
                   onChange={(e) => setProductDiscountToAdd(parseFloat(e.target.value) || 0)}
                   min="0"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -310,7 +310,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
             <div className="flex space-x-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
                 Cancelar
               </button>

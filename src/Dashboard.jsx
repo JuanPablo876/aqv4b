@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 import LayoutSidebar from './components/LayoutSidebar';
 import LayoutHeader from './components/LayoutHeader';
 import DashboardPage from './components/DashboardPage';
@@ -15,6 +15,7 @@ import EmployeesPage from './components/EmployeesPage';
 import FinancePage from './components/FinancePage';
 import ReportsPage from './components/ReportsPage';
 import SettingsPage from './components/SettingsPage';
+import UserProfilePage from './components/UserProfilePage';
 import VenetianBackground from './components/VenetianBackground';
 import ModuleSidebar from './components/ModuleSidebar';
 import { isStorageAvailable } from './utils/storage';
@@ -30,8 +31,7 @@ import { bankAccounts, cashBoxes, transactions } from './mock/finance';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { session } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
   const [modules, setModules] = useState([
     { name: 'Finanzas', description: 'Control financiero' },
@@ -48,29 +48,6 @@ export default function Dashboard() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showInventoryModal, setShowInventoryModal] = useState(false);
   const [showFinanceModal, setShowFinanceModal] = useState(false);
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setLoading(false);
-      
-      // If no session, redirect to login
-      if (!session) {
-        navigate('/login');
-      }
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (!session) {
-        navigate('/login');
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
 
   const handleAddModule = () => {
     const newName = prompt('Nombre del nuevo módulo:');
@@ -92,7 +69,8 @@ export default function Dashboard() {
     employees: 'Empleados',
     finance: 'Finanzas',
     reports: 'Reportes',
-    settings: 'Configuración'
+    settings: 'Configuración',
+    profile: 'Mi Perfil'
   };
 
   // Render page content based on active page
@@ -170,7 +148,9 @@ export default function Dashboard() {
       case 'reports':
         return <ReportsPage />;
       case 'settings':
-        return <SettingsPage />;
+        return <SettingsPage session={session} />;
+      case 'profile':
+        return <UserProfilePage session={session} />;
       default:
         return (
           <DashboardPage 
@@ -181,17 +161,6 @@ export default function Dashboard() {
         );
     }
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="h-screen overflow-hidden bg-background transition-colors">
@@ -206,7 +175,11 @@ export default function Dashboard() {
       />
       
       {/* Header */}
-      <LayoutHeader title={pageTitles[activePage]} session={session} />
+      <LayoutHeader 
+        title={pageTitles[activePage]} 
+        session={session} 
+        setActivePage={setActivePage}
+      />
       
       {/* Main Content */}
       <div className="fixed top-16 left-64 right-0 bottom-0 overflow-auto">
@@ -216,7 +189,7 @@ export default function Dashboard() {
       </div>
       
       {/* Module Sidebar (if needed) */}
-      <ModuleSidebar modules={modules} />
+      <ModuleSidebar modules={modules} onAddModule={handleAddModule} />
     </div>
   );
 }

@@ -79,12 +79,13 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
   ];
   
   return (
-    <div className="fixed left-0 top-0 h-full w-64 venetian-bg shadow-lg overflow-y-auto transition-colors"
+    <div className="fixed left-0 top-0 h-full w-64 venetian-bg shadow-lg transition-colors flex flex-col"
       style={{
         borderRight: '1px solid var(--venetian-border)'
       }}
     >
-      <div className="p-4 border-b venetian-border flex items-center space-x-2">
+      {/* Header */}
+      <div className="p-4 border-b venetian-border flex items-center space-x-2 flex-shrink-0">
         <div className="w-10 h-10 rounded-lg overflow-hidden">
           <img
             src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc0c2ZYzyxLlIki8fCRNnvUyWdBhcZQKOVp6M0G"
@@ -95,42 +96,46 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
         <h1 className="text-xl font-bold text-primary">Aqualiquim</h1>
       </div>
 
-      <ul>
-        {menuItems.map((item) => (
-          <Fragment key={item.id}>
-            {item.id === 'reports' && (
-              <hr className="my-2 border-t venetian-border" />
-            )}
-            <li className="mb-1">
-              <button
-                onClick={() =>
-                  item.id === 'addModule'
-                    ? onAddModule && onAddModule()
-                    : setActivePage && setActivePage(item.id)
-                }
-                className={`flex items-center w-full px-4 py-3 text-left transition-colors ${
-                  activePage === item.id && item.id !== 'addModule'
-                    ? 'bg-accent text-accent-foreground border-r-4 border-primary'
-                    : 'text-primary hover:bg-secondary'
-                }`}
-              >
-                <span className="mr-3">{item.icon}</span>
-                {item.label}
-              </button>
-            </li>
-          </Fragment>
-        ))}
-      </ul>
+      {/* Menu Items - Scrollable */}
+      <div className="flex-1 overflow-y-auto">
+        <ul className="py-2">
+          {menuItems.map((item) => (
+            <Fragment key={item.id}>
+              {item.id === 'reports' && (
+                <hr className="my-2 border-t venetian-border" />
+              )}
+              <li className="mb-1">
+                <button
+                  onClick={() =>
+                    item.id === 'addModule'
+                      ? onAddModule && onAddModule()
+                      : setActivePage && setActivePage(item.id)
+                  }
+                  className={`flex items-center w-full px-4 py-3 text-left transition-colors ${
+                    activePage === item.id && item.id !== 'addModule'
+                      ? 'bg-accent text-accent-foreground border-r-4 border-primary'
+                      : 'text-primary hover:bg-secondary'
+                  }`}
+                >
+                  <span className="mr-3">{item.icon}</span>
+                  {item.label}
+                </button>
+              </li>
+            </Fragment>
+          ))}
+        </ul>
+      </div>
 
-      <div className="absolute bottom-0 w-full border-t venetian-border p-4 flex items-center space-x-3">
+      {/* Account Section - Fixed at bottom */}
+      <div className="border-t venetian-border p-4 flex items-center space-x-3 flex-shrink-0">
         <div className="bg-secondary text-secondary-foreground p-2 rounded-full">
           <div className="h-5 w-5 flex items-center justify-center font-medium text-xs">
             {userInitials}
           </div>
         </div>
-        <div>
-          <p className="text-sm font-medium text-primary">{userName}</p>
-          <p className="text-xs text-muted-foreground">{userEmail}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium text-primary truncate">{userName}</p>
+          <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
         </div>
       </div>
     </div>

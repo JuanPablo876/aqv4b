@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* CSS Custom Properties for Theme System */
 @layer base {
   :root {
@@ -223,5 +232,112 @@
     z-index: 1000;
     min-width: 12rem;
     margin-top: 0.5rem;
+  }
+  
+  /* Make buttons more rounded globally */
+  .rounded-md {
+    border-radius: 0.5rem !important; /* More rounded than default */
+  }
+  
+  .rounded-lg {
+    border-radius: 0.75rem !important; /* Extra rounded */
+  }
+  
+  .rounded-xl {
+    border-radius: 1rem !important; /* Very rounded */
+  }
+  
+  button.rounded-md {
+    border-radius: 0.5rem !important;
+  }
+  
+  button.rounded-lg {
+    border-radius: 0.75rem !important;
+  }
+  
+  button.rounded-xl {
+    border-radius: 1rem !important;
+  }
+  
+  /* Extra rounded button class */
+  .btn-rounded {
+    border-radius: 1rem !important;
+  }
+
+  /* Universal Dark Mode Input Styling */
+  /* This will automatically apply dark mode styling to all input elements */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="date"],
+  input[type="datetime-local"],
+  input[type="month"],
+  input[type="time"],
+  input[type="week"],
+  select,
+  textarea {
+    @apply border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100;
+  }
+
+  /* Placeholder styling for dark mode */
+  input[type="text"]::placeholder,
+  input[type="email"]::placeholder,
+  input[type="password"]::placeholder,
+  input[type="number"]::placeholder,
+  input[type="search"]::placeholder,
+  input[type="tel"]::placeholder,
+  input[type="url"]::placeholder,
+  select::placeholder,
+  textarea::placeholder {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  /* Focus states for dark mode */
+  input[type="text"]:focus,
+  input[type="email"]:focus,
+  input[type="password"]:focus,
+  input[type="number"]:focus,
+  input[type="search"]:focus,
+  input[type="tel"]:focus,
+  input[type="url"]:focus,
+  input[type="date"]:focus,
+  input[type="datetime-local"]:focus,
+  input[type="month"]:focus,
+  input[type="time"]:focus,
+  input[type="week"]:focus,
+  select:focus,
+  textarea:focus {
+    @apply ring-blue-500 border-blue-500 dark:ring-blue-400 dark:border-blue-400;
+  }
+
+  /* Checkbox and radio button styling for dark mode */
+  input[type="checkbox"],
+  input[type="radio"] {
+    @apply bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-blue-600 dark:text-blue-400;
+  }
+
+  input[type="checkbox"]:checked,
+  input[type="radio"]:checked {
+    @apply bg-blue-600 dark:bg-blue-500 border-blue-600 dark:border-blue-500;
+  }
+
+  /* Disabled state styling */
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    @apply bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed;
+  }
+
+  /* Select dropdown arrow styling for dark mode */
+  select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  }
+
+  .dark select {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%9ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
   }
 }

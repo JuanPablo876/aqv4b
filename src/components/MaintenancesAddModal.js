@@ -91,7 +91,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="clientId"
                 value={newMaintenance.clientId}
                 onChange={handleClientSelect}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar Cliente...</option>
                 {clientsList.map(client => (
@@ -111,7 +111,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="serviceType"
                 value={newMaintenance.serviceType}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -125,7 +125,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 value={newMaintenance.frequency}
                 onChange={handleInputChange}
                 placeholder="Ej: Semanal, Mensual"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -138,7 +138,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="lastServiceDate"
                 value={newMaintenance.lastServiceDate}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -150,7 +150,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="lastServiceEmployeeId"
                 value={newMaintenance.lastServiceEmployeeId}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar Empleado...</option>
                 {employeesList.map(employee => (
@@ -169,7 +169,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="status"
                 value={newMaintenance.status}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="active">Activo</option>
                 <option value="inactive">Inactivo</option>
@@ -185,7 +185,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="address"
                 value={newMaintenance.address}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -198,7 +198,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="googleMapsLink"
                 value={newMaintenance.googleMapsLink}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -211,7 +211,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 value={newMaintenance.notes}
                 onChange={handleInputChange}
                 rows="2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               ></textarea>
             </div>
           </div>
@@ -219,7 +219,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
           <div className="mt-6 flex justify-end space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Cancelar
             </button>

@@ -213,7 +213,7 @@ const FinancePage = () => {
             <input
               type="text"
               placeholder="Buscar transacciones..."
-              className="w-full md:w-64 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full md:w-64 px-4 py-2 rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -232,7 +232,7 @@ const FinancePage = () => {
           </div>
           
           <select
-            className="w-full md:w-48 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full md:w-48 px-4 py-2 rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
           >
@@ -692,7 +692,7 @@ const FinancePage = () => {
                     name="date"
                     value={newTransaction.date}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 
@@ -704,7 +704,7 @@ const FinancePage = () => {
                     name="type"
                     value={newTransaction.type}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="income">Ingreso</option>
                     <option value="expense">Gasto</option>
@@ -720,7 +720,7 @@ const FinancePage = () => {
                     name="category"
                     value={newTransaction.category}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 
@@ -733,7 +733,7 @@ const FinancePage = () => {
                     value={newTransaction.description}
                     onChange={handleInputChange}
                     rows="2"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   ></textarea>
                 </div>
                 
@@ -746,7 +746,7 @@ const FinancePage = () => {
                     name="amount"
                     value={newTransaction.amount}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 
@@ -758,7 +758,7 @@ const FinancePage = () => {
                     name="currency"
                     value={newTransaction.currency}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="MXN">MXN</option>
                     <option value="USD">USD</option>
@@ -773,7 +773,7 @@ const FinancePage = () => {
                     name="source"
                     value={newTransaction.source}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="bank">Cuenta Bancaria</option>
                     <option value="cash">Caja Chica</option>
@@ -789,7 +789,7 @@ const FinancePage = () => {
                       name="accountId"
                       value={newTransaction.accountId}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Seleccionar...</option>
                       {bankAccountsList.map(account => (
@@ -810,7 +810,7 @@ const FinancePage = () => {
                       name="cashBoxId"
                       value={newTransaction.cashBoxId}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Seleccionar...</option>
                       {cashBoxesList.map(box => (
@@ -831,7 +831,7 @@ const FinancePage = () => {
                     name="orderId"
                     value={newTransaction.orderId}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 
@@ -844,7 +844,7 @@ const FinancePage = () => {
                     value={newTransaction.notes}
                     onChange={handleInputChange}
                     rows="2"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   ></textarea>
                 </div>
               </div>
@@ -852,7 +852,7 @@ const FinancePage = () => {
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   onClick={() => setIsAddTransactionModalOpen(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cancelar
                 </button>

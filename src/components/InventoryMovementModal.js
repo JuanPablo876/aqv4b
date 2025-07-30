@@ -80,7 +80,7 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
                 name="productId"
                 value={newMovement.productId}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar Producto...</option>
                 {productsList.map(product => (
@@ -99,7 +99,7 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
                 name="location"
                 value={newMovement.location}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar Ubicación...</option>
                 {locations.map(location => (
@@ -119,7 +119,7 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
                 name="type"
                 value={newMovement.type}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="entry">Entrada</option>
                 <option value="exit">Salida</option>
@@ -136,7 +136,7 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
                 value={newMovement.quantity}
                 onChange={handleInputChange}
                 min="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -149,7 +149,7 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
                 name="date"
                 value={newMovement.date}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
@@ -162,7 +162,7 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
                 value={newMovement.notes}
                 onChange={handleInputChange}
                 rows="2"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               ></textarea>
             </div>
           </div>
@@ -170,7 +170,7 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
           <div className="mt-6 flex justify-end space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
               Cancelar
             </button>
