@@ -1,7 +1,6 @@
 // Database Service - Supabase Integration
 // Replaces localStorage-based DataService with database operations
 import { supabase } from '../supabaseClient';
-import { connectionMonitor } from '../utils/connectionMonitor';
 
 class DatabaseService {
   constructor() {
@@ -41,14 +40,11 @@ class DatabaseService {
           if (error) throw error;
           
           this.initialized = true;
-          console.log('🚀 DatabaseService initialized successfully');
-          console.log(`📊 Found ${count || 0} clients in database`);
           return;
         } catch (err) {
           lastError = err;
           retries--;
           if (retries > 0) {
-            console.log(`⚠️ Database connection attempt failed, retrying... (${retries} attempts left)`);
             await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
           }
         }
@@ -142,7 +138,6 @@ class DatabaseService {
       
       if (error) throw error;
       
-      console.log(`✅ Created ${entity}:`, result.id);
       return result;
     } catch (error) {
       console.error(`Error creating ${entity}:`, error);
@@ -168,7 +163,6 @@ class DatabaseService {
       
       if (error) throw error;
       
-      console.log(`✅ Updated ${entity}:`, id);
       return result;
     } catch (error) {
       console.error(`Error updating ${entity}:`, error);
@@ -188,7 +182,6 @@ class DatabaseService {
       
       if (error) throw error;
       
-      console.log(`✅ Deleted ${entity}:`, id);
       return true;
     } catch (error) {
       console.error(`Error deleting ${entity}:`, error);
@@ -328,7 +321,6 @@ class DatabaseService {
       
       if (error) throw error;
       
-      console.log(`✅ Bulk created ${results.length} ${entity} records`);
       return results;
     } catch (error) {
       console.error(`Error bulk creating ${entity}:`, error);
@@ -348,7 +340,6 @@ class DatabaseService {
       
       if (error) throw error;
       
-      console.log(`✅ Bulk deleted ${ids.length} ${entity} records`);
       return ids.length;
     } catch (error) {
       console.error(`Error bulk deleting ${entity}:`, error);

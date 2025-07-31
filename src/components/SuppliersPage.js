@@ -67,18 +67,12 @@ const SuppliersPage = () => {
                 </ul>
               </div>
               
-              <div className="mt-4 flex space-x-3">
+              <div className="mt-4">
                 <button
                   onClick={() => window.location.reload()}
                   className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
                   🔄 Recargar página
-                </button>
-                <button
-                  onClick={() => window.open('/diagnostics', '_blank')}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  🔍 Abrir diagnósticos
                 </button>
               </div>
             </div>

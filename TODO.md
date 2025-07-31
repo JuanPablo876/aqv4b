@@ -67,14 +67,17 @@
 - [ ] Update documentation to reflect production URLs and settings
 
 ## Cleanup Tasks (Remove Dev Tools)
-- [ ] Remove `connectionMonitor.js` utility (development debugging tool)
-- [ ] Remove `SupabaseDiagnostic.jsx` and `SupabaseDiagnosticNew.jsx` components
-- [ ] Remove diagnostics routes from App.jsx
-- [ ] Clean up console.log statements in DatabaseService
-- [ ] Remove enhanced error handling debug info from ClientsPage (keep user-friendly version)
-- [ ] Remove exported diagnostics functionality from production build
-- [ ] Remove connection monitoring integrations from DatabaseService
+- [x] Remove `connectionMonitor.js` utility (development debugging tool)
+- [x] Remove `SupabaseDiagnostic.jsx` and `SupabaseDiagnosticNew.jsx` components
+- [x] Remove diagnostics routes from App.jsx
+- [x] Clean up console.log statements in DatabaseService
+- [x] Remove enhanced error handling debug info from ClientsPage (keep user-friendly version)
+- [x] Remove exported diagnostics functionality from production build
+- [x] Remove connection monitoring integrations from DatabaseService
 
+## Notifications Fix
+ 
+-- Fix the notifications always apperaing after logging in
 ---
 
 *This file tracks deployment and production tasks to ensure a smooth transition from local development to live system.*

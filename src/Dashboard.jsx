@@ -19,7 +19,6 @@ import UserProfilePage from './components/UserProfilePage';
 import InvitationManagement from './components/InvitationManagement';
 import VenetianBackground from './components/VenetianBackground';
 import ModuleSidebar from './components/ModuleSidebar';
-import NotificationTestPanel from './components/NotificationTestPanel';
 import { isStorageAvailable } from './utils/storage';
 import { useDatabaseInit } from './hooks/useDatabaseInit';
 
@@ -110,8 +109,7 @@ export default function Dashboard() {
     reports: 'Reportes',
     settings: 'Configuración',
     profile: 'Mi Perfil',
-    invitations: 'Gestión de Invitaciones',
-    diagnostics: 'Diagnósticos DB'
+    invitations: 'Gestión de Invitaciones'
   };
 
   // Development utilities - available in browser console
@@ -238,19 +236,6 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
         return <UserProfilePage session={session} />;
       case 'invitations':
         return <InvitationManagement />;
-      case 'diagnostics':
-        return (
-          <div className="p-6 max-w-4xl mx-auto">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-              <h2 className="text-green-800 font-bold">✅ Base de Datos Funcionando</h2>
-              <p className="text-green-600">La conexión a la base de datos es exitosa.</p>
-              <p className="text-sm text-green-600 mt-2">Puedes navegar a cualquier página para probar.</p>
-            </div>
-            
-            {/* Notification Test Panel */}
-            <NotificationTestPanel className="mt-4" />
-          </div>
-        );
       default:
         return (
           <div>
@@ -259,13 +244,6 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
               setSelectedOrder={setSelectedOrder}
               setSelectedMaintenance={setSelectedMaintenance}
             />
-            
-            {/* Temporary Notification Test Panel - Only in Development */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="fixed bottom-4 left-4 z-40">
-                <NotificationTestPanel />
-              </div>
-            )}
           </div>
         );
     }
