@@ -5,7 +5,7 @@ import { products } from '../mock/products';
 import { calculateSubtotal, calculateDiscount, calculateTax, calculateTotal } from '../utils/helpers';
 import { formatCurrency } from '../utils/storage';
 
-const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
+const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) => {
   const [clientsList, setClientsList] = useState([]);
   const [productsList, setProductsList] = useState([]);
   const [newQuote, setNewQuote] = useState({
@@ -24,7 +24,15 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
     // In a real app, this would be an API call or localStorage
     setClientsList(clients);
     setProductsList(products);
-  }, []);
+    
+    // Auto-fill client if pre-selected
+    if (preSelectedClient) {
+      setNewQuote(prev => ({
+        ...prev,
+        clientId: preSelectedClient.id
+      }));
+    }
+  }, [preSelectedClient]);
   
   // Get product details by ID
   const getProductDetails = (productId) => {
@@ -119,16 +127,32 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
         </div>
         
         <div className="p-6">
+          {/* Show client info if pre-selected */}
+          {preSelectedClient && (
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+              <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                Cotización para:
+              </h4>
+              <div className="text-sm text-blue-700 dark:text-blue-300">
+                <p className="font-semibold">{preSelectedClient.name}</p>
+                <p>{preSelectedClient.contact}</p>
+                <p>{preSelectedClient.email}</p>
+                <p>{preSelectedClient.phone}</p>
+              </div>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Cliente
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Cliente {preSelectedClient && <span className="text-blue-600 dark:text-blue-400">(Pre-seleccionado)</span>}
               </label>
               <select
                 name="clientId"
                 value={newQuote.clientId}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                disabled={!!preSelectedClient}
               >
                 <option value="">Seleccionar Cliente...</option>
                 {clientsList.map(client => (
@@ -140,7 +164,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Fecha de la Cotización
               </label>
               <input
@@ -148,12 +172,12 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="date"
                 value={newQuote.date}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Válida Hasta
               </label>
               <input
@@ -161,12 +185,12 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                 name="validUntil"
                 value={newQuote.validUntil}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
               />
             </div>
             
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Notas de la Cotización (Opcional)
               </label>
               <textarea
@@ -174,23 +198,24 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                 value={newQuote.notes}
                 onChange={handleInputChange}
                 rows="2"
-                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              ></textarea>
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                placeholder="Notas adicionales para la cotización..."
+              />
             </div>
           </div>
           
           <div className="mb-6">
-            <h4 className="text-lg font-medium text-blue-800 mb-4">Productos de la Cotización</h4>
+            <h4 className="text-lg font-medium text-blue-800 dark:text-blue-200 mb-4">Productos de la Cotización</h4>
             
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Producto
                 </label>
                 <select
                   value={selectedProductToAdd}
                   onChange={(e) => setSelectedProductToAdd(e.target.value)}
-                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Seleccionar Producto...</option>
                   {productsList.map(product => (
@@ -202,7 +227,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Cantidad
                 </label>
                 <input
@@ -210,12 +235,12 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                   value={productQuantityToAdd}
                   onChange={(e) => setProductQuantityToAdd(parseInt(e.target.value) || 0)}
                   min="1"
-                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Descuento Unitario
                 </label>
                 <input
@@ -223,14 +248,14 @@ const QuotesAddModal = ({ isOpen, onClose, onSave }) => {
                   value={productDiscountToAdd}
                   onChange={(e) => setProductDiscountToAdd(parseFloat(e.target.value) || 0)}
                   min="0"
-                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
             
             <button
               onClick={handleAddProductToQuote}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-green-300"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed"
               disabled={!selectedProductToAdd || productQuantityToAdd <= 0}
             >
               Agregar Producto

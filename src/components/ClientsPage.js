@@ -4,7 +4,7 @@ import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import VenetianTile from './VenetianTile';
 
-const ClientsPage = ({ setActivePage }) => {
+const ClientsPage = ({ setActivePage, setSelectedClientForQuote }) => {
   const { data: clientsList, loading, error, create, update, delete: deleteClient } = useClients();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
@@ -538,7 +538,10 @@ const ClientsPage = ({ setActivePage }) => {
                       <button 
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                         onClick={() => {
-                          // Navigate to quotes page with client pre-selected
+                          // Set the selected client and navigate to quotes page
+                          if (setSelectedClientForQuote) {
+                            setSelectedClientForQuote(selectedClient);
+                          }
                           if (setActivePage) {
                             setActivePage('quotes');
                           } else {
@@ -550,7 +553,7 @@ const ClientsPage = ({ setActivePage }) => {
                       </button>
                       
                       <button 
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
                         onClick={() => {
                           // Navigate to orders page with client pre-selected
                           if (setActivePage) {

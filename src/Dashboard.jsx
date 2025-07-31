@@ -55,6 +55,7 @@ export default function Dashboard() {
   // State for different pages
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedMaintenance, setSelectedMaintenance] = useState(null);
+  const [selectedClientForQuote, setSelectedClientForQuote] = useState(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
@@ -176,7 +177,7 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
           />
         );
       case 'clients':
-        return <ClientsPage setActivePage={setActivePage} />;
+        return <ClientsPage setActivePage={setActivePage} setSelectedClientForQuote={setSelectedClientForQuote} />;
       case 'products':
         return (
           <ProductsPage 
@@ -196,6 +197,8 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
           <QuotesPage 
             showModal={showQuoteModal}
             setShowModal={setShowQuoteModal}
+            preSelectedClient={selectedClientForQuote}
+            setSelectedClientForQuote={setSelectedClientForQuote}
           />
         );
       case 'orders':

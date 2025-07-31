@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuotes, useClients, useProducts } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass, getQuoteNumber } from '../utils/helpers';
 import VenetianTile from './VenetianTile';
 import QuotesAddModal from './QuotesAddModal'; // Import the new modal
 
-const QuotesPage = () => {
+const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSelectedClientForQuote }) => {
   const { data: quotesList, loading: quotesLoading, error: quotesError, update: updateQuote, create: createQuote } = useQuotes();
   const { data: clientsList, loading: clientsLoading } = useClients();
   const { data: productsList, loading: productsLoading } = useProducts();
@@ -16,6 +16,13 @@ const QuotesPage = () => {
   const [isAddQuoteModalOpen, setIsAddQuoteModalOpen] = useState(false); // State for add modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState(null);
+  
+  // Auto-open modal if preSelectedClient is provided
+  useEffect(() => {
+    if (preSelectedClient && !isAddQuoteModalOpen) {
+      setIsAddQuoteModalOpen(true);
+    }
+  }, [preSelectedClient]);
   
   if (quotesLoading || clientsLoading || productsLoading) {
     return <div className="p-6">Cargando cotizaciones...</div>;
@@ -109,9 +116,21 @@ const QuotesPage = () => {
     try {
       await createQuote(newQuoteData);
       setIsAddQuoteModalOpen(false);
+      // Clear the pre-selected client after successful save
+      if (preSelectedClient && setSelectedClientForQuote) {
+        setSelectedClientForQuote(null);
+      }
     } catch (error) {
       console.error('Error creating quote:', error);
       alert('Error al crear cotización: ' + error.message);
+    }
+  };
+
+  // Handle close modal (also clear pre-selected client)
+  const handleCloseAddModal = () => {
+    setIsAddQuoteModalOpen(false);
+    if (preSelectedClient && setSelectedClientForQuote) {
+      setSelectedClientForQuote(null);
     }
   };
 
@@ -614,8 +633,9 @@ const QuotesPage = () => {
       {/* Add Quote Modal */}
       <QuotesAddModal 
         isOpen={isAddQuoteModalOpen}
-        onClose={() => setIsAddQuoteModalOpen(false)}
+        onClose={handleCloseAddModal}
         onSave={handleSaveNewQuote}
+        preSelectedClient={preSelectedClient}
       />
 
       {/* Edit Quote Modal */}
