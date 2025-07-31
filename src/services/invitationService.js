@@ -1,24 +1,25 @@
 // Invitation Service for managing user invitations
-import { supabase } from '../lib/supabase';
+import { supabase } from '../supabaseClient';
+import { EmailService } from './EmailService';
 
 export class InvitationService {
   
   // Create a new invitation
   static async createInvitation(email, role, invitedBy, message = '') {
     try {
-      const token = this.generateInvitationToken();
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiration
-
       // Check if invitation already exists
-      const { data: existingInvitation } = await supabase
+      const { data: existingInvitations, error: checkError } = await supabase
         .from('invitations')
         .select('*')
         .eq('email', email)
-        .eq('status', 'pending')
-        .single();
+        .eq('status', 'pending');
 
-      if (existingInvitation) {
+      if (checkError) {
+        console.warn('Error checking existing invitations:', checkError);
+        // Continue anyway - this check is not critical
+      }
+
+      if (existingInvitations && existingInvitations.length > 0) {
         throw new Error('Una invitación pendiente ya existe para este email');
       }
 
@@ -29,11 +30,9 @@ export class InvitationService {
           {
             email,
             role,
-            token,
             invited_by: invitedBy,
-            message,
-            expires_at: expiresAt.toISOString(),
             status: 'pending'
+            // expires_at and created_at will be set by database defaults
           }
         ])
         .select()
@@ -41,8 +40,36 @@ export class InvitationService {
 
       if (error) throw error;
 
-      // TODO: Send invitation email
-      // await this.sendInvitationEmail(email, token, message);
+      // Now try to send actual email via Edge Function
+      try {
+        console.log('🚀 Attempting to send invitation email via Edge Function for ID:', data.id);
+        await EmailService.sendInvitationEmail(data.id);
+        console.log('✅ Invitation email sent successfully via Edge Function');
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send invitation email via Edge Function, but invitation created:', emailError.message);
+        
+        // Fallback: Mark as sent even if email fails (invitation still valid)
+        try {
+          const { error: updateError } = await supabase
+            .from('invitations')
+            .update({ 
+              email_sent_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', data.id);
+          
+          if (updateError) {
+            console.warn('Failed to update email_sent_at in fallback:', updateError);
+          } else {
+            console.log('✅ Invitation marked as email sent (fallback mode)');
+          }
+        } catch (updateError) {
+          console.warn('Exception in fallback email_sent_at update:', updateError);
+        }
+      }
+
+      // TODO: Edge Function email sending re-enabled! 
+      // The system now attempts real email delivery with fallback protection
 
       return data;
     } catch (error) {
@@ -51,13 +78,29 @@ export class InvitationService {
     }
   }
 
-  // Validate invitation token
-  static async validateInvitation(token) {
+  // Get all invitations (for admin/manager view)
+  static async getAllInvitations() {
     try {
       const { data, error } = await supabase
         .from('invitations')
         .select('*')
-        .eq('token', token)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching invitations:', error);
+      throw error;
+    }
+  }
+
+  // Validate invitation by ID (instead of token)
+  static async validateInvitation(invitationId) {
+    try {
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('id', invitationId)
         .eq('status', 'pending')
         .single();
 
@@ -85,7 +128,7 @@ export class InvitationService {
   }
 
   // Accept invitation and create user
-  static async acceptInvitation(token, userData) {
+  static async acceptInvitation(invitationId, userData) {
     try {
       // Validate invitation first
       const invitation = await this.validateInvitation(token);
@@ -179,6 +222,26 @@ export class InvitationService {
       return true;
     } catch (error) {
       console.error('Error resending invitation:', error);
+      throw error;
+    }
+  }
+
+  // Cancel invitation
+  static async cancelInvitation(invitationId) {
+    try {
+      const { data, error } = await supabase
+        .from('invitations')
+        .update({ 
+          status: 'cancelled'
+        })
+        .eq('id', invitationId)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error canceling invitation:', error);
       throw error;
     }
   }

@@ -15,8 +15,9 @@ Systematic cleanup performed on July 30, 2025, to remove unnecessary files, dupl
 - ❌ **Removed**: `src/components/ValidationShowcase.js` - Validation showcase demo (214 lines)
 - ❌ **Removed**: `src/components/PreferencesDemo.jsx` - Preferences demo component (169 lines)
 - ❌ **Removed**: `src/components/PreferencesSection.jsx` - Settings demo section (292 lines)
-- ✅ **Kept**: `src/components/ValidatedFormTest.jsx` - Still referenced in App.jsx routes
-- ✅ **Kept**: `src/components/PWATestPage.jsx` - Legitimate testing page for PWA functionality
+- ❌ **Removed**: `src/components/ValidatedFormTest.jsx` - Test form component
+- ❌ **Removed**: `src/components/PWATestPage.jsx` - PWA testing interface
+- ❌ **Removed**: `src/components/InvitationTester.jsx` - Invitation testing component
 
 ### 3. Alternative/Duplicate Implementations
 - ❌ **Removed**: `src/components/ClientsPageWithDataService.js` - Alternative clients page implementation (405 lines)

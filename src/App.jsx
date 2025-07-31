@@ -3,13 +3,13 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginComponent from './LoginPage';
 import SignupPage from './components/SignupPage';
 import InviteAcceptPage from './components/InviteAcceptPage';
+import AcceptInvitationPage from './components/AcceptInvitationPage';
 import Dashboard from './Dashboard';
 import PrivateRoute from './PrivateRoute';
 import PublicRoute from './PublicRoute';
 import NotFoundPage from './components/NotFoundPage';
 import PWAStatus from './components/PWAStatus';
 import PWATestPage from './components/PWATestPage';
-import ValidatedFormTest from './components/ValidatedFormTest';
 
 export default function App() {
   return (
@@ -36,6 +36,12 @@ export default function App() {
         {/* Invitation acceptance route - public but requires valid token */}
         <Route path="/invite/:token" element={<InviteAcceptPage />} />
         
+        {/* New invitation system - accepts via ID */}
+        <Route path="/accept-invitation" element={<AcceptInvitationPage />} />
+        
+        {/* PWA Test Page - accessible for admin users */}
+        <Route path="/admin/pwa-test" element={<PWATestPage />} />
+        
         {/* Protected routes - require authentication */}
         <Route 
           path="/dashboard" 
@@ -45,12 +51,6 @@ export default function App() {
             </PrivateRoute>
           } 
         />
-        
-        {/* PWA Test Page - accessible without authentication for testing */}
-        <Route path="/pwa-test" element={<PWATestPage />} />
-        
-        {/* ValidatedForm Test Page */}
-        <Route path="/form-test" element={<ValidatedFormTest />} />
         
         {/* Root redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

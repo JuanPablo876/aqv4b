@@ -34,6 +34,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [modules, setModules] = useState([
     { name: 'Finanzas', description: 'Control financiero' },
     { name: 'Inventario', description: 'Gestión de inventario' },
@@ -55,6 +56,10 @@ export default function Dashboard() {
     if (newName) {
       setModules(prev => [...prev, { name: newName, description: 'Módulo personalizado' }]);
     }
+  };
+
+  const handleSidebarToggle = (collapsed) => {
+    setSidebarCollapsed(collapsed);
   };
 
   // Page title mapping
@@ -176,6 +181,7 @@ export default function Dashboard() {
         setActivePage={setActivePage}
         onAddModule={handleAddModule}
         session={session}
+        onSidebarToggle={handleSidebarToggle}
       />
       
       {/* Header */}
@@ -186,7 +192,7 @@ export default function Dashboard() {
       />
       
       {/* Main Content */}
-      <div className="fixed top-16 left-64 right-0 bottom-0 overflow-auto">
+      <div className={`fixed top-16 right-0 bottom-0 overflow-auto transition-all duration-300 ${sidebarCollapsed ? 'left-16' : 'left-64'}`}>
         <div className="p-6">
           {renderPageContent()}
         </div>

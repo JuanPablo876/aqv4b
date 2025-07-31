@@ -1556,6 +1556,17 @@ const SettingsPage = ({ session }) => {
           </div>
         );
         
+      case 'database':
+        return (
+          <div>
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🗄️</div>
+              <h2 className="text-2xl font-bold text-primary mb-2">Configuración de Base de Datos</h2>
+              <p className="text-muted-foreground">Configuración avanzada de la base de datos.</p>
+            </div>
+          </div>
+        );
+        
       default:
         return null;
     }
@@ -1614,6 +1625,17 @@ const SettingsPage = ({ session }) => {
               }`}
             >
               Seguridad
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('database')}
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === 'database'
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              🧪 DB Testing
             </button>
           </nav>
         </div>

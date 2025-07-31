@@ -240,7 +240,7 @@ export const changePasswordSchema = z.object({
 // Invitation schemas
 export const createInvitationSchema = z.object({
   email: email,
-  role: z.enum(['admin', 'manager', 'user'], {
+  role: z.enum(['admin', 'manager', 'employee'], {
     errorMap: () => ({ message: 'Rol inválido' })
   }),
   message: z.string().optional()

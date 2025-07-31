@@ -38,6 +38,7 @@ const MainApp = () => {
 }
 
   const [activePage, setActivePage] = useState('dashboard');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [modules, setModules] = useState([
     { name: 'Finanzas', description: 'Control financiero' },
     { name: 'Inventario', description: 'Gestión de inventario' },
@@ -49,6 +50,10 @@ const MainApp = () => {
     if (newName) {
       setModules(prev => [...prev, { name: newName, description: 'Módulo personalizado' }]);
     }
+  };
+
+  const handleSidebarToggle = (collapsed) => {
+    setSidebarCollapsed(collapsed);
   };
 
   useEffect(() => {
@@ -111,11 +116,12 @@ const MainApp = () => {
           setActivePage={setActivePage}
           onAddModule={handleAddModule}
           session={session}
+          onSidebarToggle={handleSidebarToggle}
         />
 
         <div className="flex flex-1 flex-col overflow-hidden">
           <LayoutHeader title={getPageTitle()} />
-          <main className="flex-1 overflow-y-auto pt-16 pl-64 pr-64">
+          <main className={`flex-1 overflow-y-auto pt-16 pr-64 transition-all duration-300 ${sidebarCollapsed ? 'pl-16' : 'pl-64'}`}>
             {renderPageContent()}
           </main>
         </div>

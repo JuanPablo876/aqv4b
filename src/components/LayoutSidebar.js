@@ -1,7 +1,17 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useState } from 'react';
 import PropTypes from 'prop-types';
 
-const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
+const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session, onSidebarToggle }) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  const toggleSidebar = () => {
+    const newState = !isCollapsed;
+    setIsCollapsed(newState);
+    if (onSidebarToggle) {
+      onSidebarToggle(newState);
+    }
+  };
+  
   // Extract user data from session
   const user = session?.user;
   const userEmail = user?.email || 'usuario@example.com';
@@ -91,21 +101,54 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
   ];
   
   return (
-    <div className="fixed left-0 top-0 h-full w-64 venetian-bg shadow-lg transition-colors flex flex-col"
+    <div className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-16' : 'w-64'} venetian-bg shadow-lg transition-all duration-300 flex flex-col`}
       style={{
         borderRight: '1px solid var(--venetian-border)'
       }}
     >
       {/* Header */}
       <div className="p-4 border-b venetian-border flex items-center space-x-2 flex-shrink-0">
-        <div className="w-10 h-10 rounded-lg overflow-hidden">
-          <img
-            src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc0c2ZYzyxLlIki8fCRNnvUyWdBhcZQKOVp6M0G"
-            alt="Logo"
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <h1 className="text-xl font-bold text-primary">Aqualiquim</h1>
+        {!isCollapsed && (
+          <>
+            <div className="w-10 h-10 rounded-lg overflow-hidden">
+              <img
+                src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc0c2ZYzyxLlIki8fCRNnvUyWdBhcZQKOVp6M0G"
+                alt="Logo"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h1 className="text-xl font-bold text-primary">Aqualiquim</h1>
+          </>
+        )}
+        {isCollapsed && (
+          <div className="w-8 h-8 rounded-lg overflow-hidden mx-auto">
+            <img
+              src="https://4tsix0yujj.ufs.sh/f/2vMRHqOYUHc0c2ZYzyxLlIki8fCRNnvUyWdBhcZQKOVp6M0G"
+              alt="Logo"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Toggle Button */}
+      <div className="px-2 py-2 border-b venetian-border">
+        <button
+          onClick={toggleSidebar}
+          className="w-full flex items-center justify-center px-2 py-2 text-primary hover:bg-secondary rounded-lg transition-colors"
+          title={isCollapsed ? 'Expandir sidebar' : 'Contraer sidebar'}
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className={`h-5 w-5 transition-transform duration-300 ${isCollapsed ? 'rotate-180' : ''}`} 
+            fill="none" 
+            viewBox="0 0 24 24" 
+            stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+          </svg>
+          {!isCollapsed && <span className="ml-2 text-sm">Contraer</span>}
+        </button>
       </div>
 
       {/* Menu Items - Scrollable */}
@@ -125,14 +168,15 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
                       ? onAddModule && onAddModule()
                       : setActivePage && setActivePage(item.id)
                   }
-                  className={`flex items-center w-full px-4 py-3 text-left transition-colors ${
+                  className={`flex items-center w-full ${isCollapsed ? 'px-2 py-3 justify-center' : 'px-4 py-3'} text-left transition-colors ${
                     activePage === item.id && item.id !== 'addModule'
                       ? 'bg-accent text-accent-foreground border-r-4 border-primary'
                       : 'text-primary hover:bg-secondary'
                   }`}
+                  title={isCollapsed ? item.label : ''}
                 >
-                  <span className="mr-3">{item.icon}</span>
-                  {item.label}
+                  <span className={isCollapsed ? '' : 'mr-3'}>{item.icon}</span>
+                  {!isCollapsed && item.label}
                 </button>
               </li>
             </Fragment>
@@ -142,15 +186,26 @@ const LayoutSidebar = ({ activePage, setActivePage, onAddModule, session }) => {
 
       {/* Account Section - Fixed at bottom */}
       <div className="border-t venetian-border p-4 flex items-center space-x-3 flex-shrink-0">
-        <div className="bg-secondary text-secondary-foreground p-2 rounded-full">
-          <div className="h-5 w-5 flex items-center justify-center font-medium text-xs">
-            {userInitials}
+        {!isCollapsed && (
+          <>
+            <div className="bg-secondary text-secondary-foreground p-2 rounded-full">
+              <div className="h-5 w-5 flex items-center justify-center font-medium text-xs">
+                {userInitials}
+              </div>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-primary truncate">{userName}</p>
+              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+            </div>
+          </>
+        )}
+        {isCollapsed && (
+          <div className="bg-secondary text-secondary-foreground p-2 rounded-full mx-auto" title={`${userName} (${userEmail})`}>
+            <div className="h-5 w-5 flex items-center justify-center font-medium text-xs">
+              {userInitials}
+            </div>
           </div>
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-primary truncate">{userName}</p>
-          <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -160,7 +215,8 @@ LayoutSidebar.propTypes = {
   activePage: PropTypes.string,
   setActivePage: PropTypes.func,
   onAddModule: PropTypes.func,
-  session: PropTypes.object
+  session: PropTypes.object,
+  onSidebarToggle: PropTypes.func
 };
 
 export default LayoutSidebar;

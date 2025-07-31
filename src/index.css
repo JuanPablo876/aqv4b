@@ -382,3 +382,51 @@ body {
 .reduce-motion .transition-transform {
   transition: none !important;
 }
+
+/* Fix input styling issues */
+@layer components {
+  /* Remove unwanted dropdown arrows from text inputs */
+  input[type="text"]::-webkit-inner-spin-button,
+  input[type="text"]::-webkit-outer-spin-button,
+  input[type="email"]::-webkit-inner-spin-button,
+  input[type="email"]::-webkit-outer-spin-button,
+  input[type="password"]::-webkit-inner-spin-button,
+  input[type="password"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+  
+  /* Remove search input styling */
+  input[type="search"]::-webkit-search-decoration,
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-results-button,
+  input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  /* Ensure inputs don't get select dropdown styling */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]) {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: none;
+  }
+  
+  /* Fix select dropdown styling - remove default browser arrows and background */
+  select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 0.7rem center;
+    background-size: 1.2em 1.2em;
+    padding-right: 2.5rem;
+  }
+  
+  /* Remove any extra background elements that might create double arrows */
+  select::-ms-expand {
+    display: none;
+  }
+}

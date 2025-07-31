@@ -58,20 +58,21 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
-  console.log('[ServiceWorker] Fetch:', event.request.url);
+  // For now, let ALL requests go through without service worker interference
+  // This ensures compatibility with all external APIs and services
   
-  // Handle different types of requests
-  if (event.request.url.includes('/api/') || 
-      event.request.url.includes('/mock/')) {
-    // Handle API and mock data requests
-    event.respondWith(handleDataRequest(event.request));
-  } else if (event.request.destination === 'document') {
-    // Handle navigation requests
-    event.respondWith(handleNavigationRequest(event.request));
-  } else {
-    // Handle static asset requests
+  const url = new URL(event.request.url);
+  
+  // Only handle same-origin static assets, skip everything else
+  if (url.origin === self.location.origin && 
+      event.request.method === 'GET' &&
+      !url.pathname.includes('/api/') && 
+      !url.pathname.includes('/mock/') &&
+      !url.pathname.includes('supabase')) {
     event.respondWith(handleStaticRequest(event.request));
   }
+  
+  // Let all other requests (APIs, external services, etc.) go through normally
 });
 
 // Handle navigation requests (HTML pages)
@@ -117,8 +118,8 @@ async function handleStaticRequest(request) {
     // Try network and cache the response
     const networkResponse = await fetch(request);
     
-    // Cache successful responses
-    if (networkResponse.status === 200) {
+    // Cache successful responses (only for GET requests)
+    if (networkResponse.status === 200 && request.method === 'GET') {
       const responseClone = networkResponse.clone();
       cache.put(request, responseClone);
     }

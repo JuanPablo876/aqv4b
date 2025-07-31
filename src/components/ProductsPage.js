@@ -163,7 +163,7 @@ const ProductsPage = () => {
           </div>
           
           <select
-            className="w-full md:w-48 px-4 py-2 rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full md:w-48 px-4 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
           >

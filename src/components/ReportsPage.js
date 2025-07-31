@@ -35,7 +35,7 @@ const ReportsPage = () => {
             <VenetianTile className="overflow-hidden mb-6">
               <div className="p-6">
                 <h4 className="text-md font-medium text-blue-800 mb-4">Ventas por Periodo</h4>
-                <div className="h-64">
+                <div className="h-80">
                   <div className="h-full w-full bg-blue-50 rounded-lg flex items-center justify-center">
                     <div className="w-full px-6">
                       {salesData.map((item, index) => (

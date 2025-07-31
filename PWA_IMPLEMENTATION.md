@@ -24,7 +24,7 @@
 - `/src/contexts/PWAContext.js` - PWA state management and functionality
 - `/src/utils/pwaManager.js` - PWA manager class with advanced features
 - `/src/components/PWAStatus.jsx` - Real-time PWA status indicator
-- `/src/components/PWATestPage.jsx` - Comprehensive PWA testing interface
+- `/src/components/PWATestPage.jsx` - Comprehensive PWA testing interface (admin route: `/admin/pwa-test`)
 
 ### Route Guards
 - `/src/PublicRoute.jsx` - Prevents authenticated users from accessing login/signup

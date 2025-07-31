@@ -171,7 +171,7 @@ const InventoryPage = () => {
           </div>
           
           <select
-            className="w-full md:w-48 px-4 py-2 rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full md:w-48 px-4 py-2 rounded-lg bg-background border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             value={locationFilter}
             onChange={(e) => setLocationFilter(e.target.value)}
           >
@@ -185,7 +185,7 @@ const InventoryPage = () => {
           
           <button
             onClick={handleAddMovement}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             <div className="flex items-center">
               <svg

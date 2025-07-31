@@ -19,11 +19,11 @@ export const FormField = ({
 }) => {
   const baseInputClasses = `
     w-full px-3 py-2 rounded-md border transition-colors duration-200
-    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-    disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed
+    focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary
+    disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed
     ${error 
-      ? 'border-red-300 bg-red-50 text-red-900 placeholder-red-300 focus:border-red-500 focus:ring-red-500' 
-      : 'border-gray-300 bg-white text-gray-900 placeholder-gray-400'
+      ? 'border-destructive bg-destructive/10 text-destructive placeholder-destructive/50 focus:border-destructive focus:ring-destructive' 
+      : 'border-border bg-background text-foreground placeholder-muted-foreground'
     }
     ${className}
   `;
@@ -75,6 +75,7 @@ export const FormField = ({
             {...register(name)}
             className={baseInputClasses}
             placeholder={placeholder}
+            autoComplete={props.autoComplete || 'off'}
             {...props}
           />
         );
@@ -86,7 +87,7 @@ export const FormField = ({
       <div className="space-y-1">
         {renderInput()}
         {error && (
-          <p className="text-sm text-red-600 flex items-center">
+          <p className="text-sm text-destructive flex items-center">
             <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
@@ -100,14 +101,14 @@ export const FormField = ({
   return (
     <div className="space-y-1">
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-foreground">
           {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
+          {required && <span className="text-destructive ml-1">*</span>}
         </label>
       )}
       {renderInput()}
       {error && (
-        <p className="text-sm text-red-600 flex items-center">
+        <p className="text-sm text-destructive flex items-center">
           <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -201,7 +202,7 @@ export const ValidatedForm = ({
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues,
-    mode: 'onChange' // Enable live validation
+    mode: 'onBlur' // Changed from 'onChange' to prevent keyboard interruption
   });
 
   const onFormSubmit = async (data) => {
@@ -210,10 +211,11 @@ export const ValidatedForm = ({
       if (resetOnSubmit) {
         reset();
       }
-      toast.success('Operación completada exitosamente');
+      // Remove automatic success toast to prevent conflicts with component-specific toasts
     } catch (error) {
       console.error('Form submission error:', error);
       toast.error(error.message || 'Ocurrió un error al procesar la información');
+      throw error; // Re-throw so parent component can handle it
     }
   };
 
