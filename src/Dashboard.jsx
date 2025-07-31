@@ -308,7 +308,6 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
       <LayoutSidebar 
         activePage={activePage} 
         setActivePage={setActivePage}
-        onAddModule={handleAddModule}
         session={session}
         onSidebarToggle={handleSidebarToggle}
       />
