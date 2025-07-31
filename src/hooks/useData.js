@@ -1,7 +1,7 @@
-// React Hook for Data Service Integration
+// React Hook for Database Service Integration
 // Provides easy access to CRUD operations with automatic re-rendering
 import { useState, useEffect, useCallback } from 'react';
-import dataService from '../services/dataService';
+import databaseService from '../services/databaseService';
 
 export const useData = (entity, options = {}) => {
   const [data, setData] = useState([]);
@@ -16,7 +16,11 @@ export const useData = (entity, options = {}) => {
     sortOrder = 'asc'
   } = options;
 
-  // Load data function
+  // Memoize filters and relations to prevent infinite loops
+  const filtersKey = JSON.stringify(filters);
+  const relationsKey = JSON.stringify(relations);
+
+  // Load data function - use primitive dependencies to prevent infinite loops
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
@@ -25,11 +29,11 @@ export const useData = (entity, options = {}) => {
       let result;
       
       if (Object.keys(relations).length > 0) {
-        result = dataService.getWithRelations(entity, relations);
+        result = await databaseService.getWithRelations(entity, relations);
       } else if (Object.keys(filters).length > 0 || sortBy) {
-        result = dataService.query(entity, filters, { sortBy, sortOrder });
+        result = await databaseService.query(entity, filters, { sortBy, sortOrder });
       } else {
-        result = dataService.getAll(entity);
+        result = await databaseService.getAll(entity);
       }
       
       setData(result);
@@ -39,7 +43,7 @@ export const useData = (entity, options = {}) => {
     } finally {
       setLoading(false);
     }
-  }, [entity, filters, relations, sortBy, sortOrder]);
+  }, [entity, filtersKey, relationsKey, sortBy, sortOrder]);
 
   // Auto-load data on mount and when dependencies change
   useEffect(() => {
@@ -52,7 +56,7 @@ export const useData = (entity, options = {}) => {
   const create = useCallback(async (newItem) => {
     try {
       setError(null);
-      const created = dataService.create(entity, newItem);
+      const created = await databaseService.create(entity, newItem);
       await loadData(); // Refresh data
       return created;
     } catch (err) {
@@ -64,7 +68,7 @@ export const useData = (entity, options = {}) => {
   const update = useCallback(async (id, updates) => {
     try {
       setError(null);
-      const updated = dataService.update(entity, id, updates);
+      const updated = await databaseService.update(entity, id, updates);
       await loadData(); // Refresh data
       return updated;
     } catch (err) {
@@ -76,7 +80,7 @@ export const useData = (entity, options = {}) => {
   const deleteItem = useCallback(async (id) => {
     try {
       setError(null);
-      const result = dataService.delete(entity, id);
+      const result = await databaseService.delete(entity, id);
       await loadData(); // Refresh data
       return result;
     } catch (err) {
@@ -85,15 +89,20 @@ export const useData = (entity, options = {}) => {
     }
   }, [entity, loadData]);
 
-  const getById = useCallback((id) => {
-    return dataService.getById(entity, id);
+  const getById = useCallback(async (id) => {
+    try {
+      return await databaseService.getById(entity, id);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
   }, [entity]);
 
   // Bulk operations
   const bulkCreate = useCallback(async (items) => {
     try {
       setError(null);
-      const result = dataService.bulkCreate(entity, items);
+      const result = await databaseService.bulkCreate(entity, items);
       await loadData();
       return result;
     } catch (err) {
@@ -105,7 +114,7 @@ export const useData = (entity, options = {}) => {
   const bulkDelete = useCallback(async (ids) => {
     try {
       setError(null);
-      const result = dataService.bulkDelete(entity, ids);
+      const result = await databaseService.bulkDelete(entity, ids);
       await loadData();
       return result;
     } catch (err) {
@@ -115,10 +124,10 @@ export const useData = (entity, options = {}) => {
   }, [entity, loadData]);
 
   // Search and filter
-  const search = useCallback((searchFilters, searchOptions = {}) => {
+  const search = useCallback(async (searchFilters, searchOptions = {}) => {
     try {
       setError(null);
-      const result = dataService.query(entity, searchFilters, searchOptions);
+      const result = await databaseService.query(entity, searchFilters, searchOptions);
       return result;
     } catch (err) {
       setError(err.message);
@@ -127,13 +136,23 @@ export const useData = (entity, options = {}) => {
   }, [entity]);
 
   // Get statistics
-  const getStats = useCallback(() => {
-    return dataService.getStats(entity);
+  const getStats = useCallback(async () => {
+    try {
+      return await databaseService.getStats(entity);
+    } catch (err) {
+      setError(err.message);
+      return { total: 0, recent: 0, lastUpdated: new Date().getTime() };
+    }
   }, [entity]);
 
   // Export data
-  const exportData = useCallback((exportFilters = {}, format = 'json') => {
-    return dataService.exportData(entity, exportFilters, format);
+  const exportData = useCallback(async (exportFilters = {}, format = 'json') => {
+    try {
+      return await databaseService.exportData(entity, exportFilters, format);
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
   }, [entity]);
 
   return {
@@ -164,10 +183,153 @@ export const useData = (entity, options = {}) => {
   };
 };
 
-// Specialized hooks for common entities
-export const useClients = (options) => useData('clients', options);
+// Specialized hooks for common entities - simplified version to prevent loops
+export const useClients = (options) => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Simple load function without complex dependencies
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await databaseService.getAll('clients');
+      setData(result);
+    } catch (err) {
+      console.error('Error loading clients:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // No dependencies to prevent loops
+
+  // Load data on mount only
+  useEffect(() => {
+    loadData();
+  }, []); // Empty dependency array
+
+  // CRUD operations
+  const create = useCallback(async (newItem) => {
+    try {
+      setError(null);
+      const created = await databaseService.create('clients', newItem);
+      await loadData();
+      return created;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [loadData]);
+
+  const update = useCallback(async (id, updates) => {
+    try {
+      setError(null);
+      const updated = await databaseService.update('clients', id, updates);
+      await loadData();
+      return updated;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [loadData]);
+
+  const deleteItem = useCallback(async (id) => {
+    try {
+      setError(null);
+      const result = await databaseService.delete('clients', id);
+      await loadData();
+      return result;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [loadData]);
+
+  return {
+    data,
+    loading,
+    error,
+    create,
+    update,
+    delete: deleteItem,
+    loadData
+  };
+};
+
 export const useProducts = (options) => useData('products', options);
-export const useOrders = (options) => useData('orders', options);
+export const useOrders = (options) => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Simple load function without complex dependencies
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const result = await databaseService.getAll('orders');
+      setData(result);
+    } catch (err) {
+      console.error('Error loading orders:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // No dependencies to prevent loops
+
+  // Load data on mount only
+  useEffect(() => {
+    loadData();
+  }, []); // Empty dependency array
+
+  // CRUD operations
+  const create = useCallback(async (newItem) => {
+    try {
+      setError(null);
+      const created = await databaseService.create('orders', newItem);
+      await loadData();
+      return created;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [loadData]);
+
+  const update = useCallback(async (id, updates) => {
+    try {
+      setError(null);
+      const updated = await databaseService.update('orders', id, updates);
+      await loadData();
+      return updated;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [loadData]);
+
+  const deleteItem = useCallback(async (id) => {
+    try {
+      setError(null);
+      const result = await databaseService.delete('orders', id);
+      await loadData();
+      return result;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [loadData]);
+
+  return {
+    data,
+    loading,
+    error,
+    create,
+    update,
+    delete: deleteItem,
+    loadData
+  };
+};
 export const useInvoices = (options) => useData('invoices', options);
 export const useSuppliers = (options) => useData('suppliers', options);
 export const useEmployees = (options) => useData('employees', options);
@@ -181,11 +343,11 @@ export const useRelatedData = (entity, id, relatedEntity, foreignKey) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const result = dataService.getRelated(entity, id, relatedEntity, foreignKey);
+      const result = await databaseService.getRelated(entity, id, relatedEntity, foreignKey);
       setData(result);
     } catch (err) {
       setError(err.message);
@@ -194,58 +356,32 @@ export const useRelatedData = (entity, id, relatedEntity, foreignKey) => {
     }
   }, [entity, id, relatedEntity, foreignKey]);
 
-  return { data, loading, error };
+  useEffect(() => {
+    if (id) {
+      loadData();
+    }
+  }, [loadData, id]);
+
+  return { data, loading, error, loadData };
 };
 
 // Hook for dashboard analytics
 export const useDashboardData = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadDashboardData = async () => {
       try {
         setLoading(true);
+        setError(null);
         
-        // Get basic stats for all entities
-        const stats = {
-          clients: dataService.getStats('clients'),
-          products: dataService.getStats('products'),
-          orders: dataService.getStats('orders'),
-          invoices: dataService.getStats('invoices')
-        };
-
-        // Get recent activity
-        const recentOrders = dataService.query('orders', {}, { 
-          sortBy: 'createdAt', 
-          sortOrder: 'desc', 
-          limit: 5 
-        });
-
-        const recentClients = dataService.query('clients', {}, { 
-          sortBy: 'createdAt', 
-          sortOrder: 'desc', 
-          limit: 5 
-        });
-
-        // Calculate revenue (mock calculation)
-        const allInvoices = dataService.getAll('invoices');
-        const totalRevenue = allInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
-
-        setDashboardData({
-          stats,
-          recentActivity: {
-            orders: recentOrders,
-            clients: recentClients
-          },
-          revenue: {
-            total: totalRevenue,
-            monthly: totalRevenue * 0.15, // Mock monthly revenue
-            growth: 12.5 // Mock growth percentage
-          }
-        });
-      } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        const data = await databaseService.getDashboardData();
+        setDashboardData(data);
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -254,5 +390,5 @@ export const useDashboardData = () => {
     loadDashboardData();
   }, []);
 
-  return { dashboardData, loading };
+  return { dashboardData, loading, error };
 };

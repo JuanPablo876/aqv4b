@@ -141,6 +141,13 @@ const InventoryPage = () => {
     alert(`Funcionalidad "Realizar Pedido" para ${product.name} pendiente de implementar.`);
   };
   
+  // Handle view inventory history
+  const handleViewHistory = (item) => {
+    console.log(`Viendo historial de movimientos para: ${item.product_name}`);
+    // In a real app, this would show inventory movement history for this item
+    alert(`Funcionalidad "Ver Historial" para ${item.product_name} pendiente de implementar.`);
+  };
+  
   return (
     <div className="p-6">
       {/* Header with search, filter and add button */}
@@ -185,7 +192,7 @@ const InventoryPage = () => {
           
           <button
             onClick={handleAddMovement}
-            className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             <div className="flex items-center">
               <svg
@@ -275,7 +282,7 @@ const InventoryPage = () => {
       
       {/* Inventory table */}
       <VenetianTile className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-50">
               <tr>
@@ -426,6 +433,7 @@ const InventoryPage = () => {
                     </button>
                     <button 
                       className="text-gray-600 hover:text-gray-900"
+                      onClick={() => handleViewHistory(item)}
                     >
                       Historial
                     </button>

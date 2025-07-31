@@ -144,7 +144,7 @@ const EmployeesPage = () => {
       
       {/* Employees table */}
       <VenetianTile className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-50">
               <tr>

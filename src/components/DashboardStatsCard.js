@@ -14,9 +14,9 @@ const DashboardStatsCard = ({ title, value, change, icon, color, onClick }) => {
       text: 'text-green-600 dark:text-green-400',
       iconBg: 'bg-accent'
     },
-    purple: {
+    teal: {
       bg: 'bg-secondary',
-      text: 'text-purple-600 dark:text-purple-400',
+      text: 'text-teal-600 dark:text-teal-400',
       iconBg: 'bg-accent'
     },
     amber: {

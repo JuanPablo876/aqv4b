@@ -144,7 +144,7 @@ export default function InvitationManagement() {
         </div>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           + Nueva Invitación
         </button>
@@ -210,7 +210,7 @@ export default function InvitationManagement() {
                   />
 
                   <div className="flex space-x-3 pt-4">
-                    <SubmitButton className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90">
+                    <SubmitButton className="flex-1 bg-blue-600 text-white hover:bg-blue-700">
                       Enviar Invitación
                     </SubmitButton>
                     <button

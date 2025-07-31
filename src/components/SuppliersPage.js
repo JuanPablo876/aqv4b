@@ -1,37 +1,96 @@
 import React, { useState, useEffect } from 'react';
-import { suppliers } from '../mock/suppliers';
-import { products } from '../mock/products';
+import { useSuppliers, useProducts } from '../hooks/useData';
 import { formatCurrency } from '../utils/storage'; // Import formatCurrency
 import { filterBySearchTerm, sortByField } from '../utils/helpers';
 import VenetianTile from './VenetianTile';
 
 const SuppliersPage = () => {
-  const [suppliersList, setSuppliersList] = useState([]);
-  const [productsList, setProductsList] = useState([]);
+  const { data: suppliersList, loading: suppliersLoading, error: suppliersError, create, update, delete: deleteSupplier } = useSuppliers();
+  const { data: productsList, loading: productsLoading, error: productsError } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingSupplier, setEditingSupplier] = useState(null);
   const [newSupplier, setNewSupplier] = useState({
     name: '',
-    contact: '',
+    contact_person: '', // Updated to match database field name
     email: '',
     phone: '',
     address: '',
-    leadTime: '',
-    paymentTerms: '',
-    notes: ''
+    lead_time: '', // Updated to match database field name
+    payment_terms: '', // Updated to match database field name
+    notes: '',
+    status: 'active'
   });
-  
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setSuppliersList(suppliers);
-    setProductsList(products);
-  }, []);
+
+  // Combined loading state
+  const loading = suppliersLoading || productsLoading;
+  const error = suppliersError || productsError;
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Cargando proveedores...</span>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-lg font-medium text-red-800 mb-2">Error de conexión con la base de datos</h3>
+              <p className="text-red-700 mb-4">No se pudo cargar la información de proveedores:</p>
+              <div className="bg-red-100 border border-red-300 rounded p-3 mb-4">
+                <code className="text-sm text-red-800">{error}</code>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium text-red-800">Posibles soluciones:</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                  <li>Verificar la conexión a internet</li>
+                  <li>Revisar las variables de entorno en .env</li>
+                  <li>Comprobar el estado del proyecto en Supabase</li>
+                  <li>Ejecutar el script disable_rls_dev.sql en Supabase</li>
+                </ul>
+              </div>
+              
+              <div className="mt-4 flex space-x-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  🔄 Recargar página
+                </button>
+                <button
+                  onClick={() => window.open('/diagnostics', '_blank')}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  🔍 Abrir diagnósticos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Filter and sort suppliers
   const filteredSuppliers = sortByField(
-    filterBySearchTerm(suppliersList, searchTerm, ['name', 'contact', 'email', 'notes']),
+    filterBySearchTerm(suppliersList, searchTerm, ['name', 'contact_person', 'email', 'notes']), // Updated field references
     sortConfig.field,
     sortConfig.direction
   );
@@ -49,14 +108,12 @@ const SuppliersPage = () => {
   
   // Handle supplier selection
   const handleSelectSupplier = (supplier) => {
-    // Get supplier products
-    const supplierProducts = productsList.filter(product => 
-      supplier.products.includes(product.id)
-    );
-    
+    // Get supplier products - for now we'll show all products since relationship needs to be established
     setSelectedSupplier({
       ...supplier,
-      productsList: supplierProducts
+      productsList: productsList.filter(product => 
+        product.supplier_name && product.supplier_name.toLowerCase().includes(supplier.name.toLowerCase())
+      )
     });
   };
   
@@ -75,30 +132,63 @@ const SuppliersPage = () => {
   };
   
   // Handle save new supplier
-  const handleSaveSupplier = () => {
-    const newSupplierWithId = {
-      ...newSupplier,
-      id: suppliersList.length + 1,
-      products: []
-    };
-    
-    setSuppliersList([...suppliersList, newSupplierWithId]);
-    setIsAddModalOpen(false);
-    setNewSupplier({
-      name: '',
-      contact: '',
-      email: '',
-      phone: '',
-      address: '',
-      leadTime: '',
-      paymentTerms: '',
-      notes: ''
+  const handleSaveSupplier = async () => {
+    try {
+      await create(newSupplier);
+      setIsAddModalOpen(false);
+      setNewSupplier({
+        name: '',
+        contact_person: '',
+        email: '',
+        phone: '',
+        address: '',
+        lead_time: '',
+        payment_terms: '',
+        notes: '',
+        status: 'active'
+      });
+    } catch (error) {
+      console.error('Error creating supplier:', error);
+      alert('Error al crear proveedor: ' + error.message);
+    }
+  };
+  
+  // Handle edit supplier
+  const handleEditSupplier = (supplier) => {
+    setEditingSupplier({ ...supplier });
+    setIsEditModalOpen(true);
+  };
+
+  // Handle save edited supplier
+  const handleSaveEditedSupplier = async () => {
+    try {
+      await update(editingSupplier.id, editingSupplier);
+      setIsEditModalOpen(false);
+      setEditingSupplier(null);
+    } catch (error) {
+      console.error('Error updating supplier:', error);
+      alert('Error al actualizar proveedor: ' + error.message);
+    }
+  };
+
+  // Handle input change for editing supplier
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingSupplier({
+      ...editingSupplier,
+      [name]: value
     });
   };
   
   // Handle close supplier details
   const handleCloseDetails = () => {
     setSelectedSupplier(null);
+  };
+  
+  // Handle purchase history
+  const handlePurchaseHistory = (supplier) => {
+    console.log(`Viendo historial de compras para: ${supplier.name}`);
+    alert(`Funcionalidad "Historial de Compras" para ${supplier.name} pendiente de implementar.`);
   };
   
   return (
@@ -155,7 +245,7 @@ const SuppliersPage = () => {
       
       {/* Suppliers table */}
       <VenetianTile className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-50">
               <tr>
@@ -181,11 +271,11 @@ const SuppliersPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('contact')}
+                  onClick={() => handleSort('contact_person')}
                 >
                   <div className="flex items-center">
                     Contacto
-                    {sortConfig.field === 'contact' && (
+                    {sortConfig.field === 'contact_person' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -206,11 +296,11 @@ const SuppliersPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('leadTime')}
+                  onClick={() => handleSort('lead_time')}
                 >
                   <div className="flex items-center">
                     Tiempo de Entrega
-                    {sortConfig.field === 'leadTime' && (
+                    {sortConfig.field === 'lead_time' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -244,17 +334,17 @@ const SuppliersPage = () => {
                     <div className="text-sm font-medium text-gray-900">{supplier.name}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{supplier.contact}</div>
+                    <div className="text-sm text-gray-900">{supplier.contact_person}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{supplier.email}</div>
                     <div className="text-sm text-gray-500">{supplier.phone}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{supplier.leadTime} días</div>
+                    <div className="text-sm text-gray-900">{supplier.lead_time} días</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{supplier.paymentTerms}</div>
+                    <div className="text-sm text-gray-900">{supplier.payment_terms}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
@@ -270,7 +360,7 @@ const SuppliersPage = () => {
                       className="text-gray-600 hover:text-gray-900"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Handle edit action
+                        handleEditSupplier(supplier);
                       }}
                     >
                       Editar
@@ -309,7 +399,7 @@ const SuppliersPage = () => {
                   <div className="space-y-3">
                     <div>
                       <span className="text-gray-500">Contacto:</span>
-                      <p className="text-blue-800 font-medium">{selectedSupplier.contact}</p>
+                      <p className="text-blue-800 font-medium">{selectedSupplier.contact_person}</p>
                     </div>
                     
                     <div>
@@ -335,12 +425,12 @@ const SuppliersPage = () => {
                   <div className="space-y-3">
                     <div>
                       <span className="text-gray-500">Tiempo de Entrega:</span>
-                      <p className="text-blue-800 font-medium">{selectedSupplier.leadTime} días</p>
+                      <p className="text-blue-800 font-medium">{selectedSupplier.lead_time} días</p>
                     </div>
                     
                     <div>
                       <span className="text-gray-500">Condiciones de Pago:</span>
-                      <p className="text-blue-800">{selectedSupplier.paymentTerms}</p>
+                      <p className="text-blue-800">{selectedSupplier.payment_terms}</p>
                     </div>
                     
                     {selectedSupplier.notes && (
@@ -421,7 +511,10 @@ const SuppliersPage = () => {
                     Editar Proveedor
                   </button>
                   
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                  <button 
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    onClick={() => handlePurchaseHistory(selectedSupplier)}
+                  >
                     Historial de Compras
                   </button>
                 </div>
@@ -474,8 +567,8 @@ const SuppliersPage = () => {
                   </label>
                   <input
                     type="text"
-                    name="contact"
-                    value={newSupplier.contact}
+                    name="contact_person"
+                    value={newSupplier.contact_person}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -513,8 +606,8 @@ const SuppliersPage = () => {
                   </label>
                   <input
                     type="number"
-                    name="leadTime"
-                    value={newSupplier.leadTime}
+                    name="lead_time"
+                    value={newSupplier.lead_time}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -539,8 +632,8 @@ const SuppliersPage = () => {
                   </label>
                   <input
                     type="text"
-                    name="paymentTerms"
-                    value={newSupplier.paymentTerms}
+                    name="payment_terms"
+                    value={newSupplier.payment_terms}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -573,6 +666,172 @@ const SuppliersPage = () => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Guardar Proveedor
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
+
+      {/* Edit supplier modal */}
+      {isEditModalOpen && editingSupplier && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">Editar Proveedor</h3>
+                <button 
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditingSupplier(null);
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nombre de la Empresa
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editingSupplier.name || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Persona de Contacto
+                  </label>
+                  <input
+                    type="text"
+                    name="contact_person"
+                    value={editingSupplier.contact_person || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editingSupplier.email || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Teléfono
+                  </label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={editingSupplier.phone || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tiempo de Entrega (días)
+                  </label>
+                  <input
+                    type="number"
+                    name="lead_time"
+                    value={editingSupplier.lead_time || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Dirección
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={editingSupplier.address || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Condiciones de Pago
+                  </label>
+                  <input
+                    type="text"
+                    name="payment_terms"
+                    value={editingSupplier.payment_terms || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Estado
+                  </label>
+                  <select
+                    name="status"
+                    value={editingSupplier.status || 'active'}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                  </select>
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Notas
+                  </label>
+                  <textarea
+                    name="notes"
+                    value={editingSupplier.notes || ''}
+                    onChange={handleEditInputChange}
+                    rows="3"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  ></textarea>
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setEditingSupplier(null);
+                  }}
+                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Cancelar
+                </button>
+                
+                <button
+                  onClick={handleSaveEditedSupplier}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Actualizar Proveedor
                 </button>
               </div>
             </div>

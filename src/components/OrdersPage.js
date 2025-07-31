@@ -1,40 +1,94 @@
 import React, { useState, useEffect } from 'react';
-import { orders } from '../mock/orders';
-import { clients } from '../mock/clients';
-import { products } from '../mock/products';
-import { employees } from '../mock/employees'; // Import employees
+import { useOrders, useClients, useProducts, useEmployees } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
-import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
+import { filterBySearchTerm, sortByField, getStatusColorClass, getOrderNumber, getQuoteNumber } from '../utils/helpers';
 import { alertNewOrder } from '../utils/alerts'; // Import alert utility
 import VenetianTile from './VenetianTile';
 import OrdersAddModal from './OrdersAddModal'; // Import the new modal
 
 const OrdersPage = () => {
-  const [ordersList, setOrdersList] = useState([]);
-  const [clientsList, setClientsList] = useState([]);
-  const [productsList, setProductsList] = useState([]);
-  const [employeesList, setEmployeesList] = useState([]); // State for employees
+  const { data: ordersList, loading: ordersLoading, error: ordersError, create, update, delete: deleteOrder } = useOrders();
+  const { data: clientsList, loading: clientsLoading, error: clientsError } = useClients();
+  const { data: productsList, loading: productsLoading, error: productsError } = useProducts();
+  const { data: employeesList, loading: employeesLoading, error: employeesError } = useEmployees();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'date', direction: 'desc' });
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [selectedItem, setSelectedItem] = useState(null); // Added for employee assignment
   const [isAssignEmployeeModalOpen, setIsAssignEmployeeModalOpen] = useState(false);
   const [selectedEmployeeForAssignment, setSelectedEmployeeForAssignment] = useState('');
   const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState(false); // State for add modal
-  
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setOrdersList(orders);
-    setClientsList(clients);
-    setProductsList(products);
-    setEmployeesList(employees); // Load employees
-  }, []);
+
+  // Combined loading state
+  const loading = ordersLoading || clientsLoading || productsLoading || employeesLoading;
+  const error = ordersError || clientsError || productsError || employeesError;
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Cargando órdenes...</span>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-lg font-medium text-red-800 mb-2">Error de conexión con la base de datos</h3>
+              <p className="text-red-700 mb-4">No se pudo cargar la información de órdenes:</p>
+              <div className="bg-red-100 border border-red-300 rounded p-3 mb-4">
+                <code className="text-sm text-red-800">{error}</code>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium text-red-800">Posibles soluciones:</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                  <li>Verificar la conexión a internet</li>
+                  <li>Revisar las variables de entorno en .env</li>
+                  <li>Comprobar el estado del proyecto en Supabase</li>
+                  <li>Ejecutar el script disable_rls_dev.sql en Supabase</li>
+                </ul>
+              </div>
+              
+              <div className="mt-4 flex space-x-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  🔄 Recargar página
+                </button>
+                <button
+                  onClick={() => window.open('/diagnostics', '_blank')}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  🔍 Abrir diagnósticos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Combine orders with client and employee details
   const ordersWithDetails = ordersList.map(order => {
-    const client = clientsList.find(c => c.id === order.clientId) || {};
-    const employee = order.delivery && order.delivery.employeeId 
-      ? employeesList.find(e => e.id === order.delivery.employeeId) || {}
+    const client = clientsList.find(c => c.id === order.client_id) || {};
+    const employee = order.delivery_employee_id 
+      ? employeesList.find(e => e.id === order.delivery_employee_id) || {}
       : {};
       
     return {
@@ -96,73 +150,61 @@ const OrdersPage = () => {
   };
   
   // Handle status change
-  const handleStatusChange = (orderId, newStatus) => {
-    const updatedOrders = ordersList.map(order => {
-      if (order.id === orderId) {
-        return { ...order, status: newStatus };
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      await update(orderId, { status: newStatus });
+      
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, status: newStatus });
       }
-      return order;
-    });
-    
-    setOrdersList(updatedOrders);
-    
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, status: newStatus });
+    } catch (error) {
+      alert('Error al actualizar el estado: ' + error.message);
     }
   };
   
   // Handle payment status change
-  const handlePaymentStatusChange = (orderId, newPaymentStatus) => {
-    const updatedOrders = ordersList.map(order => {
-      if (order.id === orderId) {
-        return { ...order, paymentStatus: newPaymentStatus };
+  const handlePaymentStatusChange = async (orderId, newPaymentStatus) => {
+    try {
+      await update(orderId, { payment_status: newPaymentStatus });
+      
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder({ ...selectedOrder, payment_status: newPaymentStatus });
       }
-      return order;
-    });
-    
-    setOrdersList(updatedOrders);
-    
-    if (selectedOrder && selectedOrder.id === orderId) {
-      setSelectedOrder({ ...selectedOrder, paymentStatus: newPaymentStatus });
+    } catch (error) {
+      alert('Error al actualizar el estado de pago: ' + error.message);
     }
   };
   
   // Handle assign employee
   const handleAssignEmployee = (order) => {
     setSelectedItem(order); // Use selectedItem for the order being assigned
-    setSelectedEmployeeForAssignment(order.delivery?.employeeId || '');
+    setSelectedEmployeeForAssignment(order.delivery_employee_id || '');
     setIsAssignEmployeeModalOpen(true);
   };
   
   // Handle save employee assignment
-  const handleSaveEmployeeAssignment = () => {
-    const updatedOrders = ordersList.map(order => {
-      if (order.id === selectedItem.id) {
-        return {
-          ...order,
-          delivery: {
-            ...order.delivery,
-            employeeId: selectedEmployeeForAssignment ? parseInt(selectedEmployeeForAssignment) : null
-          }
-        };
-      }
-      return order;
-    });
-    
-    setOrdersList(updatedOrders);
-    setIsAssignEmployeeModalOpen(false);
-    
-    // Find the updated order and associated client/employee for the alert
-    const updatedOrder = updatedOrders.find(o => o.id === selectedItem.id);
-    const client = clientsList.find(c => c.id === updatedOrder.clientId);
-    const employee = employeesList.find(emp => emp.id === updatedOrder.delivery?.employeeId);
+  const handleSaveEmployeeAssignment = async () => {
+    try {
+      await update(selectedItem.id, {
+        delivery_employee_id: selectedEmployeeForAssignment || null
+      });
+      
+      setIsAssignEmployeeModalOpen(false);
+      
+      // Find the updated order and associated client/employee for the alert
+      const updatedOrder = ordersList.find(o => o.id === selectedItem.id);
+      const client = clientsList.find(c => c.id === updatedOrder.client_id);
+      const employee = employeesList.find(emp => emp.id === selectedEmployeeForAssignment);
 
-    // Simulate sending notification (in a real app, this would be an API call)
-    if (updatedOrder && client && employee && updatedOrder.delivery) {
-       alertNewOrder(updatedOrder, client, employee);
+      // Simulate sending notification (in a real app, this would be an API call)
+      if (updatedOrder && client && employee) {
+         alertNewOrder(updatedOrder, client, employee);
+      }
+      
+      setSelectedItem(null); // Clear selected item
+    } catch (error) {
+      alert('Error al asignar empleado: ' + error.message);
     }
-    
-    setSelectedItem(null); // Clear selected item
   };
   
   // Handle add order
@@ -171,18 +213,20 @@ const OrdersPage = () => {
   };
   
   // Handle save new order from modal
-  const handleSaveNewOrder = (newOrderData) => {
-    const updatedOrders = [...ordersList, { ...newOrderData, id: ordersList.length + 1 }];
-    setOrdersList(updatedOrders);
-    // Optionally update inventory here based on the new order items
-    
-    // Simulate alerting warehouse and delivery employee if delivery is needed
-    if (newOrderData.delivery && newOrderData.delivery.employeeId) {
-       const client = clientsList.find(c => c.id === newOrderData.clientId);
-       const employee = employeesList.find(emp => emp.id === newOrderData.delivery.employeeId);
-       if (client && employee) {
-          alertNewOrder({ ...newOrderData, id: ordersList.length + 1 }, client, employee);
-       }
+  const handleSaveNewOrder = async (newOrderData) => {
+    try {
+      await create(newOrderData);
+      
+      // Simulate alerting warehouse and delivery employee if delivery is needed
+      if (newOrderData.delivery_employee_id) {
+         const client = clientsList.find(c => c.id === newOrderData.client_id);
+         const employee = employeesList.find(emp => emp.id === newOrderData.delivery_employee_id);
+         if (client && employee) {
+            alertNewOrder(newOrderData, client, employee);
+         }
+      }
+    } catch (error) {
+      alert('Error al guardar la orden: ' + error.message);
     }
   };
   
@@ -287,7 +331,7 @@ const OrdersPage = () => {
       
       {/* Orders table */}
       <VenetianTile className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-50">
               <tr>
@@ -297,7 +341,7 @@ const OrdersPage = () => {
                   onClick={() => handleSort('id')}
                 >
                   <div className="flex items-center">
-                    # Pedido
+                    N° Pedido
                     {sortConfig.field === 'id' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
@@ -389,11 +433,11 @@ const OrdersPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('paymentStatus')}
+                  onClick={() => handleSort('payment_status')}
                 >
                   <div className="flex items-center">
                     Pago
-                    {sortConfig.field === 'paymentStatus' && (
+                    {sortConfig.field === 'payment_status' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -418,9 +462,9 @@ const OrdersPage = () => {
                   onClick={() => handleSelectOrder(order)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">#{order.id}</div>
+                    <div className="text-sm font-medium text-gray-900">{getOrderNumber(order.id)}</div>
                     {order.quoteId && (
-                      <div className="text-xs text-gray-500">Cotización: #{order.quoteId}</div>
+                      <div className="text-xs text-gray-500">Cotización: {getQuoteNumber(order.quoteId)}</div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -442,8 +486,8 @@ const OrdersPage = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(order.paymentStatus)}`}>
-                      {getPaymentStatusLabel(order.paymentStatus)}
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(order.payment_status)}`}>
+                      {getPaymentStatusLabel(order.payment_status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -479,7 +523,7 @@ const OrdersPage = () => {
           <VenetianTile className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-blue-100">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-blue-800">Pedido #{selectedOrder.id}</h3>
+                <h3 className="text-xl font-semibold text-blue-800">Pedido {getOrderNumber(selectedOrder.id)}</h3>
                 <button 
                   onClick={handleCloseDetails}
                   className="text-gray-400 hover:text-gray-500"
@@ -505,7 +549,7 @@ const OrdersPage = () => {
                     {selectedOrder.quoteId && (
                       <div className="flex justify-between">
                         <span className="text-gray-500">Cotización:</span>
-                        <span className="text-blue-800 font-medium">#{selectedOrder.quoteId}</span>
+                        <span className="text-blue-800 font-medium">{getQuoteNumber(selectedOrder.quoteId)}</span>
                       </div>
                     )}
                     
@@ -557,8 +601,8 @@ const OrdersPage = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Estado:</span>
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(selectedOrder.paymentStatus)}`}>
-                        {getPaymentStatusLabel(selectedOrder.paymentStatus)}
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(selectedOrder.payment_status)}`}>
+                        {getPaymentStatusLabel(selectedOrder.payment_status)}
                       </span>
                     </div>
                     
@@ -719,7 +763,7 @@ const OrdersPage = () => {
                   <div className="flex space-x-3">
                     <button 
                       onClick={() => handleStatusChange(selectedOrder.id, 'shipped')}
-                      className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                     >
                       Marcar como Enviado
                     </button>
@@ -761,7 +805,7 @@ const OrdersPage = () => {
           <VenetianTile className="max-w-sm w-full">
             <div className="p-6 border-b border-blue-100">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-blue-800">Asignar Empleado a Pedido #{selectedItem.id}</h3>
+                <h3 className="text-xl font-semibold text-blue-800">Asignar Empleado a Pedido {getOrderNumber(selectedItem.id)}</h3>
                 <button 
                   onClick={() => setIsAssignEmployeeModalOpen(false)}
                   className="text-gray-400 hover:text-gray-500"

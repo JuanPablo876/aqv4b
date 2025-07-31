@@ -71,7 +71,7 @@ const UserProfilePage = ({ session }) => {
             {!isEditing ? (
               <button
                 onClick={handleEdit}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 Editar Perfil
               </button>

@@ -46,7 +46,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
   // Handle save new invoice
   const handleSaveInvoice = () => {
     if (!newInvoice.clientId || !newInvoice.invoiceNumber || !newInvoice.total) {
-      alert('Por favor, completa los campos obligatorios (Cliente, # Factura/Nota, Total).');
+      alert('Por favor, completa los campos obligatorios (Cliente, N° Factura/Nota, Total).');
       return;
     }
     
@@ -116,7 +116,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                # Factura/Nota
+                N° Factura/Nota
               </label>
               <input
                 type="text"
@@ -196,7 +196,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                # Pedido Asociado (Opcional)
+                N° Pedido Asociado (Opcional)
               </label>
               <input
                 type="text"

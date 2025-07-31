@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { products } from '../mock/products';
+import { useProducts } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import { DEFAULT_PRODUCT_IMAGE } from '../utils/placeholders';
 import VenetianTile from './VenetianTile';
 
 const ProductsPage = () => {
-  const [productsList, setProductsList] = useState([]);
+  const { data: productsList, loading, error, create, update, delete: deleteProduct } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -19,17 +19,80 @@ const ProductsPage = () => {
     price: '',
     cost: '',
     stock: '',
-    minStock: '',
+    min_stock: '', // Updated to match database field name
     sku: '',
-    supplier: '',
-    imageUrl: '', // Added imageUrl field
-    status: 'active'
+    supplier_id: '', // Updated to match database field name
+    supplier_name: '', // Updated to match database field name
+    image_url: '', // Updated to match database field name
+    status: 'active',
+    brand: '',
+    model: '',
+    weight: '',
+    dimensions: '',
+    warranty: '',
+    installation_required: false,
+    seasonal_demand: 'moderate',
+    last_restock_date: ''
   });
-  
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setProductsList(products);
-  }, []);
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Cargando productos...</span>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-2xl mx-auto">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-lg font-medium text-red-800 mb-2">Error de conexión con la base de datos</h3>
+              <p className="text-red-700 mb-4">No se pudo cargar la información de productos:</p>
+              <div className="bg-red-100 border border-red-300 rounded p-3 mb-4">
+                <code className="text-sm text-red-800">{error}</code>
+              </div>
+              
+              <div className="space-y-3">
+                <h4 className="font-medium text-red-800">Posibles soluciones:</h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-red-700">
+                  <li>Verificar la conexión a internet</li>
+                  <li>Revisar las variables de entorno en .env</li>
+                  <li>Comprobar el estado del proyecto en Supabase</li>
+                  <li>Ejecutar el script disable_rls_dev.sql en Supabase</li>
+                </ul>
+              </div>
+              
+              <div className="mt-4 flex space-x-3">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                >
+                  🔄 Recargar página
+                </button>
+                <button
+                  onClick={() => window.open('/diagnostics', '_blank')}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  🔍 Abrir diagnósticos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   // Get unique categories for filter
   const categories = [...new Set(productsList.map(product => product.category))];
@@ -41,7 +104,7 @@ const ProductsPage = () => {
         ? productsList.filter(product => product.category === categoryFilter)
         : productsList, 
       searchTerm, 
-      ['name', 'description', 'sku', 'supplier']
+      ['name', 'description', 'sku', 'supplier_name'] // Updated to match database field
     ),
     sortConfig.field,
     sortConfig.direction
@@ -85,7 +148,7 @@ const ProductsPage = () => {
       reader.onloadend = () => {
         setNewProduct({
           ...newProduct,
-          imageUrl: reader.result // Store image as base64 string (for demo purposes)
+          image_url: reader.result // Store image as base64 string (for demo purposes)
         });
       };
       reader.readAsDataURL(file);
@@ -93,33 +156,53 @@ const ProductsPage = () => {
   };
   
   // Handle save new product
-  const handleSaveProduct = () => {
-    // Convert string values to numbers where needed
-    const formattedProduct = {
-      ...newProduct,
-      id: productsList.length + 1,
-      price: parseFloat(newProduct.price) || 0,
-      cost: parseFloat(newProduct.cost) || 0,
-      stock: parseInt(newProduct.stock) || 0,
-      minStock: parseInt(newProduct.minStock) || 0,
-      imageUrl: newProduct.imageUrl || DEFAULT_PRODUCT_IMAGE // Use uploaded image or placeholder
-    };
-    
-    setProductsList([...productsList, formattedProduct]);
-    setIsAddModalOpen(false);
-    setNewProduct({
-      name: '',
-      category: '',
-      description: '',
-      price: '',
-      cost: '',
-      stock: '',
-      minStock: '',
-      sku: '',
-      supplier: '',
-      imageUrl: '',
-      status: 'active'
-    });
+  const handleSaveProduct = async () => {
+    try {
+      // Convert string values to numbers where needed
+      const formattedProduct = {
+        ...newProduct,
+        price: parseFloat(newProduct.price) || 0,
+        cost: parseFloat(newProduct.cost) || 0,
+        stock: parseInt(newProduct.stock) || 0,
+        min_stock: parseInt(newProduct.min_stock) || 0,
+        image_url: newProduct.image_url || DEFAULT_PRODUCT_IMAGE,
+        installation_required: Boolean(newProduct.installation_required),
+        last_restock_date: newProduct.last_restock_date || null
+      };
+      
+      await create(formattedProduct);
+      setIsAddModalOpen(false);
+      setNewProduct({
+        name: '',
+        category: '',
+        description: '',
+        price: '',
+        cost: '',
+        stock: '',
+        min_stock: '',
+        sku: '',
+        supplier_id: '',
+        supplier_name: '',
+        image_url: '',
+        status: 'active',
+        brand: '',
+        model: '',
+        weight: '',
+        dimensions: '',
+        warranty: '',
+        installation_required: false,
+        seasonal_demand: 'moderate',
+        last_restock_date: ''
+      });
+    } catch (error) {
+      alert('Error al guardar el producto: ' + error.message);
+    }
+  };
+  
+  // Handle price history
+  const handlePriceHistory = (product) => {
+    console.log(`Viendo historial de precios para: ${product.name}`);
+    alert(`Funcionalidad "Historial de Precios" para ${product.name} pendiente de implementar.`);
   };
   
   // Handle close product details
@@ -241,7 +324,7 @@ const ProductsPage = () => {
                 
                 <div className="text-right">
                   <p className="text-sm font-medium text-blue-800">{product.stock} unidades</p>
-                  <p className="text-xs text-gray-500">Mín: {product.minStock}</p>
+                  <p className="text-xs text-gray-500">Mín: {product.min_stock}</p>
                 </div>
               </div>
             </div>
@@ -293,7 +376,7 @@ const ProductsPage = () => {
                 <div>
                   <div className="bg-gray-200 rounded-lg h-64 mb-4">
                     <img 
-                      src={selectedProduct.imageUrl} 
+                      src={selectedProduct.image_url} 
                       alt={selectedProduct.name} 
                       className="w-full h-full object-cover rounded-lg"
                     />
@@ -310,7 +393,7 @@ const ProductsPage = () => {
                       <p className="text-xl font-semibold text-blue-800">{formatCurrency(selectedProduct.cost)}</p>
                     </div>
                     
-                    <div className="bg-purple-50 p-4 rounded-lg">
+                    <div className="bg-blue-50 p-4 rounded-lg">
                       <p className="text-sm text-gray-500">Margen</p>
                       <p className="text-xl font-semibold text-blue-800">
                         {calculateMargin(selectedProduct.price, selectedProduct.cost).toFixed(2)}%
@@ -374,7 +457,10 @@ const ProductsPage = () => {
                         Ajustar Inventario
                       </button>
                       
-                      <button className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                      <button 
+                        className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        onClick={() => handlePriceHistory(selectedProduct)}
+                      >
                         Historial de Precios
                       </button>
                       
@@ -514,8 +600,8 @@ const ProductsPage = () => {
                   </label>
                   <input
                     type="number"
-                    name="minStock"
-                    value={newProduct.minStock}
+                    name="min_stock"
+                    value={newProduct.min_stock}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -527,8 +613,8 @@ const ProductsPage = () => {
                   </label>
                   <input
                     type="text"
-                    name="supplier"
-                    value={newProduct.supplier}
+                    name="supplier_name"
+                    value={newProduct.supplier_name}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -546,6 +632,7 @@ const ProductsPage = () => {
                   >
                     <option value="active">Activo</option>
                     <option value="inactive">Inactivo</option>
+                    <option value="discontinued">Descontinuado</option>
                   </select>
                 </div>
                 
@@ -559,9 +646,9 @@ const ProductsPage = () => {
                     onChange={handleImageChange}
                     className="w-full text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
-                   {newProduct.imageUrl && (
+                   {newProduct.image_url && (
                     <div className="mt-4 w-32 h-32 rounded-lg overflow-hidden border border-gray-200">
-                      <img src={newProduct.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      <img src={newProduct.image_url} alt="Preview" className="w-full h-full object-cover" />
                     </div>
                   )}
                 </div>

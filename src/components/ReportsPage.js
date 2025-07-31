@@ -71,7 +71,7 @@ const ReportsPage = () => {
                         </div>
                         <div className="w-full bg-blue-200 rounded-full h-2">
                           <div 
-                            className={`h-2 rounded-full bg-${['blue', 'green', 'purple', 'yellow', 'red', 'indigo', 'pink'][index % 7]}-500`}
+                            className={`h-2 rounded-full bg-${['blue', 'green', 'teal', 'yellow', 'red', 'indigo', 'gray'][index % 7]}-500`}
                             style={{ width: `${item.percentage}%` }}
                           ></div>
                         </div>
@@ -228,7 +228,7 @@ const ReportsPage = () => {
                           </div>
                           <div className="w-full bg-blue-200 rounded-full h-2">
                             <div 
-                              className={`h-2 rounded-full bg-${['blue', 'green', 'purple', 'yellow', 'red', 'indigo'][index % 6]}-500`}
+                              className={`h-2 rounded-full bg-${['blue', 'green', 'teal', 'yellow', 'red', 'indigo'][index % 6]}-500`}
                               style={{ width: `${item.percentage}%` }}
                             ></div>
                           </div>

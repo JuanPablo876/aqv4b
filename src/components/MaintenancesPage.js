@@ -1,49 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { maintenances, maintenanceHistory } from '../mock/maintenances';
-import { clients } from '../mock/clients';
-import { employees } from '../mock/employees';
+import React, { useState } from 'react';
+import { useMaintenances, useClients, useEmployees } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
-import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
+import { filterBySearchTerm, sortByField, getStatusColorClass, generateShortId } from '../utils/helpers';
 import { alertUpcomingMaintenance } from '../utils/alerts'; // Import alert utility
 import VenetianTile from './VenetianTile';
 import MaintenancesAddModal from './MaintenancesAddModal'; // Import the new modal
 
 const MaintenancesPage = () => {
-  const [maintenancesList, setMaintenancesList] = useState([]);
-  const [clientsList, setClientsList] = useState([]);
-  const [employeesList, setEmployeesList] = useState([]);
-  const [historyList, setHistoryList] = useState([]);
+  const { data: maintenancesList, loading: maintenancesLoading, error: maintenancesError, update: updateMaintenance, create: createMaintenance } = useMaintenances();
+  const { data: clientsList, loading: clientsLoading } = useClients();
+  const { data: employeesList, loading: employeesLoading } = useEmployees();
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({ field: 'lastServiceDate', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState({ field: 'last_service_date', direction: 'desc' });
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedMaintenance, setSelectedMaintenance] = useState(null);
   const [isAddMaintenanceModalOpen, setIsAddMaintenanceModalOpen] = useState(false); // State for add modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingMaintenance, setEditingMaintenance] = useState(null);
   
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setMaintenancesList(maintenances);
-    setClientsList(clients);
-    setEmployeesList(employees);
-    setHistoryList(maintenanceHistory);
-  }, []);
+  if (maintenancesLoading || clientsLoading || employeesLoading) {
+    return <div className="p-6">Cargando mantenimientos...</div>;
+  }
+
+  if (maintenancesError) {
+    return <div className="p-6 text-red-600">Error: {maintenancesError}</div>;
+  }
   
   // Combine maintenances with client and employee details
   const maintenancesWithDetails = maintenancesList.map(maintenance => {
-    const client = clientsList.find(c => c.id === maintenance.clientId) || {};
-    const lastService = historyList
-      .filter(h => h.maintenanceId === maintenance.id)
-      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-      
-    const lastServiceEmployee = lastService 
-      ? employeesList.find(e => e.id === lastService.employeeId) || {}
-      : {};
+    const client = clientsList.find(c => c.id === maintenance.client_id) || {};
+    const lastServiceEmployee = employeesList.find(e => e.id === maintenance.last_service_employee_id) || {};
       
     return {
       ...maintenance,
       clientName: client.name || 'Cliente Desconocido',
       clientContact: client.contact || 'N/A',
       clientPhone: client.phone || 'N/A',
-      lastServiceDateFormatted: lastService ? formatDate(lastService.date) : 'N/A',
+      lastServiceDateFormatted: maintenance.last_service_date ? formatDate(maintenance.last_service_date) : 'N/A',
       lastServiceEmployeeName: lastServiceEmployee.name || 'N/A'
     };
   });
@@ -74,22 +67,7 @@ const MaintenancesPage = () => {
   
   // Handle maintenance selection
   const handleSelectMaintenance = (maintenance) => {
-    // Get history and payments for this maintenance
-    const maintenanceHistoryDetails = historyList
-      .filter(h => h.maintenanceId === maintenance.id)
-      .map(h => {
-        const employee = employeesList.find(e => e.id === h.employeeId) || {};
-        return {
-          ...h,
-          employeeName: employee.name || 'Empleado Desconocido'
-        };
-      })
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
-      
-    setSelectedMaintenance({
-      ...maintenance,
-      history: maintenanceHistoryDetails
-    });
+    setSelectedMaintenance(maintenance);
   };
   
   // Handle close maintenance details
@@ -99,8 +77,8 @@ const MaintenancesPage = () => {
   
   // Simulate alerting employee for upcoming maintenance (placeholder)
   const handleAlertEmployee = (maintenance) => {
-     const employee = employeesList.find(emp => emp.id === maintenance.lastServiceEmployeeId); // Assuming lastServiceEmployeeId is the assigned employee for next service
-     const client = clientsList.find(c => c.id === maintenance.clientId);
+     const employee = employeesList.find(emp => emp.id === maintenance.last_service_employee_id); 
+     const client = clientsList.find(c => c.id === maintenance.client_id);
      
      if (employee && client) {
         alertUpcomingMaintenance(maintenance, client, employee);
@@ -115,17 +93,50 @@ const MaintenancesPage = () => {
   };
   
   // Handle save new maintenance from modal
-  const handleSaveNewMaintenance = (newMaintenanceData) => {
-    const updatedMaintenances = [...maintenancesList, { ...newMaintenanceData, id: maintenancesList.length + 1 }];
-    setMaintenancesList(updatedMaintenances);
-    // Optionally trigger alert for the assigned employee here
-    if (newMaintenanceData.lastServiceEmployeeId) {
-       const client = clientsList.find(c => c.id === newMaintenanceData.clientId);
-       const employee = employeesList.find(emp => emp.id === newMaintenanceData.lastServiceEmployeeId);
-       if (client && employee) {
-          alertUpcomingMaintenance({ ...newMaintenanceData, id: maintenancesList.length + 1 }, client, employee);
-       }
+  const handleSaveNewMaintenance = async (newMaintenanceData) => {
+    try {
+      await createMaintenance(newMaintenanceData);
+      setIsAddMaintenanceModalOpen(false);
+      
+      // Optionally trigger alert for the assigned employee here
+      if (newMaintenanceData.last_service_employee_id) {
+         const client = clientsList.find(c => c.id === newMaintenanceData.client_id);
+         const employee = employeesList.find(emp => emp.id === newMaintenanceData.last_service_employee_id);
+         if (client && employee) {
+            alertUpcomingMaintenance(newMaintenanceData, client, employee);
+         }
+      }
+    } catch (error) {
+      console.error('Error creating maintenance:', error);
+      alert('Error al crear mantenimiento: ' + error.message);
     }
+  };
+
+  // Handle edit maintenance
+  const handleEditMaintenance = (maintenance) => {
+    setEditingMaintenance({ ...maintenance });
+    setIsEditModalOpen(true);
+  };
+
+  // Handle save edited maintenance
+  const handleSaveEditedMaintenance = async () => {
+    try {
+      await updateMaintenance(editingMaintenance.id, editingMaintenance);
+      setIsEditModalOpen(false);
+      setEditingMaintenance(null);
+    } catch (error) {
+      console.error('Error updating maintenance:', error);
+      alert('Error al actualizar mantenimiento: ' + error.message);
+    }
+  };
+
+  // Handle input change for editing maintenance
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingMaintenance({
+      ...editingMaintenance,
+      [name]: value
+    });
   };
   
   // Get status label
@@ -213,7 +224,7 @@ const MaintenancesPage = () => {
       
       {/* Maintenances table */}
       <VenetianTile className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-50">
               <tr>
@@ -239,11 +250,11 @@ const MaintenancesPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('serviceType')}
+                  onClick={() => handleSort('service_type')}
                 >
                   <div className="flex items-center">
                     Tipo de Servicio
-                    {sortConfig.field === 'serviceType' && (
+                    {sortConfig.field === 'service_type' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -277,11 +288,11 @@ const MaintenancesPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('lastServiceDate')}
+                  onClick={() => handleSort('last_service_date')}
                 >
                   <div className="flex items-center">
                     Último Servicio
-                    {sortConfig.field === 'lastServiceDate' && (
+                    {sortConfig.field === 'last_service_date' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -335,7 +346,7 @@ const MaintenancesPage = () => {
                     <div className="text-xs text-gray-500">{maintenance.address}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{maintenance.serviceType}</div>
+                    <div className="text-sm text-gray-900">{maintenance.service_type}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{maintenance.frequency}</div>
@@ -374,7 +385,7 @@ const MaintenancesPage = () => {
                       className="text-gray-600 hover:text-gray-900"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Handle edit action
+                        handleEditMaintenance(maintenance);
                       }}
                     >
                       Editar
@@ -418,7 +429,7 @@ const MaintenancesPage = () => {
                     
                     <div>
                       <span className="text-gray-500">Tipo de Servicio:</span>
-                      <p className="text-blue-800">{selectedMaintenance.serviceType}</p>
+                      <p className="text-blue-800">{selectedMaintenance.service_type}</p>
                     </div>
                     
                     <div>
@@ -573,6 +584,117 @@ const MaintenancesPage = () => {
         onClose={() => setIsAddMaintenanceModalOpen(false)}
         onSave={handleSaveNewMaintenance}
       />
+
+      {/* Edit Maintenance Modal */}
+      {isEditModalOpen && editingMaintenance && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">Editar Mantenimiento {generateShortId(editingMaintenance.id).slice(-4)}</h3>
+                <button 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Service Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Servicio</label>
+                  <input
+                    type="text"
+                    name="service_type"
+                    value={editingMaintenance.service_type || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Tipo de servicio..."
+                  />
+                </div>
+
+                {/* Frequency */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Frecuencia</label>
+                  <select
+                    name="frequency"
+                    value={editingMaintenance.frequency || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Seleccionar frecuencia</option>
+                    <option value="Semanal">Semanal</option>
+                    <option value="Quincenal">Quincenal</option>
+                    <option value="Mensual">Mensual</option>
+                    <option value="Trimestral">Trimestral</option>
+                    <option value="Bajo Demanda">Bajo Demanda</option>
+                  </select>
+                </div>
+
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                  <select
+                    name="status"
+                    value={editingMaintenance.status || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                    <option value="completed">Completado</option>
+                  </select>
+                </div>
+
+                {/* Last Service Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Último Servicio</label>
+                  <input
+                    type="date"
+                    name="last_service_date"
+                    value={editingMaintenance.last_service_date ? editingMaintenance.last_service_date.split('T')[0] : ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+                  <textarea
+                    name="notes"
+                    value={editingMaintenance.notes || ''}
+                    onChange={handleEditInputChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Notas adicionales..."
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveEditedMaintenance}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
     </div>
   );
 };

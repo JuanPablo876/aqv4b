@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { bankAccounts, cashBoxes, transactions } from '../mock/finance';
 import { invoices } from '../mock/invoices'; // Import invoices
 import { formatCurrency, formatDate } from '../utils/storage';
-import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
+import { filterBySearchTerm, sortByField, getStatusColorClass, getOrderNumber } from '../utils/helpers';
 import { exportToTextForExcel } from '../utils/export'; // Import export utility
 import VenetianTile from './VenetianTile';
 import FinanceAddInvoiceModal from './FinanceAddInvoiceModal'; // Import the new modal
@@ -332,7 +332,7 @@ const FinancePage = () => {
              Exportar a Excel
            </button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-50">
               <tr>
@@ -493,7 +493,7 @@ const FinancePage = () => {
              Exportar a Excel
            </button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-50">
               <tr>
@@ -522,7 +522,7 @@ const FinancePage = () => {
                   onClick={() => handleSort('invoiceNumber')}
                 >
                   <div className="flex items-center">
-                    # Factura/Nota
+                    N° Factura/Nota
                     {sortConfig.field === 'invoiceNumber' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
@@ -625,7 +625,7 @@ const FinancePage = () => {
                    <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{invoice.invoiceNumber}</div>
                     {invoice.orderId && (
-                       <div className="text-xs text-gray-500">Pedido: #{invoice.orderId}</div>
+                       <div className="text-xs text-gray-500">Pedido: {getOrderNumber(invoice.orderId)}</div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -824,7 +824,7 @@ const FinancePage = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    # Pedido (Opcional)
+                    N° Pedido (Opcional)
                   </label>
                   <input
                     type="text"

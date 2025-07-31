@@ -23,7 +23,7 @@ const PWAStatus = () => {
       )}
 
       {isInstalled && (
-        <div className="mb-2 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+        <div className="mb-2 px-3 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-800 border border-teal-200">
           📱 Installed
         </div>
       )}

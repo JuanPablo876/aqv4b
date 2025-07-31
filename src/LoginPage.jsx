@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { supabase } from './supabaseClient'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 
 const LoginComponent = () => {
@@ -71,9 +71,17 @@ const LoginComponent = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
+            <div className="flex justify-between items-center mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <Link 
+                to="/forgot-password" 
+                className="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
             <input
               id="password"
               type="password"
@@ -96,10 +104,10 @@ const LoginComponent = () => {
 
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-600">
-            Don't have an account?{' '}
-            <a href="/signup" className="text-blue-600 hover:text-blue-700 hover:underline font-medium transition-colors">
-              Sign up here
-            </a>
+            ¿Necesitas una cuenta?{' '}
+            <span className="text-gray-500">
+              Contacta al administrador para solicitar una invitación
+            </span>
           </p>
         </div>
       </div>

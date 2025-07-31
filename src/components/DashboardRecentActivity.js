@@ -68,11 +68,20 @@ const DashboardRecentActivity = ({ activities, onActivityClick }) => {
             </div>
             
             <div className="flex-1">
-              <p className="text-blue-800 text-sm">{activity.description}</p>
-              <p className="text-xs text-blue-500 mt-1">{getRelativeTime(activity.date)}</p>
+              <p className="text-blue-800 text-sm">{activity.title || activity.description}</p>
+              <p className="text-xs text-blue-500 mt-1">
+                {activity.subtitle && `${activity.subtitle} • `}
+                {getRelativeTime(activity.date || activity.time)}
+              </p>
             </div>
             
-            <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColorClass(activity.status)}`}>
+            {activity.value && (
+              <div className="text-right">
+                <p className="text-blue-800 font-medium text-sm">{activity.value}</p>
+              </div>
+            )}
+            
+            <div className={`px-2 py-1 rounded-full text-xs font-medium ml-2 ${getStatusColorClass(activity.status)}`}>
               {activity.status}
             </div>
           </div>

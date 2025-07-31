@@ -1,38 +1,10 @@
 ﻿
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "./ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
+import { supabase } from "../supabaseClient";
+import VenetianBackground from "./VenetianBackground";
 
-// Simple cn utility function
-const cn = (...classes) => {
-  return classes.filter(Boolean).join(' ');
-};
-
-// Mock createClient function - replace with your actual implementation
-const createClient = () => {
-  return {
-    auth{
-      resetPasswordForEmail (email) => {
-        // Mock implementation - replace with actual Supabase client
-        return { error };
-      }
-    }
-  };
-};
-
-export function ForgotPasswordForm({
-  className,
-  ...props
-}"div">) {
+export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -40,15 +12,14 @@ export function ForgotPasswordForm({
 
   const handleForgotPassword = async (e) => {
     e.preventDefault();
-    const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
     try {
-      // The url which will be included in the email. This URL needs to be configured in your redirect URLs in the Supabase dashboard at https://supabase.com/dashboard/project/_/auth/url-configuration
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/update-password`,
       });
+      
       if (error) throw error;
       setSuccess(true);
     } catch (error) {
@@ -59,41 +30,88 @@ export function ForgotPasswordForm({
   };
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
-      {success ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              If you registered using your email and password, you will receive
-              a password reset email.
-            </p>
-          </CardContent>
-        </Card>
-      )  => setEmail(e.target.value)}
-                  />
-                </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset email"}
-                </Button>
-              </div>
-              <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
-                <Link
-                  href="/auth/login"
-                  className="underline underline-offset-4"
+    <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <VenetianBackground />
+      
+      <div className="max-w-md w-full space-y-8 relative z-10">
+        {success ? (
+          <div className="text-center">
+            <div className="text-6xl mb-6">📧</div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
+              Revisa tu Email
+            </h2>
+            <div className="bg-card/90 backdrop-blur-sm py-8 px-6 shadow-xl rounded-lg border border-border/20 mt-8">
+              <p className="text-sm text-muted-foreground text-center">
+                Si el email está registrado en nuestro sistema, recibirás las instrucciones para restablecer tu contraseña.
+              </p>
+              <div className="mt-6 text-center">
+                <Link 
+                  to="/login" 
+                  className="font-medium text-primary hover:text-primary/80 transition-colors"
                 >
-                  Login
+                  ← Volver al inicio de sesión
                 </Link>
               </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="text-center">
+              <div className="text-6xl mb-6">🔑</div>
+              <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
+                Restablecer Contraseña
+              </h2>
+              <p className="mt-4 text-center text-sm text-muted-foreground">
+                Ingresa tu email para recibir las instrucciones de restablecimiento
+              </p>
+            </div>
+
+            <div className="bg-card/90 backdrop-blur-sm py-8 px-6 shadow-xl rounded-lg border border-border/20">
+              <form onSubmit={handleForgotPassword} className="space-y-6">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-card-foreground">
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-border placeholder-muted-foreground text-foreground rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+                    placeholder="tu@email.com"
+                  />
+                </div>
+                
+                {error && (
+                  <div className="text-sm text-red-500 bg-red-50 p-3 rounded border border-red-200">
+                    {error}
+                  </div>
+                )}
+                
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Enviando..." : "Enviar Email de Restablecimiento"}
+                </button>
+              </form>
+              
+              <div className="mt-6 text-center">
+                <Link 
+                  to="/login" 
+                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  ← Volver al inicio de sesión
+                </Link>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

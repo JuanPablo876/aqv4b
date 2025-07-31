@@ -4,6 +4,21 @@ import VenetianTile from './VenetianTile';
 const DashboardChartCard = ({ title, data, type }) => {
   const canvasRef = useRef(null);
   
+  // Get current theme colors
+  const getThemeColors = () => {
+    const isDark = document.documentElement.classList.contains('dark');
+    
+    return {
+      axisColor: isDark ? '#4b5563' : '#e5e7eb',
+      gridColor: isDark ? '#374151' : '#f3f4f6',
+      textColor: isDark ? '#d1d5db' : '#6b7280',
+      labelColor: isDark ? '#9ca3af' : '#9ca3af',
+      backgroundColor: isDark ? '#1f2937' : '#ffffff',
+      primaryBlue: isDark ? '#60a5fa' : '#3b82f6',
+      lightBlue: isDark ? '#3b82f6' : '#93c5fd'
+    };
+  };
+  
   useEffect(() => {
     if (!canvasRef.current || !data || data.length === 0) return;
     
@@ -25,6 +40,7 @@ const DashboardChartCard = ({ title, data, type }) => {
   }, [data, type]);
   
   const drawBarChart = (ctx, data, width, height) => {
+    const colors = getThemeColors();
     const padding = 40;
     const chartWidth = width - padding * 2;
     const chartHeight = height - padding * 2;
@@ -35,7 +51,7 @@ const DashboardChartCard = ({ title, data, type }) => {
     
     // Draw axes
     ctx.beginPath();
-    ctx.strokeStyle = '#e5e7eb';
+    ctx.strokeStyle = colors.axisColor;
     ctx.moveTo(padding, padding);
     ctx.lineTo(padding, height - padding);
     ctx.lineTo(width - padding, height - padding);
@@ -49,15 +65,15 @@ const DashboardChartCard = ({ title, data, type }) => {
       
       // Create gradient for bar
       const gradient = ctx.createLinearGradient(x, y, x, height - padding);
-      gradient.addColorStop(0, '#3b82f6');
-      gradient.addColorStop(1, '#93c5fd');
+      gradient.addColorStop(0, colors.primaryBlue);
+      gradient.addColorStop(1, colors.lightBlue);
       
       // Draw bar
       ctx.fillStyle = gradient;
       ctx.fillRect(x, y, barWidth, barHeight);
       
       // Draw label
-      ctx.fillStyle = '#6b7280';
+      ctx.fillStyle = colors.textColor;
       ctx.font = '10px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(item.month, x + barWidth / 2, height - padding + 15);
@@ -68,14 +84,14 @@ const DashboardChartCard = ({ title, data, type }) => {
       const value = (maxValue / 4) * i;
       const y = height - padding - (chartHeight / 4) * i;
       
-      ctx.fillStyle = '#9ca3af';
+      ctx.fillStyle = colors.labelColor;
       ctx.font = '10px Arial';
       ctx.textAlign = 'right';
       ctx.fillText(formatNumber(value), padding - 10, y + 3);
       
       // Draw grid line
       ctx.beginPath();
-      ctx.strokeStyle = '#f3f4f6';
+      ctx.strokeStyle = colors.gridColor;
       ctx.moveTo(padding, y);
       ctx.lineTo(width - padding, y);
       ctx.stroke();
@@ -83,6 +99,7 @@ const DashboardChartCard = ({ title, data, type }) => {
   };
   
   const drawLineChart = (ctx, data, width, height) => {
+    const colors = getThemeColors();
     const padding = 40;
     const chartWidth = width - padding * 2;
     const chartHeight = height - padding * 2;
@@ -93,7 +110,7 @@ const DashboardChartCard = ({ title, data, type }) => {
     
     // Draw axes
     ctx.beginPath();
-    ctx.strokeStyle = '#e5e7eb';
+    ctx.strokeStyle = colors.axisColor;
     ctx.moveTo(padding, padding);
     ctx.lineTo(padding, height - padding);
     ctx.lineTo(width - padding, height - padding);
@@ -101,12 +118,12 @@ const DashboardChartCard = ({ title, data, type }) => {
     
     // Create gradient for area under the line
     const areaGradient = ctx.createLinearGradient(0, padding, 0, height - padding);
-    areaGradient.addColorStop(0, 'rgba(59, 130, 246, 0.2)');
-    areaGradient.addColorStop(1, 'rgba(59, 130, 246, 0.05)');
+    areaGradient.addColorStop(0, `${colors.primaryBlue}33`); // Add transparency
+    areaGradient.addColorStop(1, `${colors.primaryBlue}0D`); // More transparent
     
     // Draw line
     ctx.beginPath();
-    ctx.strokeStyle = '#3b82f6';
+    ctx.strokeStyle = colors.primaryBlue;
     ctx.lineWidth = 2;
     
     data.forEach((item, index) => {
@@ -120,16 +137,16 @@ const DashboardChartCard = ({ title, data, type }) => {
       }
       
       // Draw point
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = colors.backgroundColor;
       ctx.beginPath();
       ctx.arc(x, y, 4, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#3b82f6';
+      ctx.strokeStyle = colors.primaryBlue;
       ctx.lineWidth = 2;
       ctx.stroke();
       
       // Draw label
-      ctx.fillStyle = '#6b7280';
+      ctx.fillStyle = colors.textColor;
       ctx.font = '10px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(item.month, x, height - padding + 15);
@@ -148,14 +165,14 @@ const DashboardChartCard = ({ title, data, type }) => {
       const value = (maxValue / 4) * i;
       const y = height - padding - (chartHeight / 4) * i;
       
-      ctx.fillStyle = '#9ca3af';
+      ctx.fillStyle = colors.labelColor;
       ctx.font = '10px Arial';
       ctx.textAlign = 'right';
       ctx.fillText(formatNumber(value), padding - 10, y + 3);
       
       // Draw grid line
       ctx.beginPath();
-      ctx.strokeStyle = '#f3f4f6';
+      ctx.strokeStyle = colors.gridColor;
       ctx.moveTo(padding, y);
       ctx.lineTo(width - padding, y);
       ctx.stroke();
@@ -163,6 +180,7 @@ const DashboardChartCard = ({ title, data, type }) => {
   };
   
   const drawDoughnutChart = (ctx, data, width, height) => {
+    const colors = getThemeColors();
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.min(width, height) / 2 - 40;
@@ -170,9 +188,9 @@ const DashboardChartCard = ({ title, data, type }) => {
     // Calculate total for percentages
     const total = data.reduce((sum, item) => sum + item.percentage, 0);
     
-    // Colors for segments
-    const colors = [
-      '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', 
+    // Colors for segments (theme-aware)
+    const segmentColors = [
+      colors.primaryBlue, '#10b981', '#8b5cf6', '#f59e0b', 
       '#ef4444', '#ec4899', '#6366f1', '#14b8a6'
     ];
     
@@ -184,7 +202,7 @@ const DashboardChartCard = ({ title, data, type }) => {
       const endAngle = startAngle + sliceAngle;
       
       ctx.beginPath();
-      ctx.fillStyle = colors[index % colors.length];
+      ctx.fillStyle = segmentColors[index % segmentColors.length];
       ctx.moveTo(centerX, centerY);
       ctx.arc(centerX, centerY, radius, startAngle, endAngle);
       ctx.closePath();
@@ -197,7 +215,7 @@ const DashboardChartCard = ({ title, data, type }) => {
       const labelY = centerY + labelRadius * Math.sin(midAngle);
       
       // Draw label
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = colors.backgroundColor;
       ctx.font = 'bold 12px Arial';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -208,7 +226,7 @@ const DashboardChartCard = ({ title, data, type }) => {
     
     // Draw center hole
     ctx.beginPath();
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = colors.backgroundColor;
     ctx.arc(centerX, centerY, radius * 0.5, 0, 2 * Math.PI);
     ctx.fill();
     
@@ -220,11 +238,11 @@ const DashboardChartCard = ({ title, data, type }) => {
       const y = legendY + index * 20;
       
       // Draw color box
-      ctx.fillStyle = colors[index % colors.length];
+      ctx.fillStyle = segmentColors[index % segmentColors.length];
       ctx.fillRect(legendX, y, 12, 12);
       
       // Draw label
-      ctx.fillStyle = '#4b5563';
+      ctx.fillStyle = colors.textColor;
       ctx.font = '10px Arial';
       ctx.textAlign = 'left';
       ctx.fillText(item.category, legendX + 18, y + 9);

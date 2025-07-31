@@ -1,32 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { quotes } from '../mock/quotes';
-import { clients } from '../mock/clients';
-import { products } from '../mock/products';
+import React, { useState } from 'react';
+import { useQuotes, useClients, useProducts } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
-import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
+import { filterBySearchTerm, sortByField, getStatusColorClass, getQuoteNumber } from '../utils/helpers';
 import VenetianTile from './VenetianTile';
 import QuotesAddModal from './QuotesAddModal'; // Import the new modal
 
 const QuotesPage = () => {
-  const [quotesList, setQuotesList] = useState([]);
-  const [clientsList, setClientsList] = useState([]);
-  const [productsList, setProductsList] = useState([]);
+  const { data: quotesList, loading: quotesLoading, error: quotesError, update: updateQuote, create: createQuote } = useQuotes();
+  const { data: clientsList, loading: clientsLoading } = useClients();
+  const { data: productsList, loading: productsLoading } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({ field: 'date', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState({ field: 'created_at', direction: 'desc' });
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [isAddQuoteModalOpen, setIsAddQuoteModalOpen] = useState(false); // State for add modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingQuote, setEditingQuote] = useState(null);
   
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setQuotesList(quotes);
-    setClientsList(clients);
-    setProductsList(products);
-  }, []);
+  if (quotesLoading || clientsLoading || productsLoading) {
+    return <div className="p-6">Cargando cotizaciones...</div>;
+  }
+
+  if (quotesError) {
+    return <div className="p-6 text-red-600">Error: {quotesError}</div>;
+  }
   
   // Combine quotes with client details
   const quotesWithDetails = quotesList.map(quote => {
-    const client = clientsList.find(c => c.id === quote.clientId) || {};
+    const client = clientsList.find(c => c.id === quote.client_id) || {};
     return {
       ...quote,
       clientName: client.name || 'Cliente Desconocido',
@@ -66,7 +67,7 @@ const QuotesPage = () => {
     const quoteWithProductDetails = {
       ...quote,
       items: quote.items.map(item => {
-        const product = productsList.find(p => p.id === item.productId) || {};
+        const product = productsList.find(p => p.id === item.product_id) || {};
         return {
           ...item,
           productName: product.name || 'Producto Desconocido',
@@ -85,18 +86,16 @@ const QuotesPage = () => {
   };
   
   // Handle status change
-  const handleStatusChange = (quoteId, newStatus) => {
-    const updatedQuotes = quotesList.map(quote => {
-      if (quote.id === quoteId) {
-        return { ...quote, status: newStatus };
+  const handleStatusChange = async (quoteId, newStatus) => {
+    try {
+      await updateQuote(quoteId, { status: newStatus });
+      
+      if (selectedQuote && selectedQuote.id === quoteId) {
+        setSelectedQuote({ ...selectedQuote, status: newStatus });
       }
-      return quote;
-    });
-    
-    setQuotesList(updatedQuotes);
-    
-    if (selectedQuote && selectedQuote.id === quoteId) {
-      setSelectedQuote({ ...selectedQuote, status: newStatus });
+    } catch (error) {
+      console.error('Error updating quote status:', error);
+      alert('Error al actualizar estado de la cotización: ' + error.message);
     }
   };
   
@@ -106,10 +105,41 @@ const QuotesPage = () => {
   };
   
   // Handle save new quote from modal
-  const handleSaveNewQuote = (newQuoteData) => {
-    const updatedQuotes = [...quotesList, { ...newQuoteData, id: quotesList.length + 1 }];
-    setQuotesList(updatedQuotes);
-    setIsAddQuoteModalOpen(false);
+  const handleSaveNewQuote = async (newQuoteData) => {
+    try {
+      await createQuote(newQuoteData);
+      setIsAddQuoteModalOpen(false);
+    } catch (error) {
+      console.error('Error creating quote:', error);
+      alert('Error al crear cotización: ' + error.message);
+    }
+  };
+
+  // Handle edit quote
+  const handleEditQuote = (quote) => {
+    setEditingQuote({ ...quote });
+    setIsEditModalOpen(true);
+  };
+
+  // Handle save edited quote
+  const handleSaveEditedQuote = async () => {
+    try {
+      await updateQuote(editingQuote.id, editingQuote);
+      setIsEditModalOpen(false);
+      setEditingQuote(null);
+    } catch (error) {
+      console.error('Error updating quote:', error);
+      alert('Error al actualizar cotización: ' + error.message);
+    }
+  };
+
+  // Handle input change for editing quote
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingQuote({
+      ...editingQuote,
+      [name]: value
+    });
   };
   
   // Get status label
@@ -208,7 +238,7 @@ const QuotesPage = () => {
       
       {/* Quotes table */}
       <VenetianTile className="overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-50">
               <tr>
@@ -218,7 +248,7 @@ const QuotesPage = () => {
                   onClick={() => handleSort('id')}
                 >
                   <div className="flex items-center">
-                    # Cotización
+                    N° Cotización
                     {sortConfig.field === 'id' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
@@ -253,11 +283,11 @@ const QuotesPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('date')}
+                  onClick={() => handleSort('created_at')}
                 >
                   <div className="flex items-center">
                     Fecha
-                    {sortConfig.field === 'date' && (
+                    {sortConfig.field === 'created_at' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -272,11 +302,11 @@ const QuotesPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('validUntil')}
+                  onClick={() => handleSort('valid_until')}
                 >
                   <div className="flex items-center">
                     Válida Hasta
-                    {sortConfig.field === 'validUntil' && (
+                    {sortConfig.field === 'valid_until' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -339,17 +369,17 @@ const QuotesPage = () => {
                   onClick={() => handleSelectQuote(quote)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">#{quote.id}</div>
+                    <div className="text-sm font-medium text-gray-900">{getQuoteNumber(quote.id)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{quote.clientName}</div>
                     <div className="text-xs text-gray-500">{quote.clientContact}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(quote.date)}</div>
+                    <div className="text-sm text-gray-900">{formatDate(quote.created_at)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(quote.validUntil)}</div>
+                    <div className="text-sm text-gray-900">{formatDate(quote.valid_until)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{formatCurrency(quote.total)}</div>
@@ -373,7 +403,7 @@ const QuotesPage = () => {
                       className="text-gray-600 hover:text-gray-900"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Handle edit action
+                        handleEditQuote(quote);
                       }}
                     >
                       Editar
@@ -392,7 +422,7 @@ const QuotesPage = () => {
           <VenetianTile className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-blue-100">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-semibold text-blue-800">Cotización #{selectedQuote.id}</h3>
+                <h3 className="text-xl font-semibold text-blue-800">Cotización {getQuoteNumber(selectedQuote.id)}</h3>
                 <button 
                   onClick={handleCloseDetails}
                   className="text-gray-400 hover:text-gray-500"
@@ -412,12 +442,12 @@ const QuotesPage = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Fecha:</span>
-                      <span className="text-blue-800 font-medium">{formatDate(selectedQuote.date)}</span>
+                      <span className="text-blue-800 font-medium">{formatDate(selectedQuote.created_at)}</span>
                     </div>
                     
                     <div className="flex justify-between">
                       <span className="text-gray-500">Válida hasta:</span>
-                      <span className="text-blue-800 font-medium">{formatDate(selectedQuote.validUntil)}</span>
+                      <span className="text-blue-800 font-medium">{formatDate(selectedQuote.valid_until)}</span>
                     </div>
                     
                     <div className="flex justify-between">
@@ -488,7 +518,7 @@ const QuotesPage = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {selectedQuote.items.map((item, index) => {
-                      const product = productsList.find(p => p.id === item.productId);
+                      const product = productsList.find(p => p.id === item.product_id);
                       return (
                         <tr key={index}>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -571,7 +601,7 @@ const QuotesPage = () => {
                 )}
                 
                 {selectedQuote.status === 'approved' && (
-                  <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                     Crear Pedido
                   </button>
                 )}
@@ -587,6 +617,87 @@ const QuotesPage = () => {
         onClose={() => setIsAddQuoteModalOpen(false)}
         onSave={handleSaveNewQuote}
       />
+
+      {/* Edit Quote Modal */}
+      {isEditModalOpen && editingQuote && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">Editar Cotización {getQuoteNumber(editingQuote.id)}</h3>
+                <button 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+                  <select
+                    name="status"
+                    value={editingQuote.status}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="pending">Pendiente</option>
+                    <option value="approved">Aprobada</option>
+                    <option value="rejected">Rechazada</option>
+                    <option value="expired">Expirada</option>
+                  </select>
+                </div>
+
+                {/* Valid Until */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Válida Hasta</label>
+                  <input
+                    type="date"
+                    name="valid_until"
+                    value={editingQuote.valid_until ? editingQuote.valid_until.split('T')[0] : ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Notas</label>
+                  <textarea
+                    name="notes"
+                    value={editingQuote.notes || ''}
+                    onChange={handleEditInputChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Notas adicionales..."
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveEditedQuote}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
     </div>
   );
 };
