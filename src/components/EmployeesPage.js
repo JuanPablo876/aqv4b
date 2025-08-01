@@ -1,34 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { employees } from '../mock/employees';
+import React, { useState } from 'react';
+import { useEmployees } from '../hooks/useData';
 import { formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import VenetianTile from './VenetianTile';
 
 const EmployeesPage = () => {
-  const [employeesList, setEmployeesList] = useState([]);
+  const { data: employeesList, loading: employeesLoading, create: createEmployee, update: updateEmployee } = useEmployees();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     role: '',
     email: '',
     phone: '',
-    hireDate: '',
+    hire_date: '',
     status: 'active',
     address: '',
-    googleMapsLink: ''
+    google_maps_link: ''
   });
-  
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setEmployeesList(employees);
-  }, []);
   
   // Filter and sort employees
   const filteredEmployees = sortByField(
-    filterBySearchTerm(employeesList, searchTerm, ['name', 'role', 'email', 'phone']),
+    filterBySearchTerm((employeesList || []), searchTerm, ['name', 'role', 'email', 'phone']),
     sortConfig.field,
     sortConfig.direction
   );
@@ -64,37 +62,85 @@ const EmployeesPage = () => {
   };
   
   // Handle save new employee
-  const handleSaveEmployee = () => {
-    const newEmployeeWithId = {
-      ...newEmployee,
-      id: employeesList.length + 1,
-      hireDate: newEmployee.hireDate || new Date().toISOString().split('T')[0]
-    };
-    
-    setEmployeesList([...employeesList, newEmployeeWithId]);
-    setIsAddModalOpen(false);
-    setNewEmployee({
-      name: '',
-      role: '',
-      email: '',
-      phone: '',
-      hireDate: '',
-      status: 'active',
-      address: '',
-      googleMapsLink: ''
-    });
+  const handleSaveEmployee = async () => {
+    try {
+      const newEmployeeData = {
+        ...newEmployee,
+        hire_date: newEmployee.hire_date || new Date().toISOString().split('T')[0]
+      };
+      
+      await createEmployee(newEmployeeData);
+      setIsAddModalOpen(false);
+      setNewEmployee({
+        name: '',
+        role: '',
+        email: '',
+        phone: '',
+        hire_date: '',
+        status: 'active',
+        address: '',
+        google_maps_link: ''
+      });
+    } catch (error) {
+      console.error('Error saving employee:', error);
+      alert('Error al guardar empleado: ' + error.message);
+    }
   };
   
   // Handle close employee details
   const handleCloseDetails = () => {
     setSelectedEmployee(null);
   };
+
+  // Handle edit employee
+  const handleEditEmployee = (employee) => {
+    setSelectedEmployee(employee);
+    setNewEmployee({ ...employee });
+    setIsEditModalOpen(true);
+  };
+
+  // Handle close edit modal
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setNewEmployee({
+      name: '',
+      role: '',
+      email: '',
+      phone: '',
+      hire_date: '',
+      status: 'active',
+      address: '',
+      google_maps_link: ''
+    });
+  };
+
+  // Handle view activity
+  const handleViewActivity = (employee) => {
+    setSelectedEmployee(employee);
+    setIsActivityModalOpen(true);
+  };
+
+  // Handle close activity modal
+  const handleCloseActivityModal = () => {
+    setIsActivityModalOpen(false);
+  };
   
   return (
     <div className="p-6">
-      {/* Header with search and add button */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-blue-800 mb-4 md:mb-0">Empleados</h2>
+      {/* Loading state */}
+      {employeesLoading && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Cargando empleados...</span>
+        </div>
+      )}
+
+      {/* Content - only show when data is loaded */}
+      {!employeesLoading && (
+        <>
+          {/* Header with search and add button */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-blue-800 mb-4 md:mb-0">Empleados</h2>
         
         <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
           <div className="relative">
@@ -146,11 +192,11 @@ const EmployeesPage = () => {
       <VenetianTile className="overflow-hidden">
         <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-blue-50">
+            <thead className="bg-blue-50 dark:bg-gray-700">
               <tr>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center">
@@ -169,7 +215,7 @@ const EmployeesPage = () => {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('role')}
                 >
                   <div className="flex items-center">
@@ -188,18 +234,18 @@ const EmployeesPage = () => {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider"
                 >
                   Contacto
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('hireDate')}
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('hire_date')}
                 >
                   <div className="flex items-center">
-                    Fecha Contratación
-                    {sortConfig.field === 'hireDate' && (
+                    Contratación
+                    {sortConfig.field === 'hire_date' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -213,7 +259,7 @@ const EmployeesPage = () => {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('status')}
                 >
                   <div className="flex items-center">
@@ -230,30 +276,30 @@ const EmployeesPage = () => {
                     )}
                   </div>
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-blue-800 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredEmployees.map((employee) => (
                 <tr 
                   key={employee.id} 
-                  className="hover:bg-blue-50 cursor-pointer"
+                  className="hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer"
                   onClick={() => handleSelectEmployee(employee)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{employee.name}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{employee.name}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{employee.role}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{employee.role}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{employee.email}</div>
-                    <div className="text-sm text-gray-500">{employee.phone}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{employee.email}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{employee.phone}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(employee.hireDate)}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{formatDate(employee.hire_date)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(employee.status)}`}>
@@ -274,7 +320,7 @@ const EmployeesPage = () => {
                       className="text-gray-600 hover:text-gray-900"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Handle edit action
+                        handleEditEmployee(employee);
                       }}
                     >
                       Editar
@@ -330,7 +376,7 @@ const EmployeesPage = () => {
                     
                     <div>
                       <p className="text-sm text-gray-500">Fecha de Contratación</p>
-                      <p className="text-blue-800">{formatDate(selectedEmployee.hireDate)}</p>
+                      <p className="text-blue-800">{formatDate(selectedEmployee.hire_date)}</p>
                     </div>
                   </div>
                 </div>
@@ -371,11 +417,17 @@ const EmployeesPage = () => {
                 <h4 className="text-lg font-medium text-blue-800 mb-4">Acciones Rápidas</h4>
                 
                 <div className="grid grid-cols-2 gap-3">
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                  <button 
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    onClick={() => handleEditEmployee(selectedEmployee)}
+                  >
                     Editar Empleado
                   </button>
                   
-                  <button className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                  <button 
+                    className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                    onClick={() => handleViewActivity(selectedEmployee)}
+                  >
                     Ver Actividad
                   </button>
                 </div>
@@ -463,8 +515,8 @@ const EmployeesPage = () => {
                   </label>
                   <input
                     type="date"
-                    name="hireDate"
-                    value={newEmployee.hireDate}
+                    name="hire_date"
+                    value={newEmployee.hire_date}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -525,6 +577,261 @@ const EmployeesPage = () => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Guardar Empleado
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
+      </>
+      )}
+
+      {/* Edit employee modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">Editar Empleado</h3>
+                <button 
+                  onClick={handleCloseEditModal}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre Completo
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={newEmployee.name}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Nombre del empleado"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cargo/Rol
+                  </label>
+                  <input
+                    type="text"
+                    name="role"
+                    value={newEmployee.role}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ej: Técnico, Supervisor"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={newEmployee.email}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="empleado@empresa.com"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={newEmployee.phone}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="+507 6000-0000"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fecha de Contratación
+                  </label>
+                  <input
+                    type="date"
+                    name="hire_date"
+                    value={newEmployee.hire_date}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estado
+                  </label>
+                  <select
+                    name="status"
+                    value={newEmployee.status}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Dirección
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  value={newEmployee.address}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="Dirección completa"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Google Maps Link (Opcional)
+                </label>
+                <input
+                  type="url"
+                  name="google_maps_link"
+                  value={newEmployee.google_maps_link}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="https://maps.google.com/..."
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={handleCloseEditModal}
+                  className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Cancelar
+                </button>
+                
+                <button
+                  onClick={async () => {
+                    try {
+                      await updateEmployee(selectedEmployee.id, newEmployee);
+                      setIsEditModalOpen(false);
+                      setSelectedEmployee(null);
+                    } catch (error) {
+                      console.error('Error updating employee:', error);
+                      alert('Error al actualizar empleado: ' + error.message);
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Actualizar Empleado
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
+
+      {/* Employee activity modal */}
+      {isActivityModalOpen && selectedEmployee && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">
+                  Actividad de {selectedEmployee.name}
+                </h3>
+                <button 
+                  onClick={handleCloseActivityModal}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6">
+                <h4 className="text-lg font-medium text-blue-800 mb-3">Actividad Reciente</h4>
+                <div className="space-y-3">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-blue-800">Mantenimiento Completado</p>
+                        <p className="text-sm text-blue-600">Sistema de aire acondicionado - Cliente ABC Corp</p>
+                      </div>
+                      <span className="text-xs text-blue-500">Hace 2 horas</span>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-gray-800">Orden de Trabajo Asignada</p>
+                        <p className="text-sm text-gray-600">Instalación de equipo nuevo - Cliente XYZ Ltd</p>
+                      </div>
+                      <span className="text-xs text-gray-500">Ayer</span>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-medium text-green-800">Capacitación Completada</p>
+                        <p className="text-sm text-green-600">Curso de seguridad industrial</p>
+                      </div>
+                      <span className="text-xs text-green-500">Hace 3 días</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <h4 className="text-lg font-medium text-blue-800 mb-3">Estadísticas del Mes</h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg text-center">
+                    <p className="text-2xl font-bold text-blue-600">12</p>
+                    <p className="text-sm text-blue-600">Trabajos Completados</p>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg text-center">
+                    <p className="text-2xl font-bold text-green-600">96%</p>
+                    <p className="text-sm text-green-600">Satisfacción Cliente</p>
+                  </div>
+                  <div className="bg-orange-50 p-4 rounded-lg text-center">
+                    <p className="text-2xl font-bold text-orange-600">42</p>
+                    <p className="text-sm text-orange-600">Horas Trabajadas</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex justify-end">
+                <button
+                  onClick={handleCloseActivityModal}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                >
+                  Cerrar
                 </button>
               </div>
             </div>

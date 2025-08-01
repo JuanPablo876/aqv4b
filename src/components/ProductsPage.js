@@ -11,6 +11,8 @@ const ProductsPage = () => {
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isPriceHistoryModalOpen, setIsPriceHistoryModalOpen] = useState(false);
+  const [selectedHistoryProduct, setSelectedHistoryProduct] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -196,7 +198,8 @@ const ProductsPage = () => {
   // Handle price history
   const handlePriceHistory = (product) => {
     console.log(`Viendo historial de precios para: ${product.name}`);
-    alert(`Funcionalidad "Historial de Precios" para ${product.name} pendiente de implementar.`);
+    setSelectedHistoryProduct(product);
+    setIsPriceHistoryModalOpen(true);
   };
   
   // Handle close product details
@@ -661,6 +664,121 @@ const ProductsPage = () => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Guardar Producto
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
+
+      {/* Price History Modal */}
+      {isPriceHistoryModalOpen && selectedHistoryProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">
+                  Historial de Precios - {selectedHistoryProduct.name}
+                </h3>
+                <button 
+                  onClick={() => setIsPriceHistoryModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Producto:</span> {selectedHistoryProduct.name}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">SKU:</span> {selectedHistoryProduct.sku}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Precio Actual:</span> {formatCurrency(selectedHistoryProduct.price)}
+                </p>
+              </div>
+
+              {/* Mock price history data */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-yellow-800 text-sm">
+                  <strong>Nota:</strong> Esta funcionalidad muestra datos de ejemplo. 
+                  En producción se conectará a los registros reales de cambios de precio.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-blue-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Precio Anterior
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Precio Nuevo
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Cambio
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Motivo
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Usuario
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {/* Mock data - replace with real price history */}
+                    {[
+                      { date: '2025-08-01', oldPrice: 3500, newPrice: 3899.99, change: 399.99, reason: 'Ajuste por inflación', user: 'Admin' },
+                      { date: '2025-07-15', oldPrice: 3200, newPrice: 3500, change: 300, reason: 'Aumento de costos de proveedor', user: 'Admin' },
+                      { date: '2025-06-01', oldPrice: 3000, newPrice: 3200, change: 200, reason: 'Actualización de precios de temporada', user: 'Admin' },
+                      { date: '2025-05-10', oldPrice: 2800, newPrice: 3000, change: 200, reason: 'Ajuste por demanda del mercado', user: 'Admin' }
+                    ].map((priceChange, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(priceChange.date).toLocaleDateString('es-ES')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {formatCurrency(priceChange.oldPrice)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {formatCurrency(priceChange.newPrice)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`text-sm font-medium ${
+                            priceChange.change > 0 ? 'text-green-600' : 'text-red-600'
+                          }`}>
+                            {priceChange.change > 0 ? '+' : ''}{formatCurrency(priceChange.change)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {priceChange.reason}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {priceChange.user}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setIsPriceHistoryModalOpen(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Cerrar
                 </button>
               </div>
             </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import VenetianTile from './VenetianTile';
-import { clients } from '../mock/clients';
+import { useData } from '../hooks/useData';
 
 const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
-  const [clientsList, setClientsList] = useState([]);
+  const { data: clientsList, loading: clientsLoading } = useData('clients');
+  
   const [newInvoice, setNewInvoice] = useState({
     clientId: '',
     rfc: '',
@@ -17,10 +18,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
     notes: ''
   });
   
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setClientsList(clients);
-  }, []);
+  const loading = clientsLoading;
   
   // Handle input change for new invoice
   const handleInputChange = (e) => {
@@ -80,6 +78,16 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
           </div>
         </div>
         
+        {loading ? (
+          <div className="p-6">
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                <p className="text-blue-600 text-sm">Cargando datos...</p>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="p-6">
           <div className="grid grid-cols-1 gap-4">
             <div>
@@ -237,6 +245,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
             </button>
           </div>
         </div>
+        )}
       </VenetianTile>
     </div>
   );

@@ -12,7 +12,9 @@ const SuppliersPage = () => {
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isPurchaseHistoryModalOpen, setIsPurchaseHistoryModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
+  const [selectedHistorySupplier, setSelectedHistorySupplier] = useState(null);
   const [newSupplier, setNewSupplier] = useState({
     name: '',
     contact_person: '', // Updated to match database field name
@@ -182,7 +184,8 @@ const SuppliersPage = () => {
   // Handle purchase history
   const handlePurchaseHistory = (supplier) => {
     console.log(`Viendo historial de compras para: ${supplier.name}`);
-    alert(`Funcionalidad "Historial de Compras" para ${supplier.name} pendiente de implementar.`);
+    setSelectedHistorySupplier(supplier);
+    setIsPurchaseHistoryModalOpen(true);
   };
   
   return (
@@ -241,11 +244,11 @@ const SuppliersPage = () => {
       <VenetianTile className="overflow-hidden">
         <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-blue-50">
+            <thead className="bg-blue-50 dark:bg-gray-700">
               <tr>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center">
@@ -264,7 +267,7 @@ const SuppliersPage = () => {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('contact_person')}
                 >
                   <div className="flex items-center">
@@ -283,13 +286,13 @@ const SuppliersPage = () => {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider"
                 >
                   Contacto
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('lead_time')}
                 >
                   <div className="flex items-center">
@@ -308,37 +311,37 @@ const SuppliersPage = () => {
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider"
                 >
                   Condiciones de Pago
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-blue-800 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredSuppliers.map((supplier) => (
                 <tr 
                   key={supplier.id} 
-                  className="hover:bg-blue-50 cursor-pointer"
+                  className="hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer"
                   onClick={() => handleSelectSupplier(supplier)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{supplier.name}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{supplier.name}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{supplier.contact_person}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{supplier.contact_person}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{supplier.email}</div>
-                    <div className="text-sm text-gray-500">{supplier.phone}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{supplier.email}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">{supplier.phone}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{supplier.lead_time} días</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{supplier.lead_time} días</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{supplier.payment_terms}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{supplier.payment_terms}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
@@ -826,6 +829,124 @@ const SuppliersPage = () => {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Actualizar Proveedor
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
+
+      {/* Purchase History Modal */}
+      {isPurchaseHistoryModalOpen && selectedHistorySupplier && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">
+                  Historial de Compras - {selectedHistorySupplier.name}
+                </h3>
+                <button 
+                  onClick={() => setIsPurchaseHistoryModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Proveedor:</span> {selectedHistorySupplier.name}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Contacto:</span> {selectedHistorySupplier.contact_person}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Teléfono:</span> {selectedHistorySupplier.phone}
+                </p>
+              </div>
+
+              {/* Mock purchase history data */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-yellow-800 text-sm">
+                  <strong>Nota:</strong> Esta funcionalidad muestra datos de ejemplo. 
+                  En producción se conectará a los registros reales de órdenes de compra y facturas del proveedor.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-blue-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        N° Orden/Factura
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Productos
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Total
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Estado
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Método de Pago
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {/* Mock data - replace with real purchase history */}
+                    {[
+                      { date: '2025-08-01', orderNumber: 'PO-2025-001', products: 'Bomba Centrífuga, Filtros (x5)', total: 15500, status: 'entregado', payment: 'Transferencia' },
+                      { date: '2025-07-20', orderNumber: 'PO-2025-002', products: 'Químicos para Piscina (x10)', total: 8900, status: 'en_transito', payment: 'Cheque' },
+                      { date: '2025-07-05', orderNumber: 'PO-2025-003', products: 'Accesorios de Limpieza', total: 3200, status: 'entregado', payment: 'Efectivo' },
+                      { date: '2025-06-15', orderNumber: 'PO-2025-004', products: 'Calentador Solar', total: 12000, status: 'entregado', payment: 'Transferencia' }
+                    ].map((purchase, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(purchase.date).toLocaleDateString('es-ES')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {purchase.orderNumber}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                          {purchase.products}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {formatCurrency(purchase.total)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            purchase.status === 'entregado' ? 'bg-green-100 text-green-800' :
+                            purchase.status === 'en_transito' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {purchase.status === 'entregado' ? 'Entregado' :
+                             purchase.status === 'en_transito' ? 'En Tránsito' : 'Pendiente'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {purchase.payment}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setIsPurchaseHistoryModalOpen(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Cerrar
                 </button>
               </div>
             </div>

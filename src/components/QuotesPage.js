@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuotes, useClients, useProducts } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass, getQuoteNumber } from '../utils/helpers';
+import { sendQuoteEmail, printQuote } from '../utils/emailPrint';
 import VenetianTile from './VenetianTile';
 import QuotesAddModal from './QuotesAddModal'; // Import the new modal
 
@@ -16,6 +17,8 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
   const [isAddQuoteModalOpen, setIsAddQuoteModalOpen] = useState(false); // State for add modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [printing, setPrinting] = useState(false);
   
   // Auto-open modal if preSelectedClient is provided
   useEffect(() => {
@@ -73,8 +76,8 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
     // Enhance quote with product details
     const quoteWithProductDetails = {
       ...quote,
-      items: quote.items.map(item => {
-        const product = productsList.find(p => p.id === item.product_id) || {};
+      items: (quote.items || []).map(item => {
+        const product = (productsList || []).find(p => p.id === item.product_id) || {};
         return {
           ...item,
           productName: product.name || 'Producto Desconocido',
@@ -159,6 +162,70 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
       ...editingQuote,
       [name]: value
     });
+  };
+
+  // Handle email quote
+  const handleEmailQuote = async (quote) => {
+    if (!quote) {
+      alert('No hay cotización seleccionada.');
+      return;
+    }
+
+    const client = clientsList.find(c => c.id === quote.client_id);
+    if (!client?.email) {
+      alert('El cliente no tiene email registrado.');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const quoteData = {
+        quote_number: quote.quote_number,
+        date: quote.date,
+        total: quote.total,
+        notes: quote.notes,
+        status: quote.status
+      };
+
+      const result = await sendQuoteEmail(quoteData, client, quote.items || []);
+      if (result.success) {
+        alert('✅ Email enviado exitosamente');
+      } else {
+        alert('❌ Error al enviar email: ' + result.message);
+      }
+    } catch (error) {
+      console.error('❌ Error sending email:', error);
+      alert('Error al enviar email: ' + error.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
+  // Handle print quote
+  const handlePrintQuote = (quote) => {
+    if (!quote) {
+      alert('No hay cotización seleccionada.');
+      return;
+    }
+
+    setPrinting(true);
+    try {
+      const client = clientsList.find(c => c.id === quote.client_id);
+      const quoteData = {
+        quote_number: quote.quote_number,
+        date: quote.date,
+        total: quote.total,
+        notes: quote.notes,
+        status: quote.status
+      };
+
+      printQuote(quoteData, client, quote.items || []);
+    } catch (error) {
+      console.error('❌ Error printing quote:', error);
+      alert('Error al imprimir: ' + error.message);
+    } finally {
+      setTimeout(() => setPrinting(false), 1000); // Reset after print dialog
+    }
   };
   
   // Get status label
@@ -259,11 +326,11 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
       <VenetianTile className="overflow-hidden">
         <div className="table-container">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-blue-50">
+            <thead className="bg-blue-50 dark:bg-gray-700">
               <tr>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
+                  className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
                   onClick={() => handleSort('id')}
                 >
                   <div className="flex items-center">
@@ -380,11 +447,11 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredQuotes.map((quote) => (
                 <tr 
                   key={quote.id} 
-                  className="hover:bg-blue-50 cursor-pointer"
+                  className="hover:bg-blue-50 dark:hover:bg-gray-700 cursor-pointer"
                   onClick={() => handleSelectQuote(quote)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -592,12 +659,44 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
               
               <div className="flex justify-between items-center">
                 <div className="flex space-x-3">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    Imprimir
+                  <button 
+                    onClick={() => handlePrintQuote(selectedQuote)}
+                    disabled={printing}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    {printing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Imprimiendo...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        </svg>
+                        <span>Imprimir</span>
+                      </>
+                    )}
                   </button>
                   
-                  <button className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                    Enviar por Email
+                  <button 
+                    onClick={() => handleEmailQuote(selectedQuote)}
+                    disabled={sendingEmail}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    {sendingEmail ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Enviando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        <span>Enviar por Email</span>
+                      </>
+                    )}
                   </button>
                 </div>
                 

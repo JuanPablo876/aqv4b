@@ -26,19 +26,8 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
 
   // Calculate dashboard data when data or date range changes
   useEffect(() => {
-    console.log('🔄 Dashboard useEffect triggered:', {
-      allLoading,
-      ordersCount: orders?.length || 0,
-      clientsCount: clients?.length || 0,
-      productsCount: products?.length || 0,
-      inventoryCount: inventory?.length || 0,
-      hasRealOrders: orders && orders.length > 0,
-      dateRange,
-      ordersData: orders?.slice(0, 2) // Show first 2 orders for debugging
-    });
-    
     if (!allLoading) {
-      console.log('🔍 Dashboard Debug - Data Ready:', {
+      console.log('🔍 Dashboard Debug:', {
         ordersCount: orders?.length || 0,
         hasRealData: orders && orders.length > 0,
         dateRange
@@ -50,7 +39,7 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
         
         // Add mock data if no real data exists
         if (workingOrders.length === 0) {
-          console.log('⚠️ Using mock data for dashboard - No real orders found');
+          console.log('⚠️ Using mock data for dashboard');
           const today = new Date();
           workingOrders = [
             {
@@ -238,13 +227,7 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
           salesValue,
           percentageChange,
           ordersTotal: workingOrders.length,
-          filteredCount: filteredOrders.length,
-          monthlySales,
-          yearlySales,
-          clientsTotal: clients.length,
-          productsTotal: products.length,
-          inventoryTotal: inventory.length,
-          usingMockData: workingOrders.length > 0 && workingOrders[0].id.includes('mock')
+          filteredCount: filteredOrders.length
         });
 
         return {
@@ -277,9 +260,7 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
         };
       };
       
-      const calculatedData = calculateDashboardData();
-      console.log('🎯 Setting dashboard data:', calculatedData.salesSummary);
-      setDashboardData(calculatedData);
+      setDashboardData(calculateDashboardData());
     }
   }, [orders, clients, products, inventory, invoices, transactions, 
       ordersLoading, clientsLoading, productsLoading, inventoryLoading, 
@@ -324,17 +305,6 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
 
   // Loading state
   if (allLoading || !dashboardData) {
-    console.log('⏳ Dashboard Loading State:', {
-      allLoading,
-      ordersLoading,
-      clientsLoading,
-      productsLoading,
-      inventoryLoading,
-      invoicesLoading,
-      transactionsLoading,
-      hasDashboardData: !!dashboardData
-    });
-    
     return (
       <div className="flex justify-center items-center h-full">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import VenetianTile from './VenetianTile';
-import { clients } from '../mock/clients';
-import { products } from '../mock/products';
+import { useData } from '../hooks/useData';
 import { calculateSubtotal, calculateDiscount, calculateTax, calculateTotal } from '../utils/helpers';
-import { formatCurrency } from '../utils/storage';
+import { formatCurrency, formatDate } from '../utils/storage';
+import { sendQuoteEmail, printQuote } from '../utils/emailPrint';
 
 const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) => {
-  const [clientsList, setClientsList] = useState([]);
-  const [productsList, setProductsList] = useState([]);
+  const { data: clientsList, loading: clientsLoading } = useData('clients');
+  const { data: productsList, loading: productsLoading } = useData('products');
+  const { data: quotesList, loading: quotesLoading } = useData('quotes');
+  
   const [newQuote, setNewQuote] = useState({
     clientId: '',
     date: new Date().toISOString().split('T')[0],
@@ -19,12 +21,13 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
   const [selectedProductToAdd, setSelectedProductToAdd] = useState('');
   const [productQuantityToAdd, setProductQuantityToAdd] = useState(1);
   const [productDiscountToAdd, setProductDiscountToAdd] = useState(0);
+  const [saving, setSaving] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  
+  const loading = clientsLoading || productsLoading;
   
   useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setClientsList(clients);
-    setProductsList(products);
-    
     // Auto-fill client if pre-selected
     if (preSelectedClient) {
       setNewQuote(prev => ({
@@ -33,6 +36,29 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
       }));
     }
   }, [preSelectedClient]);
+  
+  // Generate next sequential quote number
+  const generateNextQuoteNumber = () => {
+    if (!quotesList || quotesList.length === 0) {
+      return 'COT-001'; // First quote
+    }
+    
+    // Extract numbers from existing quote numbers and find the highest
+    const quoteNumbers = quotesList
+      .map(quote => {
+        if (!quote.quote_number) return 0;
+        const match = quote.quote_number.match(/COT-(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter(num => num > 0);
+    
+    if (quoteNumbers.length === 0) {
+      return 'COT-001'; // No valid quote numbers found
+    }
+    
+    const nextNumber = Math.max(...quoteNumbers) + 1;
+    return `COT-${nextNumber.toString().padStart(3, '0')}`;
+  };
   
   // Get product details by ID
   const getProductDetails = (productId) => {
@@ -83,28 +109,106 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
   };
   
   // Handle save quote
-  const handleSaveQuote = () => {
+  const handleSaveQuote = async () => {
     if (!newQuote.clientId || newQuote.items.length === 0 || !newQuote.validUntil) {
       alert('Por favor, selecciona un cliente, agrega al menos un producto y define la fecha de validez.');
       return;
     }
     
-    const subtotal = calculateSubtotal(newQuote.items);
-    const discount = calculateDiscount(newQuote.items);
-    const tax = calculateTax(subtotal, discount);
-    const total = subtotal - discount + tax;
+    setSaving(true);
+    try {
+      const subtotal = calculateSubtotal(newQuote.items);
+      const discount = calculateDiscount(newQuote.items);
+      const tax = calculateTax(subtotal, discount);
+      const total = subtotal - discount + tax;
+      
+      const quoteToSave = {
+        ...newQuote,
+        id: Date.now(), // Simple ID generation
+        quote_number: generateNextQuoteNumber(),
+        subtotal,
+        discount,
+        tax,
+        total
+      };
+      
+      await onSave(quoteToSave);
+      onClose();
+    } catch (error) {
+      console.error('❌ Error saving quote:', error);
+      alert('Error al guardar la cotización: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+  
+  // Get client details by ID
+  const getClientDetails = (clientId) => {
+    return (clientsList || []).find(c => c.id === parseInt(clientId)) || null;
+  };
+  
+  // Handle email quote
+  const handleEmailQuote = async () => {
+    if (!newQuote.clientId || newQuote.items.length === 0) {
+      alert('Por favor, guarda la cotización primero antes de enviarla por email.');
+      return;
+    }
     
-    const quoteToSave = {
-      ...newQuote,
-      id: Date.now(), // Simple ID generation
-      subtotal,
-      discount,
-      tax,
-      total
-    };
+    const client = getClientDetails(newQuote.clientId);
+    if (!client?.email) {
+      alert('El cliente seleccionado no tiene email registrado.');
+      return;
+    }
     
-    onSave(quoteToSave);
-    onClose();
+    setSendingEmail(true);
+    try {
+      const quoteData = {
+        quote_number: generateNextQuoteNumber(),
+        date: newQuote.date,
+        valid_until: newQuote.validUntil,
+        total: calculateTotal(newQuote.items),
+        notes: newQuote.notes
+      };
+      
+      const result = await sendQuoteEmail(quoteData, client, newQuote.items);
+      if (result.success) {
+        alert('✅ Email enviado exitosamente');
+      } else {
+        alert('❌ Error al enviar email: ' + result.message);
+      }
+    } catch (error) {
+      console.error('❌ Error sending email:', error);
+      alert('Error al enviar email: ' + error.message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+  
+  // Handle print quote
+  const handlePrintQuote = () => {
+    if (!newQuote.clientId || newQuote.items.length === 0) {
+      alert('Por favor, selecciona un cliente y agrega productos antes de imprimir.');
+      return;
+    }
+    
+    setPrinting(true);
+    try {
+      const client = getClientDetails(newQuote.clientId);
+      const quoteData = {
+        quote_number: generateNextQuoteNumber(),
+        date: newQuote.date,
+        valid_until: newQuote.validUntil,
+        total: calculateTotal(newQuote.items),
+        notes: newQuote.notes
+      };
+      
+      printQuote(quoteData, client, newQuote.items);
+    } catch (error) {
+      console.error('❌ Error printing quote:', error);
+      alert('Error al imprimir: ' + error.message);
+    } finally {
+      setTimeout(() => setPrinting(false), 1000); // Reset after print dialog
+    }
   };
   
   if (!isOpen) return null;
@@ -126,6 +230,16 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
           </div>
         </div>
         
+        {loading ? (
+          <div className="p-6">
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                <p className="text-blue-600 text-sm">Cargando datos...</p>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="p-6">
           {/* Show client info if pre-selected */}
           {preSelectedClient && (
@@ -155,7 +269,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
                 disabled={!!preSelectedClient}
               >
                 <option value="">Seleccionar Cliente...</option>
-                {clientsList.map(client => (
+                {(clientsList || []).map(client => (
                   <option key={client.id} value={client.id}>
                     {client.name} ({client.contact})
                   </option>
@@ -218,7 +332,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
                   className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Seleccionar Producto...</option>
-                  {productsList.map(product => (
+                  {(productsList || []).map(product => (
                     <option key={product.id} value={product.id}>
                       {product.name} ({formatCurrency(product.price)})
                     </option>
@@ -340,16 +454,72 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
                 Cancelar
               </button>
               
+              {/* Email Button */}
+              <button
+                onClick={handleEmailQuote}
+                disabled={!newQuote.clientId || newQuote.items.length === 0 || sendingEmail}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-green-300 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {sendingEmail ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Enviando...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <span>Email</span>
+                  </>
+                )}
+              </button>
+              
+              {/* Print Button */}
+              <button
+                onClick={handlePrintQuote}
+                disabled={!newQuote.clientId || newQuote.items.length === 0 || printing}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                {printing ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Imprimiendo...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Imprimir</span>
+                  </>
+                )}
+              </button>
+              
+              {/* Save Button */}
               <button
                 onClick={handleSaveQuote}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300"
-                disabled={!newQuote.clientId || newQuote.items.length === 0 || !newQuote.validUntil}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center space-x-2"
+                disabled={!newQuote.clientId || newQuote.items.length === 0 || !newQuote.validUntil || saving}
               >
-                Guardar Cotización
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Guardando...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    <span>Guardar Cotización</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
         </div>
+        )}
       </VenetianTile>
     </div>
   );

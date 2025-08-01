@@ -1,8 +1,8 @@
 import React from 'react';
-import { getRelativeTime, getStatusColorClass } from '../utils/helpers';
+import { getRelativeTime, getStatusColorClass, getLocalizedStatus } from '../utils/helpers';
 import VenetianTile from './VenetianTile';
 
-const DashboardRecentActivity = ({ activities, onActivityClick }) => {
+const DashboardRecentActivity = ({ activities = [], onActivityClick, onViewAll }) => {
   // Icon mapping for different activity types
   const getActivityIcon = (type) => {
     switch (type) {
@@ -51,7 +51,10 @@ const DashboardRecentActivity = ({ activities, onActivityClick }) => {
     <VenetianTile className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-blue-800 font-medium">Actividad Reciente</h3>
-        <button className="text-sm text-blue-600 hover:text-blue-800">
+        <button 
+          className="text-sm text-blue-600 hover:text-blue-800"
+          onClick={onViewAll}
+        >
           Ver todo
         </button>
       </div>
@@ -82,7 +85,7 @@ const DashboardRecentActivity = ({ activities, onActivityClick }) => {
             )}
             
             <div className={`px-2 py-1 rounded-full text-xs font-medium ml-2 ${getStatusColorClass(activity.status)}`}>
-              {activity.status}
+              {getLocalizedStatus(activity.status)}
             </div>
           </div>
         ))}

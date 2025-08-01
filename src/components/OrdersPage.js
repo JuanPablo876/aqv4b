@@ -5,8 +5,9 @@ import { filterBySearchTerm, sortByField, getStatusColorClass, getOrderNumber, g
 import { alertNewOrder } from '../utils/alerts'; // Import alert utility
 import VenetianTile from './VenetianTile';
 import OrdersAddModal from './OrdersAddModal'; // Import the new modal
+import OrdersEditModal from './OrdersEditModal';
 
-const OrdersPage = () => {
+const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => {
   const { data: ordersList, loading: ordersLoading, error: ordersError, create, update, delete: deleteOrder } = useOrders();
   const { data: clientsList, loading: clientsLoading, error: clientsError } = useClients();
   const { data: productsList, loading: productsLoading, error: productsError } = useProducts();
@@ -20,6 +21,15 @@ const OrdersPage = () => {
   const [isAssignEmployeeModalOpen, setIsAssignEmployeeModalOpen] = useState(false);
   const [selectedEmployeeForAssignment, setSelectedEmployeeForAssignment] = useState('');
   const [isAddOrderModalOpen, setIsAddOrderModalOpen] = useState(false); // State for add modal
+  const [isEditOrderModalOpen, setIsEditOrderModalOpen] = useState(false); // State for edit modal
+  const [editingOrder, setEditingOrder] = useState(null); // Order being edited
+
+  // Auto-open modal if preSelectedClient is provided
+  useEffect(() => {
+    if (preSelectedClient && !isAddOrderModalOpen) {
+      setIsAddOrderModalOpen(true);
+    }
+  }, [preSelectedClient]);
 
   // Combined loading state
   const loading = ordersLoading || clientsLoading || productsLoading || employeesLoading;
@@ -79,7 +89,7 @@ const OrdersPage = () => {
   }
   
   // Combine orders with client and employee details
-  const ordersWithDetails = ordersList.map(order => {
+  const ordersWithDetails = (ordersList || []).map(order => {
     const client = clientsList.find(c => c.id === order.client_id) || {};
     const employee = order.delivery_employee_id 
       ? employeesList.find(e => e.id === order.delivery_employee_id) || {}
@@ -121,15 +131,35 @@ const OrdersPage = () => {
   
   // Handle order selection
   const handleSelectOrder = (order) => {
+    // Check if order and order.items exist
+    if (!order) {
+      console.error('OrdersPage: handleSelectOrder called with null/undefined order');
+      return;
+    }
+
+    console.log('🔍 OrdersPage: Selected order:', order);
+    console.log('🔍 OrdersPage: Order items:', order.items);
+
     // Enhance order with product details
     const orderWithProductDetails = {
       ...order,
-      items: order.items.map(item => {
-        const product = productsList.find(p => p.id === item.productId) || {};
+      items: (order.items || []).map(item => {
+        console.log('🔍 OrdersPage: Processing item:', item);
+        const product = productsList.find(p => 
+          p.id === item.productId || 
+          p.id === item.product_id || 
+          p.id === parseInt(item.productId) || 
+          p.id === parseInt(item.product_id)
+        ) || {};
+        console.log('🔍 OrdersPage: Found product:', product);
         return {
           ...item,
+          productId: item.productId || item.product_id,
           productName: product.name || 'Producto Desconocido',
           sku: product.sku || 'N/A',
+          price: item.price || product.price || 0,
+          quantity: item.quantity || 0,
+          discount: item.discount || 0,
           category: product.category || 'N/A'
         };
       })
@@ -204,6 +234,13 @@ const OrdersPage = () => {
   // Handle add order
   const handleAddOrder = () => {
     setIsAddOrderModalOpen(true);
+  };
+  
+  // Handle edit order
+  const handleEditOrder = (order) => {
+    console.log('🔧 Editing order:', order); // Debug log
+    setEditingOrder(order);
+    setIsEditOrderModalOpen(true);
   };
   
   // Handle save new order from modal
@@ -332,11 +369,11 @@ const OrdersPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('id')}
+                  onClick={() => handleSort('date')}
                 >
                   <div className="flex items-center">
                     N° Pedido
-                    {sortConfig.field === 'id' && (
+                    {sortConfig.field === 'date' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -449,63 +486,81 @@ const OrdersPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredOrders.map((order) => (
-                <tr 
-                  key={order.id} 
-                  className="hover:bg-blue-50 cursor-pointer"
-                  onClick={() => handleSelectOrder(order)}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{getOrderNumber(order.id)}</div>
-                    {order.quoteId && (
-                      <div className="text-xs text-gray-500">Cotización: {getQuoteNumber(order.quoteId)}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{order.clientName}</div>
-                    <div className="text-xs text-gray-500">{order.clientContact}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(order.date)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{formatCurrency(order.total)}</div>
-                    {order.balance > 0 && (
-                      <div className="text-xs text-gray-500">Saldo: {formatCurrency(order.balance)}</div>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(order.status)}`}>
-                      {getStatusLabel(order.status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(order.payment_status)}`}>
-                      {getPaymentStatusLabel(order.payment_status)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button 
-                      className="text-blue-600 hover:text-blue-900 mr-3"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSelectOrder(order);
-                      }}
-                    >
-                      Ver
-                    </button>
-                    <button 
-                      className="text-gray-600 hover:text-gray-900"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Handle edit action
-                      }}
-                    >
-                      Editar
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredOrders.map((order, index) => {
+                // Generate display number based on order date and count for that day
+                const orderDate = new Date(order.date);
+                const day = orderDate.getDate().toString().padStart(2, '0');
+                const month = (orderDate.getMonth() + 1).toString().padStart(2, '0');
+                const year = orderDate.getFullYear();
+                const dateStr = `${day}${month}${year}`; // DDMMYYYY format
+                
+                // Count orders on the same date up to this index
+                const sameDate = filteredOrders.filter((o, i) => {
+                  const oDate = new Date(o.date);
+                  return oDate.toDateString() === orderDate.toDateString() && i <= index;
+                });
+                
+                const dayCount = sameDate.length;
+                const displayNumber = `AQV-${dateStr}${dayCount}`;
+                
+                return (
+                  <tr 
+                    key={order.id} 
+                    className="hover:bg-blue-50 cursor-pointer"
+                    onClick={() => handleSelectOrder(order)}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{displayNumber}</div>
+                      {order.quoteId && (
+                        <div className="text-xs text-gray-500">Cotización: {getQuoteNumber(order.quoteId)}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{order.clientName}</div>
+                      <div className="text-xs text-gray-500">{order.clientContact}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{formatDate(order.date)}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">{formatCurrency(order.total)}</div>
+                      {order.balance > 0 && (
+                        <div className="text-xs text-gray-500">Saldo: {formatCurrency(order.balance)}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(order.status)}`}>
+                        {getStatusLabel(order.status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(order.payment_status)}`}>
+                        {getPaymentStatusLabel(order.payment_status)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button 
+                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectOrder(order);
+                        }}
+                      >
+                        Ver
+                      </button>
+                      <button 
+                        className="text-gray-600 hover:text-gray-900"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditOrder(order);
+                        }}
+                      >
+                        Editar
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -657,56 +712,75 @@ const OrdersPage = () => {
               
               <h4 className="text-lg font-medium text-blue-800 mb-4">Productos</h4>
               
-              <div className="bg-blue-50 rounded-lg overflow-hidden mb-6">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-blue-100">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Producto
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Cantidad
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Precio Unitario
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Descuento
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Subtotal
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {selectedOrder.items.map((item, index) => {
-                      const product = productsList.find(p => p.id === item.productId);
-                      return (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{product?.name || 'Producto Desconocido'}</div>
-                            <div className="text-xs text-gray-500">{product?.sku || 'N/A'}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{item.quantity}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{formatCurrency(item.price)}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{formatCurrency(item.discount || 0)}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <div className="text-sm font-medium text-gray-900">
-                              {formatCurrency((item.price * item.quantity) - (item.discount || 0))}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {(selectedOrder.items || []).length > 0 ? (
+                <div className="bg-blue-50 rounded-lg overflow-hidden mb-6">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-blue-100">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Producto
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Cantidad
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Precio Unitario
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Descuento
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Subtotal
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {(selectedOrder.items || []).map((item, index) => {
+                        const product = productsList.find(p => 
+                          p.id === item.productId || 
+                          p.id === item.product_id || 
+                          p.id === parseInt(item.productId) || 
+                          p.id === parseInt(item.product_id)
+                        ) || {};
+                        return (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">{product?.name || 'Producto Desconocido'}</div>
+                              <div className="text-xs text-gray-500">{product?.sku || 'N/A'}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{item.quantity}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(item.price || product?.price || 0)}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(item.discount || 0)}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="text-sm font-medium text-gray-900">
+                                {formatCurrency(((item.price || product?.price || 0) * item.quantity) - (item.discount || 0))}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <div>
+                      <h4 className="text-yellow-800 font-medium">No hay productos en este pedido</h4>
+                      <p className="text-yellow-600 text-sm mt-1">Este pedido no tiene productos asociados o no se pudieron cargar.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               <div className="flex justify-between mb-6">
                 <div></div>
@@ -852,8 +926,38 @@ const OrdersPage = () => {
       {/* Add Order Modal */}
       <OrdersAddModal 
         isOpen={isAddOrderModalOpen}
-        onClose={() => setIsAddOrderModalOpen(false)}
+        onClose={() => {
+          setIsAddOrderModalOpen(false);
+          // Clear pre-selected client after modal close
+          if (setSelectedClientForOrder) {
+            setSelectedClientForOrder(null);
+          }
+        }}
         onSave={handleSaveNewOrder}
+        preSelectedClient={preSelectedClient}
+      />
+      
+      {/* Edit Order Modal */}
+      <OrdersEditModal 
+        isOpen={isEditOrderModalOpen}
+        onClose={() => {
+          console.log('🔒 Closing edit modal'); // Debug log
+          setIsEditOrderModalOpen(false);
+          setEditingOrder(null);
+        }}
+        onSave={async (updatedOrder) => {
+          try {
+            console.log('💾 Saving updated order:', updatedOrder); // Debug log
+            await update(editingOrder.id, updatedOrder);
+            setIsEditOrderModalOpen(false);
+            setEditingOrder(null);
+            alert('✅ Pedido actualizado exitosamente');
+          } catch (error) {
+            console.error('❌ Error updating order:', error);
+            alert('❌ Error al actualizar pedido: ' + error.message);
+          }
+        }}
+        editingOrder={editingOrder}
       />
     </div>
   );

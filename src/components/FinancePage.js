@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { bankAccounts, cashBoxes, transactions } from '../mock/finance';
-import { invoices } from '../mock/invoices'; // Import invoices
+import React, { useState } from 'react';
+import { useData } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass, getOrderNumber } from '../utils/helpers';
 import { exportToTextForExcel } from '../utils/export'; // Import export utility
@@ -8,43 +7,37 @@ import VenetianTile from './VenetianTile';
 import FinanceAddInvoiceModal from './FinanceAddInvoiceModal'; // Import the new modal
 
 const FinancePage = () => {
-  const [bankAccountsList, setBankAccountsList] = useState([]);
-  const [cashBoxesList, setCashBoxesList] = useState([]);
-  const [transactionsList, setTransactionsList] = useState([]);
-  const [invoicesList, setInvoicesList] = useState([]); // State for invoices
+  const { data: bankAccountsList, loading: bankAccountsLoading } = useData('bankAccounts');
+  const { data: cashBoxesList, loading: cashBoxesLoading } = useData('cashBoxes');
+  const { data: transactionsList, loading: transactionsLoading, create: createTransaction } = useData('transactions');
+  const { data: invoicesList, loading: invoicesLoading, create: createInvoice } = useData('invoices');
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'date', direction: 'desc' });
   const [typeFilter, setTypeFilter] = useState('');
   const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
   const [isAddInvoiceModalOpen, setIsAddInvoiceModalOpen] = useState(false); // State for add invoice modal
+  const [isViewTransactionModalOpen, setIsViewTransactionModalOpen] = useState(false); // State for view transaction modal
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [newTransaction, setNewTransaction] = useState({
     date: new Date().toISOString().split('T')[0],
-    type: 'income',
+    transaction_type: 'income',
     category: '',
     description: '',
     amount: '',
     currency: 'MXN',
-    source: 'bank',
-    accountId: '',
-    cashBoxId: '',
-    orderId: '',
+    account_type: 'bank',
+    account_id: '',
+    reference_document: '',
     notes: ''
   });
-  
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setBankAccountsList(bankAccounts);
-    setCashBoxesList(cashBoxes);
-    setTransactionsList(transactions);
-    setInvoicesList(invoices); // Load invoices
-  }, []);
   
   // Filter and sort transactions
   const filteredTransactions = sortByField(
     filterBySearchTerm(
       typeFilter 
-        ? transactionsList.filter(transaction => transaction.type === typeFilter)
-        : transactionsList, 
+        ? (transactionsList || []).filter(transaction => transaction.transaction_type === typeFilter)
+        : (transactionsList || []), 
       searchTerm, 
       ['category', 'description', 'notes']
     ),
@@ -90,59 +83,33 @@ const FinancePage = () => {
   };
   
   // Handle save new transaction
-  const handleSaveTransaction = (transactionData) => {
-     const newTransactionWithId = {
-      ...transactionData,
-      id: transactionsList.length + 1,
-      amount: parseFloat(transactionData.amount) || 0,
-      accountId: transactionData.source === 'bank' ? parseInt(transactionData.accountId) : null,
-      cashBoxId: transactionData.source === 'cash' ? parseInt(transactionData.cashBoxId) : null,
-      orderId: transactionData.orderId ? parseInt(transactionData.orderId) : null
-    };
-    
-    // Update balances (simplified logic)
-    const updatedBankAccounts = bankAccountsList.map(account => {
-      if (account.id === newTransactionWithId.accountId) {
-        return {
-          ...account,
-          balance: newTransactionWithId.type === 'income' 
-            ? account.balance + newTransactionWithId.amount 
-            : account.balance - newTransactionWithId.amount
-        };
-      }
-      return account;
-    });
-    
-    const updatedCashBoxes = cashBoxesList.map(box => {
-      if (box.id === newTransactionWithId.cashBoxId) {
-        return {
-          ...box,
-          balance: newTransactionWithId.type === 'income' 
-            ? box.balance + newTransactionWithId.amount 
-            : box.balance - newTransactionWithId.amount,
-          lastUpdated: new Date().toISOString().split('T')[0]
-        };
-      }
-      return box;
-    });
-    
-    setBankAccountsList(updatedBankAccounts);
-    setCashBoxesList(updatedCashBoxes);
-    setTransactionsList([...transactionsList, newTransactionWithId]);
-    setIsAddTransactionModalOpen(false);
-    setNewTransaction({
-      date: new Date().toISOString().split('T')[0],
-      type: 'income',
-      category: '',
-      description: '',
-      amount: '',
-      currency: 'MXN',
-      source: 'bank',
-      accountId: '',
-      cashBoxId: '',
-      orderId: '',
-      notes: ''
-    });
+  const handleSaveTransaction = async (transactionData) => {
+    try {
+      const newTransactionData = {
+        ...transactionData,
+        amount: parseFloat(transactionData.amount) || 0,
+        account_id: transactionData.account_type === 'bank' ? transactionData.account_id : null,
+        status: 'completed'
+      };
+      
+      await createTransaction(newTransactionData);
+      setIsAddTransactionModalOpen(false);
+      // Reset form
+      setNewTransaction({
+        date: new Date().toISOString().split('T')[0],
+        transaction_type: 'income',
+        category: '',
+        description: '',
+        amount: '',
+        account_type: 'bank',
+        account_id: '',
+        reference_document: '',
+        notes: ''
+      });
+    } catch (error) {
+      console.error('Error saving transaction:', error);
+      alert('Error al guardar transacción: ' + error.message);
+    }
   };
   
   // Handle save new invoice from modal
@@ -201,12 +168,44 @@ const FinancePage = () => {
     }));
     exportToTextForExcel(dataToExport, 'facturas_notas');
   };
+
+  // Handle view transaction
+  const handleViewTransaction = (transaction) => {
+    setSelectedTransaction(transaction);
+    setIsViewTransactionModalOpen(true);
+  };
+
+  // Handle delete transaction
+  const handleDeleteTransaction = async (transactionId) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta transacción?')) {
+      try {
+        // In a real app, you would call a delete API here
+        // await deleteTransaction(transactionId);
+        alert('Funcionalidad "Eliminar Transacción" pendiente de implementar en la API');
+        console.log('Deleting transaction:', transactionId);
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+        alert('Error al eliminar la transacción: ' + error.message);
+      }
+    }
+  };
   
   return (
     <div className="p-6">
-      {/* Header with search, filter and add button */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-blue-800 mb-4 md:mb-0">Finanzas</h2>
+      {/* Loading state */}
+      {(bankAccountsLoading || cashBoxesLoading || transactionsLoading || invoicesLoading) && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Cargando datos financieros...</span>
+        </div>
+      )}
+
+      {/* Content - only show when data is loaded */}
+      {!(bankAccountsLoading || cashBoxesLoading || transactionsLoading || invoicesLoading) && (
+        <>
+          {/* Header with search, filter and add button */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-blue-800 mb-4 md:mb-0">Finanzas</h2>
         
         <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
           <div className="relative">
@@ -464,13 +463,13 @@ const FinancePage = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
                       className="text-blue-600 hover:text-blue-900 mr-3"
-                      // onClick={() => handleViewTransaction(transaction)}
+                      onClick={() => handleViewTransaction(transaction)}
                     >
                       Ver
                     </button>
                     <button 
-                      className="text-gray-600 hover:text-gray-900"
-                      // onClick={() => handleDeleteTransaction(transaction.id)}
+                      className="text-red-600 hover:text-red-900"
+                      onClick={() => handleDeleteTransaction(transaction.id)}
                     >
                       Eliminar
                     </button>
@@ -875,9 +874,107 @@ const FinancePage = () => {
         onClose={() => setIsAddInvoiceModalOpen(false)}
         onSave={handleSaveInvoice}
       />
+
+      {/* View Transaction Modal */}
+      {isViewTransactionModalOpen && selectedTransaction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">
+                  Detalles de Transacción
+                </h3>
+                <button 
+                  onClick={() => setIsViewTransactionModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Fecha</p>
+                  <p className="font-medium text-gray-900">{formatDate(selectedTransaction.date)}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Tipo</p>
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    selectedTransaction.transaction_type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedTransaction.transaction_type === 'income' ? 'Ingreso' : 'Gasto'}
+                  </span>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Categoría</p>
+                  <p className="font-medium text-gray-900">{selectedTransaction.category}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Monto</p>
+                  <p className="font-medium text-gray-900">{formatCurrency(selectedTransaction.amount)}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Moneda</p>
+                  <p className="font-medium text-gray-900">{selectedTransaction.currency}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Tipo de Cuenta</p>
+                  <p className="font-medium text-gray-900">
+                    {selectedTransaction.account_type === 'bank' ? 'Cuenta Bancaria' : 'Caja'}
+                  </p>
+                </div>
+                
+                {selectedTransaction.reference_document && (
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-600 mb-1">Documento de Referencia</p>
+                    <p className="font-medium text-gray-900">{selectedTransaction.reference_document}</p>
+                  </div>
+                )}
+                
+                <div className="md:col-span-2">
+                  <p className="text-sm text-gray-600 mb-1">Descripción</p>
+                  <p className="font-medium text-gray-900">{selectedTransaction.description}</p>
+                </div>
+                
+                {selectedTransaction.notes && (
+                  <div className="md:col-span-2">
+                    <p className="text-sm text-gray-600 mb-1">Notas</p>
+                    <p className="font-medium text-gray-900">{selectedTransaction.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => setIsViewTransactionModalOpen(false)}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={() => handleDeleteTransaction(selectedTransaction.id)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Eliminar Transacción
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
+        </>
+      )}
     </div>
   );
 };
 
 export default FinancePage;
-// DONE

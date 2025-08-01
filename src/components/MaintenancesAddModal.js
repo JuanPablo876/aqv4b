@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import VenetianTile from './VenetianTile';
-import { clients } from '../mock/clients';
-import { employees } from '../mock/employees';
+import { useData } from '../hooks/useData';
 
 const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
-  const [clientsList, setClientsList] = useState([]);
-  const [employeesList, setEmployeesList] = useState([]);
+  const { data: clientsList, loading: clientsLoading } = useData('clients');
+  const { data: employeesList, loading: employeesLoading } = useData('employees');
+  
   const [newMaintenance, setNewMaintenance] = useState({
     clientId: '',
     address: '',
@@ -18,11 +18,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
     notes: ''
   });
   
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setClientsList(clients);
-    setEmployeesList(employees);
-  }, []);
+  const loading = clientsLoading || employeesLoading;
   
   // Handle input change for new maintenance
   const handleInputChange = (e) => {
@@ -81,6 +77,16 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
           </div>
         </div>
         
+        {loading ? (
+          <div className="p-6">
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                <p className="text-blue-600 text-sm">Cargando datos...</p>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="p-6">
           <div className="grid grid-cols-1 gap-4">
             <div>
@@ -94,7 +100,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Seleccionar Cliente...</option>
-                {clientsList.map(client => (
+                {(clientsList || []).map(client => (
                   <option key={client.id} value={client.id}>
                     {client.name}
                   </option>
@@ -232,6 +238,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
             </button>
           </div>
         </div>
+        )}
       </VenetianTile>
     </div>
   );

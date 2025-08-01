@@ -1,30 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import VenetianTile from './VenetianTile';
-import { products } from '../mock/products';
-import { suppliers } from '../mock/suppliers';
+import { useData } from '../hooks/useData';
 import { DEFAULT_PRODUCT_IMAGE } from '../utils/placeholders';
 import { ValidatedForm, ToastContainer } from './forms/ValidatedForm';
 import { productSchema } from '../schemas/validationSchemas';
 import { useToast } from '../hooks/useToast';
 
 const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
-  const [productsList, setProductsList] = useState([]);
-  const [suppliersList, setSuppliersList] = useState([]);
+  const { data: productsList, loading: productsLoading } = useData('products');
+  const { data: suppliersList, loading: suppliersLoading } = useData('suppliers');
   const { toasts, removeToast } = useToast();
   
-  useEffect(() => {
-    setProductsList(products);
-    setSuppliersList(suppliers);
-  }, []);
+  const loading = productsLoading || suppliersLoading;
   
   // Get unique categories for filter
-  const categories = [...new Set(productsList.map(product => product.category))];
+  const categories = productsList ? [...new Set(productsList.map(product => product.category))] : [];
   
   // Get supplier options
-  const supplierOptions = suppliersList.map(supplier => ({
+  const supplierOptions = suppliersList ? suppliersList.map(supplier => ({
     value: supplier.id.toString(),
     label: supplier.name
-  }));
+  })) : [];
   
   // Get category options
   const categoryOptions = categories.map(category => ({
@@ -82,6 +78,16 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
             </div>
           </div>
           
+          {loading ? (
+            <div className="p-6">
+              <div className="flex items-center justify-center h-32">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                  <p className="text-blue-600 text-sm">Cargando datos...</p>
+                </div>
+              </div>
+            </div>
+          ) : (
           <div className="p-6">
             <ValidatedForm
               schema={productSchema}
@@ -223,6 +229,7 @@ const ProductsAddModal = ({ isOpen, onClose, onSave }) => {
               )}
             </ValidatedForm>
           </div>
+          )}
         </VenetianTile>
       </div>
       

@@ -86,10 +86,10 @@ const Toast = ({ message, type = 'info', duration = 3000, onClose }) => {
 };
 
 // Toast container component
-export const ToastContainer = ({ toasts, removeToast }) => {
+export const ToastContainer = ({ toasts = [], removeToast }) => {
   return (
     <div className="fixed top-0 right-0 p-4 space-y-4 z-50">
-      {toasts.map((toast) => (
+      {(toasts || []).map((toast) => (
         <Toast
           key={toast.id}
           message={toast.message}

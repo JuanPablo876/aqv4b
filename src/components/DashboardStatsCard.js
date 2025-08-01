@@ -29,7 +29,10 @@ const DashboardStatsCard = ({ title, value, change, icon, color, onClick }) => {
   const classes = colorClasses[color] || colorClasses.blue;
   
   // Determine if change is positive or negative
-  const isPositive = change >= 0;
+  // Handle both number and string formats for change
+  const isPositive = typeof change === 'string' 
+    ? change.startsWith('+') || (!change.startsWith('-') && parseFloat(change) >= 0)
+    : change >= 0;
   
   return (
     <VenetianTile className={`p-6 cursor-pointer ${onClick ? 'hover:shadow-lg transition-shadow' : ''}`} onClick={onClick}>
@@ -41,7 +44,7 @@ const DashboardStatsCard = ({ title, value, change, icon, color, onClick }) => {
           {change !== undefined && (
             <div className="flex items-center mt-2">
               <span className={`text-xs font-medium ${isPositive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {isPositive ? '+' : ''}{change}%
+                {typeof change === 'string' ? change : `${isPositive ? '+' : ''}${change}%`}
               </span>
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 

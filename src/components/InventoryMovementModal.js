@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import VenetianTile from './VenetianTile';
-import { products } from '../mock/products';
-import { inventory } from '../mock/inventory';
+import { useData } from '../hooks/useData';
 
 const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
-  const [productsList, setProductsList] = useState([]);
-  const [inventoryList, setInventoryList] = useState([]);
+  const { data: productsList, loading: productsLoading } = useData('products');
+  const { data: inventoryList, loading: inventoryLoading } = useData('inventory');
+  
   const [newMovement, setNewMovement] = useState({
     productId: '',
     location: '',
@@ -15,14 +15,10 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
     notes: ''
   });
   
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setProductsList(products);
-    setInventoryList(inventory);
-  }, []);
+  const loading = productsLoading || inventoryLoading;
   
   // Get unique locations for dropdown
-  const locations = [...new Set(inventoryList.map(item => item.location))];
+  const locations = inventoryList ? [...new Set(inventoryList.map(item => item.location))] : [];
   
   // Handle input change for new movement
   const handleInputChange = (e) => {
@@ -70,6 +66,16 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
           </div>
         </div>
         
+        {loading ? (
+          <div className="p-6">
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                <p className="text-blue-600 text-sm">Cargando datos...</p>
+              </div>
+            </div>
+          </div>
+        ) : (
         <div className="p-6">
           <div className="grid grid-cols-1 gap-4">
             <div>
@@ -183,6 +189,7 @@ const InventoryMovementModal = ({ isOpen, onClose, onSave }) => {
             </button>
           </div>
         </div>
+        )}
       </VenetianTile>
     </div>
   );

@@ -17,6 +17,7 @@ import ReportsPage from './components/ReportsPage';
 import SettingsPage from './components/SettingsPage';
 import UserProfilePage from './components/UserProfilePage';
 import InvitationManagement from './components/InvitationManagement';
+import DatabaseTest from './components/DatabaseTest';
 import VenetianBackground from './components/VenetianBackground';
 import ModuleSidebar from './components/ModuleSidebar';
 import { isStorageAvailable } from './utils/storage';
@@ -55,6 +56,7 @@ export default function Dashboard() {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedMaintenance, setSelectedMaintenance] = useState(null);
   const [selectedClientForQuote, setSelectedClientForQuote] = useState(null);
+  const [selectedClientForOrder, setSelectedClientForOrder] = useState(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
@@ -109,7 +111,8 @@ export default function Dashboard() {
     reports: 'Reportes',
     settings: 'Configuración',
     profile: 'Mi Perfil',
-    invitations: 'Gestión de Invitaciones'
+    invitations: 'Gestión de Invitaciones',
+    dbtest: 'Database Test'
   };
 
   // Development utilities - available in browser console
@@ -175,7 +178,7 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
           />
         );
       case 'clients':
-        return <ClientsPage setActivePage={setActivePage} setSelectedClientForQuote={setSelectedClientForQuote} />;
+        return <ClientsPage setActivePage={setActivePage} setSelectedClientForQuote={setSelectedClientForQuote} setSelectedClientForOrder={setSelectedClientForOrder} />;
       case 'products':
         return (
           <ProductsPage 
@@ -206,6 +209,8 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
             setSelectedOrder={setSelectedOrder}
             showModal={showOrderModal}
             setShowModal={setShowOrderModal}
+            preSelectedClient={selectedClientForOrder}
+            setSelectedClientForOrder={setSelectedClientForOrder}
           />
         );
       case 'maintenances':
@@ -236,6 +241,8 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
         return <UserProfilePage session={session} />;
       case 'invitations':
         return <InvitationManagement />;
+      case 'dbtest':
+        return <DatabaseTest />;
       default:
         return (
           <div>

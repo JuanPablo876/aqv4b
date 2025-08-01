@@ -181,6 +181,7 @@ const DashboardChartCard = ({ title, data, type }) => {
   
   const drawDoughnutChart = (ctx, data, width, height) => {
     const colors = getThemeColors();
+    const isDark = document.documentElement.classList.contains('dark');
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.min(width, height) / 2 - 40;
@@ -189,9 +190,12 @@ const DashboardChartCard = ({ title, data, type }) => {
     const total = data.reduce((sum, item) => sum + item.percentage, 0);
     
     // Colors for segments (theme-aware)
-    const segmentColors = [
+    const segmentColors = isDark ? [
       colors.primaryBlue, '#10b981', '#8b5cf6', '#f59e0b', 
       '#ef4444', '#ec4899', '#6366f1', '#14b8a6'
+    ] : [
+      colors.primaryBlue, '#059669', '#7c3aed', '#d97706', 
+      '#dc2626', '#db2777', '#4f46e5', '#0f766e'
     ];
     
     let startAngle = -0.5 * Math.PI; // Start at top

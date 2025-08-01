@@ -343,6 +343,26 @@ CREATE TABLE IF NOT EXISTS transactions (
 );
 
 -- ============================================================================
+-- INVITATIONS TABLE
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS invitations (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  email VARCHAR(255) NOT NULL,
+  role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'manager', 'employee')),
+  invited_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired', 'cancelled')),
+  expires_at TIMESTAMP WITH TIME ZONE DEFAULT (NOW() + INTERVAL '7 days'),
+  email_sent_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create unique index to prevent duplicate pending invitations for same email
+CREATE UNIQUE INDEX IF NOT EXISTS invitations_email_pending_unique 
+ON invitations (email) 
+WHERE status = 'pending';
+
+-- ============================================================================
 -- INDEXES FOR BETTER PERFORMANCE
 -- ============================================================================
 
@@ -384,6 +404,11 @@ CREATE INDEX IF NOT EXISTS idx_invoices_date ON invoices(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_type ON transactions(transaction_type);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account_id, account_type);
+
+-- Invitations indexes
+CREATE INDEX IF NOT EXISTS idx_invitations_email ON invitations(email);
+CREATE INDEX IF NOT EXISTS idx_invitations_status ON invitations(status);
+CREATE INDEX IF NOT EXISTS idx_invitations_invited_by ON invitations(invited_by);
 
 -- ============================================================================
 -- TRIGGERS FOR AUTO-UPDATING TIMESTAMPS
@@ -432,6 +457,9 @@ CREATE TRIGGER update_bank_accounts_updated_at BEFORE UPDATE ON bank_accounts
 CREATE TRIGGER update_transactions_updated_at BEFORE UPDATE ON transactions
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_invitations_updated_at BEFORE UPDATE ON invitations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- ============================================================================
 -- ROW LEVEL SECURITY (RLS) SETUP
 -- ============================================================================
@@ -452,6 +480,7 @@ ALTER TABLE maintenances ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bank_accounts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cash_boxes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE invitations ENABLE ROW LEVEL SECURITY;
 
 -- Basic RLS policies (allow all for authenticated users - customize as needed)
 -- You may want to create more specific policies based on user roles
@@ -499,6 +528,9 @@ CREATE POLICY "Allow all for authenticated users" ON cash_boxes
   FOR ALL USING (auth.role() = 'authenticated');
 
 CREATE POLICY "Allow all for authenticated users" ON transactions
+  FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Allow all for authenticated users" ON invitations
   FOR ALL USING (auth.role() = 'authenticated');
 
 -- ============================================================================

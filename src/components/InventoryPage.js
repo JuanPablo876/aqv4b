@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { inventory } from '../mock/inventory';
-import { products } from '../mock/products';
+import { useInventory, useProducts } from '../hooks/useData';
 import { formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import VenetianTile from './VenetianTile';
@@ -9,40 +8,37 @@ import InventoryMovementModal from './InventoryMovementModal'; // Import the new
 import ProductsAddModal from './ProductsAddModal'; // Import the ProductsAddModal
 
 const InventoryPage = () => {
-  const [inventoryList, setInventoryList] = useState([]);
-  const [productsList, setProductsList] = useState([]);
+  const { data: inventoryList, loading: inventoryLoading } = useInventory();
+  const { data: productsList, loading: productsLoading } = useProducts();
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({ field: 'lastUpdated', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState({ field: 'last_updated', direction: 'desc' });
   const [locationFilter, setLocationFilter] = useState('');
   const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [isMovementModalOpen, setIsMovementModalOpen] = useState(false); // State for movement modal
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false); // State for add product modal
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false); // State for history modal
   const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
   const [adjustmentData, setAdjustmentData] = useState({
     quantity: '',
     reason: '',
     notes: ''
   });
   
-  useEffect(() => {
-    // In a real app, this would be an API call or localStorage
-    setInventoryList(inventory);
-    setProductsList(products);
-  }, []);
-  
   // Get unique locations for filter
-  const locations = [...new Set(inventoryList.map(item => item.location))];
+  const locations = [...new Set((inventoryList || []).map(item => item.location))];
   
   // Combine inventory with product details
-  const inventoryWithProducts = inventoryList.map(item => {
-    const product = productsList.find(p => p.id === item.productId) || {};
+  const inventoryWithProducts = (inventoryList || []).map(item => {
+    const product = (productsList || []).find(p => p.id === item.product_id) || {};
     return {
       ...item,
       productName: product.name || 'Producto Desconocido',
       sku: product.sku || 'N/A',
       category: product.category || 'N/A',
-      minStock: product.minStock || 0,
-      status: item.quantity <= (product.minStock || 0) ? 'low' : 'ok'
+      minStock: item.min_stock || 0,
+      status: item.quantity <= (item.min_stock || 0) ? 'low' : 'ok'
     };
   });
   
@@ -97,7 +93,7 @@ const InventoryPage = () => {
         return {
           ...item,
           quantity: parseInt(adjustmentData.quantity),
-          lastUpdated: new Date().toISOString().split('T')[0],
+          last_updated: new Date().toISOString(),
           notes: adjustmentData.notes
         };
       }
@@ -144,15 +140,26 @@ const InventoryPage = () => {
   // Handle view inventory history
   const handleViewHistory = (item) => {
     console.log(`Viendo historial de movimientos para: ${item.product_name}`);
-    // In a real app, this would show inventory movement history for this item
-    alert(`Funcionalidad "Ver Historial" para ${item.product_name} pendiente de implementar.`);
+    setSelectedHistoryItem(item);
+    setIsHistoryModalOpen(true);
   };
   
   return (
     <div className="p-6">
-      {/* Header with search, filter and add button */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-blue-800 mb-4 md:mb-0">Inventario</h2>
+      {/* Loading state */}
+      {(inventoryLoading || productsLoading) && (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <span className="ml-3 text-gray-600">Cargando inventario...</span>
+        </div>
+      )}
+
+      {/* Content - only show when data is loaded */}
+      {!inventoryLoading && !productsLoading && (
+        <>
+          {/* Header with search, filter and add button */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+            <h2 className="text-2xl font-semibold text-blue-800 mb-4 md:mb-0">Inventario</h2>
         
         <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-3">
           <div className="relative">
@@ -283,8 +290,8 @@ const InventoryPage = () => {
       {/* Inventory table */}
       <VenetianTile className="overflow-hidden">
         <div className="table-container">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-blue-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-blue-50 dark:bg-gray-700">
               <tr>
                 <th 
                   scope="col" 
@@ -365,11 +372,11 @@ const InventoryPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('lastUpdated')}
+                  onClick={() => handleSort('last_updated')}
                 >
                   <div className="flex items-center">
                     Última Actualización
-                    {sortConfig.field === 'lastUpdated' && (
+                    {sortConfig.field === 'last_updated' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -410,7 +417,7 @@ const InventoryPage = () => {
                     <div className="text-xs text-gray-500">Mín: {item.minStock}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(item.lastUpdated)}</div>
+                    <div className="text-sm text-gray-900">{formatDate(item.last_updated)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -432,7 +439,7 @@ const InventoryPage = () => {
                       Ajustar
                     </button>
                     <button 
-                      className="text-gray-600 hover:text-gray-900"
+                      className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
                       onClick={() => handleViewHistory(item)}
                     >
                       Historial
@@ -558,9 +565,130 @@ const InventoryPage = () => {
         onClose={() => setIsAddProductModalOpen(false)}
         onSave={handleSaveNewProduct}
       />
+
+      {/* Inventory History Modal */}
+      {isHistoryModalOpen && selectedHistoryItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">
+                  Historial de Movimientos - {selectedHistoryItem.product_name}
+                </h3>
+                <button 
+                  onClick={() => setIsHistoryModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Producto:</span> {selectedHistoryItem.product_name}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">SKU:</span> {selectedHistoryItem.sku}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Ubicación:</span> {selectedHistoryItem.location}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Stock Actual:</span> {selectedHistoryItem.quantity}
+                </p>
+              </div>
+
+              {/* Mock history data - in a real app this would come from database */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-yellow-800 text-sm">
+                  <strong>Nota:</strong> Esta funcionalidad muestra datos de ejemplo. 
+                  En producción se conectará a los registros reales de movimientos de inventario.
+                </p>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-blue-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Fecha
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Tipo de Movimiento
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Cantidad
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Stock Anterior
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Stock Nuevo
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                        Motivo
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {/* Mock data - replace with real movement history */}
+                    {[
+                      { date: '2025-08-01', type: 'Entrada', quantity: 50, previousStock: 100, newStock: 150, reason: 'Compra a proveedor' },
+                      { date: '2025-07-28', type: 'Salida', quantity: -25, previousStock: 125, newStock: 100, reason: 'Venta a cliente' },
+                      { date: '2025-07-25', type: 'Ajuste', quantity: 5, previousStock: 120, newStock: 125, reason: 'Corrección de inventario' },
+                      { date: '2025-07-20', type: 'Salida', quantity: -30, previousStock: 150, newStock: 120, reason: 'Pedido #ORD-001234' }
+                    ].map((movement, index) => (
+                      <tr key={index}>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(movement.date).toLocaleDateString('es-ES')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            movement.type === 'Entrada' ? 'bg-green-100 text-green-800' :
+                            movement.type === 'Salida' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {movement.type}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {movement.quantity > 0 ? '+' : ''}{movement.quantity}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {movement.previousStock}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {movement.newStock}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {movement.reason}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setIsHistoryModalOpen(false)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
+        </>
+      )}
     </div>
   );
 };
 
 export default InventoryPage;
-// DONE

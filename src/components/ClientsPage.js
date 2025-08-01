@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useClients } from '../hooks/useData';
+import { useData } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import VenetianTile from './VenetianTile';
+import HistoryModal, { historyColumns } from './HistoryModal';
 
-const ClientsPage = ({ setActivePage, setSelectedClientForQuote }) => {
+const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClientForOrder }) => {
   const { data: clientsList, loading, error, create, update, delete: deleteClient } = useClients();
+  const { data: ordersList, loading: ordersLoading } = useData('orders');
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
   const [selectedClient, setSelectedClient] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [historyData, setHistoryData] = useState([]);
+  const [historyTitle, setHistoryTitle] = useState('');
   const [newClient, setNewClient] = useState({
     name: '',
     contact: '',
@@ -172,6 +179,25 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote }) => {
       ...editingClient,
       [name]: value
     });
+  };
+  
+  // Handle view order history
+  const handleViewOrderHistory = (client) => {
+    if (!client) return;
+    
+    // Filter orders for this specific client
+    const clientOrders = (ordersList || []).filter(order => order.client_id === client.id);
+    
+    console.log(`📊 Loading order history for ${client.name}:`, {
+      clientId: client.id,
+      totalOrders: ordersList?.length || 0,
+      clientOrders: clientOrders.length,
+      orders: clientOrders.slice(0, 3) // Show first 3 for debugging
+    });
+    
+    setHistoryData(clientOrders);
+    setHistoryTitle(`Historial de Pedidos - ${client.name}`);
+    setIsHistoryModalOpen(true);
   };
   
   return (
@@ -549,7 +575,10 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote }) => {
                       <button 
                         className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
                         onClick={() => {
-                          // Navigate to orders page with client pre-selected
+                          // Set the selected client and navigate to orders page
+                          if (setSelectedClientForOrder) {
+                            setSelectedClientForOrder(selectedClient);
+                          }
                           if (setActivePage) {
                             setActivePage('orders');
                           } else {
@@ -561,11 +590,8 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote }) => {
                       </button>
                       
                       <button 
-                        className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-                        onClick={() => {
-                          // Show order history for this client
-                          alert('Funcionalidad en desarrollo: Historial de Pedidos para ' + selectedClient.name);
-                        }}
+                        className="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                        onClick={() => handleViewOrderHistory(selectedClient)}
                       >
                         Historial de Pedidos
                       </button>
@@ -889,6 +915,17 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote }) => {
           </VenetianTile>
         </div>
       )}
+      
+      {/* Order History Modal */}
+      <HistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        title={historyTitle}
+        data={historyData}
+        columns={historyColumns.orders}
+        loading={ordersLoading}
+        emptyMessage="Este cliente no tiene pedidos registrados"
+      />
     </div>
   );
 };

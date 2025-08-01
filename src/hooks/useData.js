@@ -2,6 +2,7 @@
 // Provides easy access to CRUD operations with automatic re-rendering
 import { useState, useEffect, useCallback } from 'react';
 import databaseService from '../services/databaseService';
+import { supabase } from '../supabaseClient';
 
 export const useData = (entity, options = {}) => {
   const [data, setData] = useState([]);
@@ -26,6 +27,8 @@ export const useData = (entity, options = {}) => {
       setLoading(true);
       setError(null);
       
+      console.log(`🔄 Loading data for entity: ${entity}`);
+      
       let result;
       
       if (Object.keys(relations).length > 0) {
@@ -36,9 +39,10 @@ export const useData = (entity, options = {}) => {
         result = await databaseService.getAll(entity);
       }
       
+      console.log(`✅ Loaded ${entity}:`, { count: result?.length || 0, data: result?.slice(0, 2) });
       setData(result);
     } catch (err) {
-      console.error(`Error loading ${entity}:`, err);
+      console.error(`❌ Error loading ${entity}:`, err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -268,8 +272,37 @@ export const useOrders = (options) => {
     try {
       setLoading(true);
       setError(null);
-      const result = await databaseService.getAll('orders');
-      setData(result);
+      
+      // Get orders with their items
+      const ordersResult = await databaseService.getAll('orders');
+      console.log('🔍 useOrders: Loaded', ordersResult?.length || 0, 'orders');
+      
+      // For each order, fetch its items
+      const ordersWithItems = await Promise.all(
+        ordersResult.map(async (order) => {
+          try {
+            // Get order items from order_items table
+            const { data: items, error: itemsError } = await supabase
+              .from('order_items')
+              .select('*')
+              .eq('order_id', order.id);
+              
+            if (itemsError) {
+              console.error('Error fetching order items for order', order.id, ':', itemsError);
+              return { ...order, items: [] };
+            }
+            
+            console.log(`� Order ${order.order_number}: ${items?.length || 0} items`);
+            return { ...order, items: items || [] };
+          } catch (err) {
+            console.error('Error fetching items for order', order.id, ':', err);
+            return { ...order, items: [] };
+          }
+        })
+      );
+      
+      console.log('✅ useOrders: All orders loaded with items');
+      setData(ordersWithItems);
     } catch (err) {
       console.error('Error loading orders:', err);
       setError(err.message);
@@ -287,10 +320,49 @@ export const useOrders = (options) => {
   const create = useCallback(async (newItem) => {
     try {
       setError(null);
-      const created = await databaseService.create('orders', newItem);
+      console.log('🔍 useOrders create: Saving order with items:', newItem);
+      
+      // Extract items from the order data
+      const orderItems = newItem.items || [];
+      const orderData = { ...newItem };
+      delete orderData.items; // Remove items from order data as it doesn't belong in orders table
+      
+      // Create the order first
+      const createdOrder = await databaseService.create('orders', orderData);
+      console.log('✅ Order created:', createdOrder);
+      
+      // If there are items, save them to order_items table
+      if (orderItems.length > 0) {
+        console.log('📦 Saving order items:', orderItems.length, 'items');
+        
+        const orderItemsToSave = orderItems.map(item => ({
+          order_id: createdOrder.id,
+          product_id: item.productId || item.product_id,
+          quantity: item.quantity,
+          price: item.price,
+          discount: item.discount || 0
+        }));
+        
+        console.log('📝 Order items to save:', orderItemsToSave);
+        
+        const { data: savedItems, error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItemsToSave)
+          .select();
+        
+        if (itemsError) {
+          console.error('❌ Error saving order items:', itemsError);
+          // Don't throw error, just log it - order was already created
+        } else {
+          console.log('✅ Order items saved:', savedItems);
+        }
+      }
+      
+      // Reload data to get the complete order with items
       await loadData();
-      return created;
+      return createdOrder;
     } catch (err) {
+      console.error('❌ Error creating order:', err);
       setError(err.message);
       throw err;
     }
@@ -299,10 +371,61 @@ export const useOrders = (options) => {
   const update = useCallback(async (id, updates) => {
     try {
       setError(null);
-      const updated = await databaseService.update('orders', id, updates);
+      console.log('🔍 useOrders update: Updating order with items:', id, updates);
+      
+      // Extract items from the updates
+      const orderItems = updates.items || [];
+      const orderData = { ...updates };
+      delete orderData.items; // Remove items from order data as it doesn't belong in orders table
+      
+      // Update the order first
+      const updatedOrder = await databaseService.update('orders', id, orderData);
+      console.log('✅ Order updated:', updatedOrder);
+      
+      // Handle order items update
+      if (orderItems.length > 0) {
+        console.log('📦 Updating order items:', orderItems.length, 'items');
+        
+        // First, delete existing order items for this order
+        const { error: deleteError } = await supabase
+          .from('order_items')
+          .delete()
+          .eq('order_id', id);
+        
+        if (deleteError) {
+          console.error('❌ Error deleting old order items:', deleteError);
+        } else {
+          console.log('🗑️ Deleted old order items');
+        }
+        
+        // Then insert the new order items
+        const orderItemsToSave = orderItems.map(item => ({
+          order_id: id,
+          product_id: item.productId || item.product_id,
+          quantity: item.quantity,
+          price: item.price,
+          discount: item.discount || 0
+        }));
+        
+        console.log('📝 New order items to save:', orderItemsToSave);
+        
+        const { data: savedItems, error: itemsError } = await supabase
+          .from('order_items')
+          .insert(orderItemsToSave)
+          .select();
+        
+        if (itemsError) {
+          console.error('❌ Error saving updated order items:', itemsError);
+        } else {
+          console.log('✅ Updated order items saved:', savedItems);
+        }
+      }
+      
+      // Reload data to get the complete order with items
       await loadData();
-      return updated;
+      return updatedOrder;
     } catch (err) {
+      console.error('❌ Error updating order:', err);
       setError(err.message);
       throw err;
     }

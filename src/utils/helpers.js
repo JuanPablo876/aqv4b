@@ -31,24 +31,29 @@ const getQuoteNumber = (uuid) => {
 
 // Calculate total from items array
 const calculateTotal = (items) => {
-  return items.reduce((total, item) => {
+  const total = items.reduce((total, item) => {
     const itemTotal = (item.price * item.quantity) - (item.discount || 0);
     return total + itemTotal;
   }, 0);
+  return total;
 };
 
 // Calculate subtotal from items array
 const calculateSubtotal = (items) => {
-  return items.reduce((subtotal, item) => {
-    return subtotal + (item.price * item.quantity);
+  const subtotal = items.reduce((subtotal, item) => {
+    const itemSubtotal = item.price * item.quantity;
+    return subtotal + itemSubtotal;
   }, 0);
+  return subtotal;
 };
 
 // Calculate total discount from items array
 const calculateDiscount = (items) => {
-  return items.reduce((total, item) => {
-    return total + (item.discount || 0);
+  const discount = items.reduce((total, item) => {
+    const itemDiscount = item.discount || 0;
+    return total + itemDiscount;
   }, 0);
+  return discount;
 };
 
 // Calculate tax amount based on subtotal and discount
@@ -134,6 +139,7 @@ const getLocalizedStatus = (status) => {
     rejected: 'rechazado',
     processing: 'procesando',
     shipped: 'enviado',
+    delivered: 'entregado',
     completed: 'completado',
     cancelled: 'cancelado',
     paid: 'pagado',
@@ -186,6 +192,7 @@ export {
   filterBySearchTerm,
   sortByField,
   getStatusColorClass,
+  getLocalizedStatus,
   truncateText,
   getRelativeTime
 };

@@ -2,12 +2,15 @@ import React from 'react';
 import VenetianTile from './VenetianTile';
 import InventoryOrderButton from './InventoryOrderButton'; // Import the button
 
-const DashboardInventoryAlerts = ({ alerts, onOrderFromInventory }) => {
+const DashboardInventoryAlerts = ({ alerts, onOrderFromInventory, onViewInventory }) => {
   return (
     <VenetianTile className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-blue-800 font-medium">Alertas de Inventario</h3>
-        <button className="text-sm text-blue-600 hover:text-blue-800">
+        <button 
+          className="text-sm text-blue-600 hover:text-blue-800"
+          onClick={onViewInventory}
+        >
           Ver inventario
         </button>
       </div>

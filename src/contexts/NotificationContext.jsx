@@ -9,37 +9,29 @@ export const NOTIFICATION_TYPES = {
   SYSTEM: 'system'
 };
 
+// Get persisted notifications from localStorage
+const getPersistedNotifications = () => {
+  try {
+    const stored = localStorage.getItem('notifications');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.warn('Error loading notifications from localStorage:', error);
+    return [];
+  }
+};
+
+// Save notifications to localStorage
+const saveNotificationsToStorage = (notifications) => {
+  try {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  } catch (error) {
+    console.warn('Error saving notifications to localStorage:', error);
+  }
+};
+
 // Initial state
 const initialState = {
-  notifications: [
-    {
-      id: 1,
-      type: NOTIFICATION_TYPES.SUCCESS,
-      title: "Sistema",
-      message: "Nuevo pedido recibido #1085",
-      timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-      read: false,
-      persistent: false
-    },
-    {
-      id: 2,
-      type: NOTIFICATION_TYPES.WARNING,
-      title: "Inventario",
-      message: "Stock bajo de Cloro granulado",
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-      read: false,
-      persistent: false
-    },
-    {
-      id: 3,
-      type: NOTIFICATION_TYPES.INFO,
-      title: "Ventas",
-      message: "Cotización #1082 aprobada",
-      timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
-      read: true,
-      persistent: false
-    }
-  ],
+  notifications: getPersistedNotifications(),
   maxNotifications: 5,
   autoRemoveDelay: 5000
 };
@@ -71,30 +63,42 @@ const notificationReducer = (state, action) => {
         updatedNotifications.splice(state.maxNotifications);
       }
       
-      return {
+      const newStateAdd = {
         ...state,
         notifications: updatedNotifications
       };
       
+      saveNotificationsToStorage(newStateAdd.notifications);
+      return newStateAdd;
+      
     case ACTIONS.REMOVE_NOTIFICATION:
-      return {
+      const newStateRemove = {
         ...state,
         notifications: state.notifications.filter(n => n.id !== action.payload)
       };
       
+      saveNotificationsToStorage(newStateRemove.notifications);
+      return newStateRemove;
+      
     case ACTIONS.CLEAR_ALL:
-      return {
+      const newStateClear = {
         ...state,
         notifications: []
       };
       
+      saveNotificationsToStorage(newStateClear.notifications);
+      return newStateClear;
+      
     case ACTIONS.MARK_AS_READ:
-      return {
+      const newStateRead = {
         ...state,
         notifications: state.notifications.map(n =>
           n.id === action.payload ? { ...n, read: true } : n
         )
       };
+      
+      saveNotificationsToStorage(newStateRead.notifications);
+      return newStateRead;
       
     default:
       return state;

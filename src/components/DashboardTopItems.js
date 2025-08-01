@@ -2,7 +2,7 @@ import React from 'react';
 import { formatCurrency } from '../utils/storage';
 import VenetianTile from './VenetianTile';
 
-const DashboardTopItems = ({ title, items, type }) => {
+const DashboardTopItems = ({ title, items = [], type, onViewAll }) => {
   const getMaxValue = () => {
     if (items.length === 0) return 1;
     if (type === 'products') {
@@ -18,7 +18,10 @@ const DashboardTopItems = ({ title, items, type }) => {
     <VenetianTile className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-blue-800 font-medium">{title}</h3>
-        <button className="text-sm text-blue-600 hover:text-blue-800">
+        <button 
+          className="text-sm text-blue-600 hover:text-blue-800"
+          onClick={onViewAll}
+        >
           Ver todo
         </button>
       </div>
