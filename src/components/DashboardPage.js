@@ -347,7 +347,7 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
       {/* Header with Date Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-blue-500 mb-1">Dashboard</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400">Resumen de actividad y métricas clave</p>
         </div>
         <div className="mt-4 sm:mt-0">
