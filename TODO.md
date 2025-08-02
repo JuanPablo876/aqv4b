@@ -1,108 +1,98 @@
 # TODO: Deployment and Production Checklist
 
-## Recent UI/UX Issues (August 2025)
-- [x] **Fixed Horizontal Scroll Issues:**
-  - [x] Remove `overflow-x: hidden` from root CSS that prevented table scrolling
-  - [x] Add `.table-container` class for proper horizontal scroll on tables
-  - [x] Allow tables to scroll horizontally when zoomed in or on mobile devices
+## Critical Bug Fixes
 
-- [x] **Table Infrastructure Rebuild Complete:**
-  - [x] Rebuilt MaintenancesPage table with proper responsive structure and dark mode support
-  - [x] Rebuilt SuppliersPage table with consistent styling and theme compatibility
-  - [x] Rebuilt EmployeesPage table with standardized layout and dark mode classes
-  - [x] Enhanced QuotesPage table with dark mode support and consistent structure
-  - [x] All tables now use consistent `table-container` wrapper and proper CSS classes
-  - [x] Implemented responsive dark/light mode themes across all table components
-  - [x] Standardized table headers with `bg-blue-50 dark:bg-gray-700` classes
-  - [x] Enhanced table bodies with proper hover states and dark mode support
+- [ ] **Data Type Consistency & Logic Review (August 2025) - CRITICAL:**
+  - [ ] **Fix ID parsing inconsistencies across the application:**
+    - [ ] Product IDs are stored as strings but parsed as integers causing lookup failures
+    - [ ] Client IDs have similar string/integer conversion issues
+    - [ ] Standardize ID handling throughout the application (use consistent data types)
+    - [ ] Review all getProductDetails, getClientDetails, and similar functions for proper ID matching
+  - [ ] **Comprehensive logic review needed:**
+    - [ ] Multiple components have logic inconsistencies and data type mismatches
+    - [ ] Form validation logic needs standardization across modals
+    - [ ] State management patterns need consistency review
+    - [ ] Error handling needs improvement throughout the application
+  - [ ] **Common ID/data issues to fix:**
+    - [ ] QuotesAddModal: ✅ FIXED - Product ID string/integer mismatch
+    - [ ] OrdersEditModal: Has parseInt(productId) issues - needs robust ID matching like OrdersAddModal
+    - [ ] MaintenancesAddModal: Has parseInt(clientId) issues - needs robust ID matching
+    - [ ] FinanceAddInvoiceModal: Has parseInt(clientId) issues - needs robust ID matching
+    - [ ] OrdersPage: Has parseInt(item.productId) issues in multiple places
+    - [ ] All modals: Review and standardize getProductDetails/getClientDetails functions
+    - [ ] Database query results may return different ID types than expected
+    - [ ] Frontend state management not handling ID types consistently
 
-- [x] **Fixed ToastContainer Error:**
-  - [x] Add null safety checks to ToastContainer component
-  - [x] Prevent "Cannot read properties of undefined (reading 'map')" error
-  - [x] Add default empty array for toasts prop
-
-- [x] **Dashboard Button Functionality:**
-  - [x] Implement "Ver todo" button in DashboardRecentActivity component
-  - [x] Implement "Ver todo" button in DashboardTopItems component
-  - [x] Implement "Ver inventario" button in DashboardInventoryAlerts component
-  - [x] Add proper navigation handlers for all dashboard buttons
-
-- [x] **Employee Table Dark Mode Support:**
-  - [x] Add dark mode classes to employee table headers
-  - [x] Replace inline backgroundColor with responsive dark/light theme classes
-  - [x] Ensure text contrast works in both themes
-
-- [x] **Suppliers Table Fixes:**
-  - [x] Apply consistent table header styling to SuppliersPage
-  - [x] Add dark mode support to suppliers table headers
-  - [x] Reduce table width and improve horizontal scroll
-
-- [x] **Employee Button Functionality:**
-  - [x] Implement "Editar" button functionality with edit modal
-  - [x] Implement "Ver Actividad" button functionality with activity modal
-  - [x] Add proper state management for employee modals
-
-- [x] **Product Dropdown Null Safety:**
-  - [x] Fix OrdersAddModal product dropdown with null safety checks
-  - [x] Fix QuotesAddModal product dropdown with null safety checks  
-  - [x] Fix MaintenancesAddModal client dropdown with null safety checks
-  - [x] Add proper handling for empty data arrays
-
-## UI/UX Polish & Code Organization
-- [x] **Consolidate Duplicated UI Components:**
-  - [x] Create reusable `StatusBadge` component to replace scattered status styling
-  - [x] Create reusable `ActivityIcon` component for different activity types
-  - [x] Create reusable `StatsCard` component to reduce dashboard code duplication
-  - [x] Create reusable `ChartTooltip` component for consistent chart interactions
-  - [x] Create reusable `DataTable` component with sorting and filtering
-  - [x] Consolidate modal components into a base `Modal` component with variants
-  - [x] Create reusable `LoadingSpinner` component to replace inline spinners
-  - [x] Create reusable `EmptyState` component for consistent empty data displays
-  - [x] Create reusable `AddButton` component for standardized "Add New" buttons
-  - [x] Create reusable `SortIcon` component for table sorting indicators
-  - [x] Create reusable `ModalBase` component to eliminate duplicate modal code
-
-- [x] **Quote Creation Auto-Fill and UX Improvements:**
-  - [x] Auto-fill client info when creating quotes from ClientsPage "Nueva Cotización" button
-  - [x] Display pre-selected client information prominently in quote modal
-  - [x] Disable client selector when client is pre-selected to avoid confusion
-  - [x] Auto-open quote modal when navigating from client details
-  - [x] Clear pre-selected client after quote creation or modal close
-
-- [x] **Dark Theme Color Fixes:**
-  - [x] Replace bright green "Agregar Producto" button with blue to work better with dark theme
-  - [x] Update "Nuevo Pedido" button from bright green to emerald for better dark theme compatibility
-  - [x] Add proper dark theme support for form elements (inputs, selects, textareas)
-  - [x] Improve label colors and contrast for dark/light theme consistency
+- [ ] **Button Handler Audit & Fixes (August 2025) - CRITICAL:**
+  - [ ] **Complete application-wide audit for missing/invalid button handlers**
+  - [ ] **Systematic check of all interactive elements requiring the following fixes:**
+    - [ ] Add `e.preventDefault()` to all event handlers that should prevent form submission
+    - [ ] Add `type="button"` attribute to all non-submit buttons
+    - [ ] Ensure all buttons have proper onClick handlers (no undefined/missing handlers)
+    - [ ] Verify all form submissions use proper validation before processing
+  
+  - [ ] **Pages requiring button handler audit (check ALL buttons/forms):**
+    - [ ] **AcceptInvitationPage.jsx** - Check form submissions and button handlers
+    - [ ] **ClientsPage.js** - Audit add/edit/save client buttons and inline forms
+    - [ ] **EmployeesPage.js** - Check employee management buttons and modal forms
+    - [ ] **FinancePage.js** - Audit transaction buttons, invoice forms, export functions
+    - [ ] **InventoryPage.js** - Check movement buttons, adjustment forms, ordering systems
+    - [ ] **MaintenancesPage.js** - Audit maintenance forms, scheduling buttons, service actions
+    - [ ] **OrdersPage.js** - Check order creation, editing, status update buttons
+    - [ ] **ProductsPage.js** - Audit product management forms and action buttons
+    - [ ] **QuotesPage.js** - Check quote creation, editing, conversion buttons
+    - [ ] **ReportsPage.js** - Audit export buttons, filter forms, report generation
+    - [ ] **SuppliersPage.js** - Check supplier management and purchasing buttons
+    - [ ] **UserProfilePage.js** - Audit profile editing and password change forms
+    - [ ] **DashboardPage.js** - Check any interactive dashboard elements
+    - [ ] **SettingsPage.js** - Audit all settings form submissions and save buttons
+    - [ ] **PWATestPage.jsx** - Check PWA testing buttons and forms
+    - [ ] **NotFoundPage.jsx** - Check navigation buttons
+  
+  - [ ] **Modal Components requiring audit:**
+    - [ ] **ClientAddModal.js** - Already uses ValidatedForm (likely OK)
+    - [ ] **FinanceAddInvoiceModal.js** - ✅ FIXED: Added preventDefault and type="button"
+    - [ ] **InventoryMovementModal.js** - ✅ FIXED: Added preventDefault and type="button"
+    - [ ] **MaintenancesAddModal.js** - ✅ FIXED: Added preventDefault and type="button"
+    - [ ] **OrdersAddModal.js** - Check against working OrdersAddModal pattern
+    - [ ] **OrdersEditModal.js** - ✅ FIXED: Added preventDefault and type="button"
+    - [ ] **ProductsAddModal.js** - Already uses ValidatedForm (likely OK)
+    - [ ] **QuotesAddModal.js** - ✅ FIXED: Added preventDefault and type="button"
+    - [ ] **HistoryModal.js** - Check any action buttons within history views
+  
+  - [ ] **Utility Components requiring audit:**
+    - [ ] **NotificationCenter.jsx** - Check notification action buttons
+    - [ ] **NotificationDropdown.jsx** - Check notification management buttons
+    - [ ] **InvitationManagement.jsx** - Check invitation sending/management buttons
+    - [ ] **PWAStatus.jsx** - Check PWA-related action buttons
+    - [ ] **DatabaseTest.js** - Check database testing buttons
+    - [ ] **ScrollableTable.jsx** - Check any table action buttons
+  
+  - [ ] **Common button issues to look for:**
+    - [ ] Buttons inside forms without `type="button"` (defaults to submit)
+    - [ ] Event handlers missing `e.preventDefault()` for non-form-submission actions
+    - [ ] Missing onClick handlers (buttons that do nothing when clicked)
+    - [ ] Form submission buttons that should validate before submitting
+    - [ ] Delete/destructive actions without confirmation dialogs
+    - [ ] Disabled buttons that should show loading states
+    - [ ] Save/submit buttons without proper error handling
 
 ## Dashboard Issues
-- [x] **Fix Chart Dark Theme Support:**
-  - [x] Update DashboardChartCard to use CSS variables for colors instead of hardcoded hex values
-  - [x] Add proper dark theme colors for chart axes, labels, and gridlines
-  - [x] Ensure chart legend text adapts to dark/light theme automatically
-  - [x] Test chart readability and contrast in both theme modes
-  - [x] Fix chart tooltips and hover states for dark theme compatibility
+- [ ] **Dashboard Dynamic Data Integration (August 2025):**
+  - [ ] Replace all hardcoded dashboard metrics with real database calculations
+  - [ ] Implement dynamic data loading for all dashboard components (stats cards, charts, activity feed)
+  - [ ] Connect dashboard graphs to actual sales, inventory, and financial data from database
+  - [ ] Add real-time data refresh capabilities for dashboard metrics
+  - [ ] Implement proper loading states and error handling for dashboard data fetching
+  - [ ] Add data caching and optimization for dashboard performance
 
-- [x] **Localize Activity Section (Fix English Words in "Actividad Reciente"):**
-  - [x] Replace English status words with Spanish equivalents in `getStatusColorClass`
-  - [x] Update status labels: "pending" → "pendiente", "completed" → "completado", "cancelled" → "cancelado"
-  - [x] Ensure all activity descriptions use consistent Spanish text
-  - [x] Fix mixed language in activity timestamps and descriptions
-  - [x] Update activity icons and labels to match Spanish terminology
-
-- [x] **Fix Sales Data Calculations (Remove Hardcoded Values):**
-  - [x] Replace hardcoded "+12.5%" in "Ventas Diarias" with actual calculated percentage change
-  - [x] Implement real period comparison logic (today vs yesterday, this month vs last month)
-  - [x] Add configurable date ranges for sales comparison calculations
-  - [x] Calculate actual growth percentage from real sales/invoice data
-  - [x] Connect sales metrics to actual database records instead of mock data
-
-- [x] **Improve Dashboard Data Sorting and Friendly Date Display:**
-  - [x] Add friendly date sorting for activity section (newest first by default)
-  - [x] Implement period-based text changes ("Hoy", "Esta semana", "Este mes") instead of raw dates
-  - [x] Add intuitive date filters for activity period selection
-  - [x] Sort top items and clients by actual relevance/value from database
-  - [x] Add relative time display ("hace 2 horas", "ayer", "la semana pasada")
+- [ ] **Notifications System Data Integration (August 2025):**
+  - [ ] Replace mock notification data with actual system events and alerts
+  - [ ] Implement real-time notifications for order status changes, low inventory, payment reminders
+  - [ ] Connect notification system to actual business events (new orders, maintenance due, client interactions)
+  - [ ] Add notification preferences and filtering options for users
+  - [ ] Implement notification history and mark-as-read functionality with database persistence
+  - [ ] Add email/SMS notification delivery options for critical alerts
 
 ## Deployment Tasks
 - [ ] Update all references of `localhost:3000` to `aqualiquim.mx` in Supabase Edge Function environment variables and API URLs
@@ -115,17 +105,8 @@
 - [ ] Update documentation to reflect production URLs and settings
 
 ## Cleanup Tasks (Remove Dev Tools)
-- [x] Remove `connectionMonitor.js` utility (development debugging tool)
-- [x] Remove `SupabaseDiagnostic.jsx` and `SupabaseDiagnosticNew.jsx` components
-- [x] Remove diagnostics routes from App.jsx
-- [x] Clean up console.log statements in DatabaseService
-- [x] Remove enhanced error handling debug info from ClientsPage (keep user-friendly version)
-- [x] Remove exported diagnostics functionality from production build
-- [x] Remove connection monitoring integrations from DatabaseService
-
-## Notifications Fix
- 
--- [x] Fix the notifications always re-appearing after logging in
+- [ ] Clean up any remaining console.log statements in production code
+- [ ] Remove any test/debug routes or components for production build
 
 ## Settings Page Issues
 - [ ] **Fix Non-Functional Settings Features:**
@@ -137,47 +118,15 @@
   - [ ] Implement export/import features (buttons exist but no logic)
 
 ## Dashboard Data Filtering & User Experience
-- [x] **Add Date Range Filter for Dashboard:**
-  - [x] Created DashboardDateFilter component with user-friendly date range picker
-  - [x] Added presets (Today, Yesterday, Last 7 days, Last 30 days, This month, Last month, etc.)
-  - [x] Added custom date range selection functionality
+- [ ] **Complete Date Range Filter Integration:**
   - [ ] Complete integration with dashboard data calculation logic
   - [ ] Persist user's preferred date range filter across sessions
   - [ ] Update all dashboard components to respect selected date range
 
 ## Navigation & Menu Issues
-- [x] **Fix Maintenance Tab Submenus:**
-  - [x] Fixed MaintenancePage horizontal space issues - added min-width to table columns and overflow-x-auto
-  - [x] Fixed SuppliersPage horizontal space issues - added overflow-x-auto and minimum table width
-  - [x] Fixed EmployeesPage horizontal space issues - added overflow-x-auto and minimum table width
-  - [x] Fixed non-functional "Alertar Empleado" button - now shows proper user feedback and alerts
-  - [x] Verified "Ver" and "Editar" buttons are functional - they open maintenance details and edit modals
-  - [ ] Consider adding tabs/submenus to MaintenancesPage similar to SettingsPage pattern for better organization
+- [ ] Consider adding tabs/submenus to MaintenancesPage similar to SettingsPage pattern for better organization
 
 ## Critical Bugs
-- [x] **Fix OrdersPage.js Error:**
-  - [x] Fix "Cannot read properties of undefined (reading 'map')" error at OrdersPage.js:134
-  - [x] Added proper null/undefined checks for order.items in handleSelectOrder function
-  - [x] Fixed additional map error on line 695 with selectedOrder.items
-  - [x] Fixed potential error on line 89 with ordersList.map
-  - [x] All map operations now use (array || []).map() pattern for safety
-
-- [x] **Fix "delivered" Status Localization:**
-  - [x] Added missing "delivered: 'entregado'" translation to getLocalizedStatus function in helpers.js
-  - [x] Fixed "Actividad Reciente" section showing "delivered" instead of "entregado"
-
-- [x] **OrdersAddModal Calculation Issues (August 2025):**
-  - [x] Fix total calculation displaying 0 despite having products in order
-  - [x] Verify calculateSubtotal, calculateDiscount, calculateTax, and calculateTotal functions are working correctly
-  - [x] Debug order items structure and calculation logic in order creation workflow
-  - [x] Test order total calculation with different product combinations
-
-- [x] **Button Interaction Issues (August 2025):**
-  - [x] Fix Email, Print, and Save buttons in OrdersAddModal - buttons cannot be selected/clicked
-  - [x] Investigate potential CSS z-index or event handler conflicts
-  - [x] Verify button disabled states and loading states are not preventing interaction
-  - [x] Test button functionality across different browsers and screen sizes
-
 - [ ] **Dynamic Inventory Updates for Orders (August 2025):**
   - [ ] Implement automatic inventory quantity reduction when orders are created
   - [ ] Add real-time inventory count updates in InventoryPage when order products are saved
@@ -204,23 +153,14 @@
   - [ ] Add email templates management system
   - [ ] Add email delivery status tracking and error handling
 
-- [x] **Missing Historial Functions (August 2025):**
-  - [x] Implement "Ver Historial" in InventoryPage (now shows mock inventory movement history with proper modal)
-  - [x] Implement "Historial de Precios" in ProductsPage (now shows mock price change history with proper modal)
-  - [x] Implement "Historial de Compras" in SuppliersPage (now shows mock purchase history with proper modal)
+- [ ] **Missing Historial Functions (August 2025):**
+  - [ ] **InventoryPage "Ver Historial"** - Currently shows mock data, needs real database integration
+  - [ ] **ProductsPage "Historial de Precios"** - Currently shows mock data, needs real database integration  
+  - [ ] **SuppliersPage "Historial de Compras"** - Currently shows mock data, needs real database integration
+  - [ ] **ClientsPage "Historial de Pedidos"** - Currently shows alert: "Funcionalidad en desarrollo"
+  - [ ] **MaintenancesPage "Historial de Servicios"** - UI exists but no data/functionality
   - [ ] Connect all historial functions to actual database records with proper date filtering
-
-- [x] **Missing QuotesPage Email/Print Functions (August 2025):**
-  - [x] Implement "Enviar por Email" button functionality in QuotesPage quote detail view
-  - [x] Implement "Imprimir" button functionality in QuotesPage quote detail view
-  - [x] Connect to existing sendQuoteEmail and printQuote functions from emailPrint utils
-  - [x] Add proper error handling and user feedback for quote email/print operations
-
-- [x] **Missing FinancePage Functions (August 2025):**
-  - [x] Implement "Ver" button functionality in FinancePage transactions table
-  - [x] Implement "Eliminar" button functionality in FinancePage transactions table
-  - [x] Add transaction detail modal for viewing complete transaction information
-  - [x] Add confirmation dialog for transaction deletion with proper database operations
+  - [ ] Design and implement proper data models for historical tracking across all modules
 
 - [ ] **Hardcoded Dashboard Charts (August 2025):**
   - [ ] Replace hardcoded salesData in DashboardChartCard with real invoice/order aggregations
@@ -236,13 +176,126 @@
   - [ ] Implement dynamic date range filtering for all report calculations
   - [ ] Connect all report metrics to actual database records instead of mock data
 
-- [ ] **Implement "Historial" Feature:**
-  - [ ] Design and implement the missing "Historial" functionality across multiple pages
-  - [ ] Fix "Historial de Pedidos" in ClientsPage (currently shows alert: "Funcionalidad en desarrollo")
-  - [ ] Fix "Historial de Precios" in ProductsPage (currently shows alert: "Funcionalidad pendiente de implementar")  
-  - [ ] Fix "Historial de Compras" in SuppliersPage (currently shows alert: "Funcionalidad pendiente de implementar")
-  - [ ] Fix "Ver Historial" in InventoryPage (currently shows alert: "Funcionalidad pendiente de implementar")
-  - [ ] Implement "Historial de Servicios" in MaintenancesPage (UI exists but no data/functionality)
+- [ ] **Additional Hardcoded Data Replacements (August 2025):**
+  - [ ] **FinancePage (Finanzas) Real Data Integration:**
+    - [ ] Replace mock financial transaction data with actual database records
+    - [ ] Connect invoice payments, expenses, and revenue to real financial data
+    - [ ] Implement actual cash flow calculations and financial summaries
+    - [ ] Add real bank account balances and transaction history
+    - [ ] Connect payment status updates to actual payment processing
+  
+  - [ ] **ReportsPage (Reportes) Complete Data Integration:**
+    - [ ] Replace all mock sales reports with real invoice/order data calculations
+    - [ ] Implement actual profit/loss calculations from real financial data
+    - [ ] Connect inventory reports to real stock levels and movements
+    - [ ] Add real client performance metrics and purchase history analysis
+    - [ ] Implement actual expense tracking and cost analysis reports
+    - [ ] Add real maintenance cost reporting and equipment performance metrics
+  
+  - [ ] **Client Performance Metrics:**
+    - [ ] Replace hardcoded client statistics in ClientsPage with real purchase data
+    - [ ] Implement actual client lifetime value calculations
+    - [ ] Add real client payment history and credit status
+    - [ ] Connect client activity timeline to actual business interactions
+  
+  - [ ] **Supplier Performance Data:**
+    - [ ] Replace mock supplier statistics with real purchase order data
+    - [ ] Implement actual supplier performance metrics (delivery times, quality, pricing)
+    - [ ] Add real supplier payment history and credit terms tracking
+    - [ ] Connect supplier evaluations to actual business performance data
+  
+  - [ ] **Employee Performance Tracking:**
+    - [ ] Replace hardcoded employee metrics with real work assignment data
+    - [ ] Implement actual employee productivity tracking and performance analytics
+    - [ ] Add real employee work history, maintenance assignments, and client interactions
+    - [ ] Connect employee scheduling and time tracking to actual business operations
+
+## Essential Features for Production
+- [ ] **Role-Based Access Control (RBAC) - Critical for Security:**
+  - [ ] Create roles table in database (admin, manager, staff, viewer)
+  - [ ] Implement user role assignment and permission checking
+  - [ ] Add role-based UI restrictions and route protection
+  - [ ] Create admin interface for managing user roles and permissions
+
+- [ ] **Audit Logs - Essential for Business Compliance:**
+  - [ ] Implement audit logging system for all CRUD operations
+  - [ ] Track user actions with timestamps and change details
+  - [ ] Create audit log viewer for administrators
+  - [ ] Add soft delete functionality with audit trail
+
+- [ ] **Email Notifications - Critical for Business Operations:**
+  - [ ] Implement automated email alerts for low inventory levels
+  - [ ] Add order status change notifications to clients and staff
+  - [ ] Set up payment reminder emails for overdue invoices
+  - [ ] Create system alerts for failed logins and security events
+
+- [ ] **Search Across Modules - Essential for Productivity:**
+  - [ ] Implement global search functionality across all modules
+  - [ ] Add search filters for inventory, orders, clients, and invoices
+  - [ ] Create quick search with autocomplete functionality
+  - [ ] Add advanced search with multiple criteria filtering
+
+- [ ] **Responsive Design Fixes - Critical for Usability:**
+  - [ ] Optimize layouts for tablet devices (768px-1024px)
+  - [ ] Improve mobile responsiveness for all forms and modals
+  - [ ] Fix table scrolling and column visibility on smaller screens
+  - [ ] Test and optimize touch interactions for mobile devices
+  - [ ] Re-test responsive design after recent table infrastructure changes
+
+- [ ] **Pagination & Lazy Loading - Essential for Performance:**
+  - [ ] Implement pagination for large datasets in all tables
+  - [ ] Add lazy loading for improved performance with large client lists
+  - [ ] Optimize product and inventory loading for better user experience
+  - [ ] Add virtual scrolling for very large datasets
+
+## Optional Enhancement Features
+- [ ] **Custom Reports Generator:**
+  - [ ] Create drag-and-drop report builder interface
+  - [ ] Add customizable report templates for common business needs
+  - [ ] Implement report scheduling and automated email delivery
+  - [ ] Add export options (PDF, Excel, CSV) for generated reports
+
+- [ ] **Data Archiving System:**
+  - [ ] Implement archive functionality for old clients, orders, and inventory
+  - [ ] Create archive management interface with restore capabilities
+  - [ ] Add configurable auto-archiving rules based on date/activity
+  - [ ] Maintain archived data access for reporting and compliance
+
+- [ ] **Client & Supplier Tags:**
+  - [ ] Add tagging system for clients (VIP, Regular, High-Risk, etc.)
+  - [ ] Implement supplier tags (Preferred, Backup, Low-Stock, etc.)
+  - [ ] Create filterable views based on tags
+  - [ ] Add bulk tagging operations for efficient management
+
+- [ ] **Bulk Import/Export (CSV/Excel):**
+  - [ ] Create bulk import functionality for clients, products, and inventory
+  - [ ] Add data validation and error reporting for bulk operations
+  - [ ] Implement export functionality for all major data types
+  - [ ] Add import templates and data mapping tools
+
+- [ ] **Draggable Lists & Reordering UI:**
+  - [ ] Implement drag-and-drop for order item reordering
+  - [ ] Add draggable priority sorting for maintenance tasks
+  - [ ] Create reorderable supplier preference lists
+  - [ ] Add drag-and-drop file uploads for documents
+
+- [ ] **Custom Themes:**
+  - [ ] Create 2-3 additional theme options (Light, Dark, High Contrast)
+  - [ ] Add user preference storage for theme selection
+  - [ ] Implement theme switcher in user settings
+  - [ ] Ensure all custom themes maintain accessibility standards
+
+- [ ] **Data Previews & Tooltips:**
+  - [ ] Add hover previews for order summaries in lists
+  - [ ] Implement tooltip previews for client and supplier details
+  - [ ] Create inventory item quick-view on hover
+  - [ ] Add contextual help tooltips for form fields and actions
+
+- [ ] **Contextual Help System:**
+  - [ ] Create interactive onboarding tour for new users
+  - [ ] Add help tooltips and hints throughout the application
+  - [ ] Implement context-sensitive help panels
+  - [ ] Create help documentation integration within the app
 
 ---
 

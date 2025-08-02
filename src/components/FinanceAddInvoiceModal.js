@@ -42,7 +42,8 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
   };
   
   // Handle save new invoice
-  const handleSaveInvoice = () => {
+  const handleSaveInvoice = (e) => {
+    e.preventDefault();
     if (!newInvoice.clientId || !newInvoice.invoiceNumber || !newInvoice.total) {
       alert('Por favor, completa los campos obligatorios (Cliente, N° Factura/Nota, Total).');
       return;
@@ -231,6 +232,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
           
           <div className="mt-6 flex justify-end space-x-3">
             <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
@@ -238,6 +240,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
             </button>
             
             <button
+              type="button"
               onClick={handleSaveInvoice}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >

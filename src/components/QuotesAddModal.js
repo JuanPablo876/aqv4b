@@ -12,6 +12,10 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
   
   const [newQuote, setNewQuote] = useState({
     clientId: '',
+    clientName: '', // For custom client name
+    clientEmail: '', // For custom client email
+    clientPhone: '', // For custom client phone
+    clientAddress: '', // For custom client address
     date: new Date().toISOString().split('T')[0],
     validUntil: '',
     status: 'pending',
@@ -24,6 +28,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
   const [saving, setSaving] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const [isCustomClient, setIsCustomClient] = useState(false); // New state for custom client
   
   const loading = clientsLoading || productsLoading;
   
@@ -62,7 +67,12 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
   
   // Get product details by ID
   const getProductDetails = (productId) => {
-    return productsList.find(p => p.id === parseInt(productId));
+    // Support both string and integer comparison for ID matching
+    const product = (productsList || []).find(p => {
+      return p.id === productId || p.id === parseInt(productId) || p.id.toString() === productId.toString();
+    });
+    
+    return product || null;
   };
   
   // Handle input change for new quote
@@ -76,21 +86,44 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
   
   // Handle add product to quote
   const handleAddProductToQuote = () => {
-    if (!selectedProductToAdd || productQuantityToAdd <= 0) return;
+    console.log('🔍 handleAddProductToQuote called', {
+      selectedProductToAdd,
+      productQuantityToAdd,
+      productsList: productsList?.length,
+      productsListSample: productsList?.slice(0, 2)?.map(p => ({ id: p.id, name: p.name }))
+    });
+    
+    if (!selectedProductToAdd || productQuantityToAdd <= 0) {
+      console.log('❌ Validation failed:', { selectedProductToAdd, productQuantityToAdd });
+      return;
+    }
     
     const product = getProductDetails(selectedProductToAdd);
-    if (!product) return;
+    if (!product) {
+      console.log('❌ Product not found:', {
+        selectedProductToAdd,
+        typeof: typeof selectedProductToAdd,
+        availableProducts: productsList?.map(p => ({ id: p.id, type: typeof p.id, name: p.name }))
+      });
+      return;
+    }
+    
+    console.log('✅ Adding product:', product);
     
     const newItem = {
-      productId: product.id,
+      productId: String(product.id), // Ensure consistent string format
       quantity: parseInt(productQuantityToAdd),
       price: product.price,
       discount: parseFloat(productDiscountToAdd) || 0
     };
     
-    setNewQuote({
-      ...newQuote,
-      items: [...newQuote.items, newItem]
+    setNewQuote(prevQuote => {
+      const updatedQuote = {
+        ...prevQuote,
+        items: [...prevQuote.items, newItem]
+      };
+      console.log('✅ Updated quote:', updatedQuote);
+      return updatedQuote;
     });
     
     // Reset product selection fields
@@ -102,16 +135,20 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
   // Handle remove product from quote
   const handleRemoveProductFromQuote = (index) => {
     const updatedItems = newQuote.items.filter((_, i) => i !== index);
-    setNewQuote({
-      ...newQuote,
+    setNewQuote(prevQuote => ({
+      ...prevQuote,
       items: updatedItems
-    });
+    }));
   };
   
   // Handle save quote
   const handleSaveQuote = async () => {
-    if (!newQuote.clientId || newQuote.items.length === 0 || !newQuote.validUntil) {
-      alert('Por favor, selecciona un cliente, agrega al menos un producto y define la fecha de validez.');
+    const hasValidClient = isCustomClient ? 
+      (newQuote.clientName && newQuote.clientEmail) : 
+      newQuote.clientId;
+      
+    if (!hasValidClient || newQuote.items.length === 0 || !newQuote.validUntil) {
+      alert('Por favor, completa la información del cliente, agrega al menos un producto y define la fecha de validez.');
       return;
     }
     
@@ -129,7 +166,8 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
         subtotal,
         discount,
         tax,
-        total
+        total,
+        isCustomClient
       };
       
       await onSave(quoteToSave);
@@ -142,21 +180,36 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
     }
   };
   
-  // Get client details by ID
+  // Get client details by ID or custom client info
   const getClientDetails = (clientId) => {
-    return (clientsList || []).find(c => c.id === parseInt(clientId)) || null;
+    if (isCustomClient) {
+      return {
+        name: newQuote.clientName,
+        email: newQuote.clientEmail,
+        phone: newQuote.clientPhone,
+        address: newQuote.clientAddress
+      };
+    }
+    // Support both string and integer comparison for ID matching
+    return (clientsList || []).find(c => {
+      return c.id === clientId || c.id === parseInt(clientId) || c.id.toString() === clientId.toString();
+    }) || null;
   };
   
   // Handle email quote
   const handleEmailQuote = async () => {
-    if (!newQuote.clientId || newQuote.items.length === 0) {
-      alert('Por favor, guarda la cotización primero antes de enviarla por email.');
+    const hasValidClient = isCustomClient ? 
+      (newQuote.clientName && newQuote.clientEmail) : 
+      newQuote.clientId;
+      
+    if (!hasValidClient || newQuote.items.length === 0) {
+      alert('Por favor, completa la información del cliente y agrega productos antes de enviar por email.');
       return;
     }
     
     const client = getClientDetails(newQuote.clientId);
     if (!client?.email) {
-      alert('El cliente seleccionado no tiene email registrado.');
+      alert('No se encontró email del cliente.');
       return;
     }
     
@@ -186,8 +239,12 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
   
   // Handle print quote
   const handlePrintQuote = () => {
-    if (!newQuote.clientId || newQuote.items.length === 0) {
-      alert('Por favor, selecciona un cliente y agrega productos antes de imprimir.');
+    const hasValidClient = isCustomClient ? 
+      (newQuote.clientName) : 
+      newQuote.clientId;
+      
+    if (!hasValidClient || newQuote.items.length === 0) {
+      alert('Por favor, completa la información del cliente y agrega productos antes de imprimir.');
       return;
     }
     
@@ -259,23 +316,75 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Cliente {preSelectedClient && <span className="text-blue-600 dark:text-blue-400">(Pre-seleccionado)</span>}
+                Tipo de Cliente
               </label>
-              <select
-                name="clientId"
-                value={newQuote.clientId}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
-                disabled={!!preSelectedClient}
-              >
-                <option value="">Seleccionar Cliente...</option>
-                {(clientsList || []).map(client => (
-                  <option key={client.id} value={client.id}>
-                    {client.name} ({client.contact})
-                  </option>
-                ))}
-              </select>
+              <div className="flex space-x-4 mb-2">
+                <label className="flex items-center text-gray-700 dark:text-gray-300">
+                  <input
+                    type="radio"
+                    name="clientType"
+                    value="existing"
+                    checked={!isCustomClient}
+                    onChange={() => setIsCustomClient(false)}
+                    className="mr-2 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                  />
+                  Cliente Existente
+                </label>
+                <label className="flex items-center text-gray-700 dark:text-gray-300">
+                  <input
+                    type="radio"
+                    name="clientType"
+                    value="custom"
+                    checked={isCustomClient}
+                    onChange={() => setIsCustomClient(true)}
+                    className="mr-2 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                  />
+                  Cliente Nuevo
+                </label>
+              </div>
+              
+              {!isCustomClient ? (
+                <select
+                  name="clientId"
+                  value={newQuote.clientId}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  disabled={!!preSelectedClient}
+                >
+                  <option value="">Seleccionar Cliente...</option>
+                  {(clientsList || []).map(client => (
+                    <option key={client.id} value={client.id}>
+                      {client.name} ({client.contact})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  name="clientName"
+                  value={newQuote.clientName}
+                  onChange={handleInputChange}
+                  placeholder="Nombre del cliente"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                />
+              )}
             </div>
+            
+            {isCustomClient && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Email del Cliente
+                </label>
+                <input
+                  type="email"
+                  name="clientEmail"
+                  value={newQuote.clientEmail}
+                  onChange={handleInputChange}
+                  placeholder="email@ejemplo.com"
+                  className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                />
+              </div>
+            )}
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -302,6 +411,38 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
                 className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
               />
             </div>
+            
+            {isCustomClient && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Teléfono del Cliente
+                  </label>
+                  <input
+                    type="tel"
+                    name="clientPhone"
+                    value={newQuote.clientPhone}
+                    onChange={handleInputChange}
+                    placeholder="Teléfono"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Dirección del Cliente
+                  </label>
+                  <input
+                    type="text"
+                    name="clientAddress"
+                    value={newQuote.clientAddress}
+                    onChange={handleInputChange}
+                    placeholder="Dirección"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+              </>
+            )}
             
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -368,6 +509,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
             </div>
             
             <button
+              type="button"
               onClick={handleAddProductToQuote}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed"
               disabled={!selectedProductToAdd || productQuantityToAdd <= 0}
@@ -448,6 +590,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
             
             <div className="flex space-x-3">
               <button
+                type="button"
                 onClick={onClose}
                 className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
@@ -456,8 +599,13 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
               
               {/* Email Button */}
               <button
+                type="button"
                 onClick={handleEmailQuote}
-                disabled={!newQuote.clientId || newQuote.items.length === 0 || sendingEmail}
+                disabled={
+                  newQuote.items.length === 0 || 
+                  sendingEmail ||
+                  (isCustomClient ? (!newQuote.clientName || !newQuote.clientEmail) : !newQuote.clientId)
+                }
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:bg-green-300 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {sendingEmail ? (
@@ -477,8 +625,13 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
               
               {/* Print Button */}
               <button
+                type="button"
                 onClick={handlePrintQuote}
-                disabled={!newQuote.clientId || newQuote.items.length === 0 || printing}
+                disabled={
+                  newQuote.items.length === 0 || 
+                  printing ||
+                  (isCustomClient ? !newQuote.clientName : !newQuote.clientId)
+                }
                 className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:bg-purple-300 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {printing ? (
@@ -498,9 +651,15 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
               
               {/* Save Button */}
               <button
+                type="button"
                 onClick={handleSaveQuote}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center space-x-2"
-                disabled={!newQuote.clientId || newQuote.items.length === 0 || !newQuote.validUntil || saving}
+                disabled={
+                  newQuote.items.length === 0 || 
+                  !newQuote.validUntil || 
+                  saving ||
+                  (isCustomClient ? (!newQuote.clientName || !newQuote.clientEmail) : !newQuote.clientId)
+                }
               >
                 {saving ? (
                   <>

@@ -29,7 +29,8 @@ const UserProfilePage = ({ session }) => {
     setIsEditing(true);
   };
 
-  const handleSave = () => {
+  const handleSave = (e) => {
+    e.preventDefault();
     // Here you would typically update the user profile via API
     console.log('Saving profile data:', formData);
     setIsEditing(false);
@@ -78,12 +79,14 @@ const UserProfilePage = ({ session }) => {
             ) : (
               <div className="space-x-2">
                 <button
+                  type="button"
                   onClick={handleSave}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                 >
                   Guardar
                 </button>
                 <button
+                  type="button"
                   onClick={handleCancel}
                   className="px-4 py-2 border border-input rounded-lg text-muted-foreground hover:bg-accent"
                 >

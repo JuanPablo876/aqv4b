@@ -42,7 +42,8 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
   };
   
   // Handle save new maintenance
-  const handleSaveMaintenance = () => {
+  const handleSaveMaintenance = (e) => {
+    e.preventDefault();
     if (!newMaintenance.clientId || !newMaintenance.serviceType || !newMaintenance.frequency) {
       alert('Por favor, completa los campos obligatorios (Cliente, Tipo de Servicio, Frecuencia).');
       return;
@@ -224,6 +225,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
           
           <div className="mt-6 flex justify-end space-x-3">
             <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
@@ -231,6 +233,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
             </button>
             
             <button
+              type="button"
               onClick={handleSaveMaintenance}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >

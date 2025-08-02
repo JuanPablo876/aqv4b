@@ -97,7 +97,8 @@ const OrdersEditModal = ({ isOpen, onClose, onSave, editingOrder = null }) => {
   };
 
   // Handle save
-  const handleSave = async () => {
+  const handleSave = async (e) => {
+    e.preventDefault();
     setSaving(true);
     try {
       const subtotal = calculateSubtotal(orderData.items);
@@ -420,6 +421,7 @@ const OrdersEditModal = ({ isOpen, onClose, onSave, editingOrder = null }) => {
             {/* Action Buttons */}
             <div className="flex justify-between items-center mt-6">
               <button
+                type="button"
                 onClick={onClose}
                 className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               >
@@ -427,6 +429,7 @@ const OrdersEditModal = ({ isOpen, onClose, onSave, editingOrder = null }) => {
               </button>
               
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center space-x-2"
