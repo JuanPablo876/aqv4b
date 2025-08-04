@@ -7,13 +7,13 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
   const { data: employeesList, loading: employeesLoading } = useData('employees');
   
   const [newMaintenance, setNewMaintenance] = useState({
-    clientId: '',
+    client_id: '',
     address: '',
     googleMapsLink: '',
     serviceType: '',
     frequency: '',
     lastServiceDate: new Date().toISOString().split('T')[0],
-    lastServiceEmployeeId: '',
+    last_service_employee_id: '',
     status: 'active',
     notes: ''
   });
@@ -29,22 +29,31 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
     });
   };
   
+  // Get client details by ID with robust matching
+  const getClientDetails = (clientId) => {
+    // Support both string and integer comparison for ID matching
+    const client = (clientsList || []).find(c => {
+      return c.id === clientId || c.id === parseInt(clientId) || c.id.toString() === clientId.toString();
+    });
+    return client || null;
+  };
+
   // Handle client selection to pre-fill address and link
   const handleClientSelect = (e) => {
-    const clientId = e.target.value;
-    const client = clientsList.find(c => c.id === parseInt(clientId));
+    const client_id = e.target.value;
+    const client = getClientDetails(client_id);
     setNewMaintenance({
       ...newMaintenance,
-      clientId: clientId ? parseInt(clientId) : '',
+      client_id: client_id,
       address: client?.address || '',
-      googleMapsLink: client?.googleMapsLink || ''
+      googleMapsLink: client?.googleMapsLink || client?.google_maps_link || ''
     });
   };
   
   // Handle save new maintenance
   const handleSaveMaintenance = (e) => {
     e.preventDefault();
-    if (!newMaintenance.clientId || !newMaintenance.serviceType || !newMaintenance.frequency) {
+    if (!newMaintenance.client_id || !newMaintenance.serviceType || !newMaintenance.frequency) {
       alert('Por favor, completa los campos obligatorios (Cliente, Tipo de Servicio, Frecuencia).');
       return;
     }
@@ -52,7 +61,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
     const maintenanceToSave = {
       ...newMaintenance,
       id: Date.now(), // Simple ID generation
-      lastServiceEmployeeId: newMaintenance.lastServiceEmployeeId ? parseInt(newMaintenance.lastServiceEmployeeId) : null
+      last_service_employee_id: newMaintenance.last_service_employee_id ? parseInt(newMaintenance.last_service_employee_id) : null
     };
     
     onSave(maintenanceToSave);
@@ -95,8 +104,8 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 Cliente
               </label>
               <select
-                name="clientId"
-                value={newMaintenance.clientId}
+                name="client_id"
+                value={newMaintenance.client_id}
                 onChange={handleClientSelect}
                 className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >
@@ -154,8 +163,8 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
                 Empleado que Ejecutó Último Servicio (Opcional)
               </label>
               <select
-                name="lastServiceEmployeeId"
-                value={newMaintenance.lastServiceEmployeeId}
+                name="last_service_employee_id"
+                value={newMaintenance.last_service_employee_id}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >

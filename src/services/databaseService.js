@@ -14,6 +14,7 @@ class DatabaseService {
       'invoices': 'invoices',
       'inventory': 'inventory',
       'maintenances': 'maintenances',
+      'serviceRecords': 'service_records',
       'bankAccounts': 'bank_accounts',
       'cashBoxes': 'cash_boxes',
       'transactions': 'transactions'

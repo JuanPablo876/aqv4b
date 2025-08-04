@@ -99,7 +99,10 @@ const MaintenancesPage = () => {
   // Handle save edited maintenance
   const handleSaveEditedMaintenance = async () => {
     try {
-      await updateMaintenance(editingMaintenance.id, editingMaintenance);
+      // Filter out virtual/computed fields that don't exist in database
+      const { clientName, clientContact, clientEmail, clientPhone, lastServiceEmployee, lastServiceDateFormatted, lastServiceEmployeeName, ...maintenanceData } = editingMaintenance;
+      
+      await updateMaintenance(editingMaintenance.id, maintenanceData);
       setIsEditModalOpen(false);
       setEditingMaintenance(null);
     } catch (error) {
@@ -430,13 +433,21 @@ const MaintenancesPage = () => {
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
-                    onClick={() => setIsEditModalOpen(false)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsEditModalOpen(false);
+                    }}
                     className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
                   >
                     Cancelar
                   </button>
                   <button
-                    onClick={handleSaveEditedMaintenance}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSaveEditedMaintenance();
+                    }}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
                   >
                     Guardar Cambios

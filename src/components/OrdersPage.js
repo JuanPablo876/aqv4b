@@ -3,6 +3,8 @@ import { useOrders, useClients, useProducts, useEmployees } from '../hooks/useDa
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass, getOrderNumber, getQuoteNumber } from '../utils/helpers';
 import { alertNewOrder } from '../utils/alerts'; // Import alert utility
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { cleanFormData } from '../utils/formValidation';
 import VenetianTile from './VenetianTile';
 import OrdersAddModal from './OrdersAddModal'; // Import the new modal
 import OrdersEditModal from './OrdersEditModal';
@@ -181,8 +183,10 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
       if (selectedOrder && selectedOrder.id === orderId) {
         setSelectedOrder({ ...selectedOrder, status: newStatus });
       }
+      
+      handleSuccess('Estado actualizado exitosamente');
     } catch (error) {
-      alert('Error al actualizar el estado: ' + error.message);
+      handleError(error, 'Error al actualizar el estado');
     }
   };
   
@@ -194,8 +198,10 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
       if (selectedOrder && selectedOrder.id === orderId) {
         setSelectedOrder({ ...selectedOrder, payment_status: newPaymentStatus });
       }
+      
+      handleSuccess('Estado de pago actualizado exitosamente');
     } catch (error) {
-      alert('Error al actualizar el estado de pago: ' + error.message);
+      handleError(error, 'Error al actualizar el estado de pago');
     }
   };
   
@@ -226,8 +232,9 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
       }
       
       setSelectedItem(null); // Clear selected item
+      handleSuccess('Empleado asignado exitosamente');
     } catch (error) {
-      alert('Error al asignar empleado: ' + error.message);
+      handleError(error, 'Error al asignar empleado');
     }
   };
   
@@ -256,8 +263,10 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
             alertNewOrder(newOrderData, client, employee);
          }
       }
+      
+      handleSuccess('Orden creada exitosamente');
     } catch (error) {
-      alert('Error al guardar la orden: ' + error.message);
+      handleError(error, 'Error al guardar la orden');
     }
   };
   
@@ -905,13 +914,21 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
               
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => setIsAssignEmployeeModalOpen(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsAssignEmployeeModalOpen(false);
+                  }}
                   className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={handleSaveEmployeeAssignment}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveEmployeeAssignment();
+                  }}
                   disabled={!selectedEmployeeForAssignment}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-blue-300"
                 >
@@ -951,10 +968,9 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
             await update(editingOrder.id, updatedOrder);
             setIsEditOrderModalOpen(false);
             setEditingOrder(null);
-            alert('✅ Pedido actualizado exitosamente');
+            handleSuccess('Pedido actualizado exitosamente');
           } catch (error) {
-            console.error('❌ Error updating order:', error);
-            alert('❌ Error al actualizar pedido: ' + error.message);
+            handleError(error, 'Error al actualizar pedido');
           }
         }}
         editingOrder={editingOrder}

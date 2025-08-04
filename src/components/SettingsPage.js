@@ -6,6 +6,8 @@ import { useToast } from '../hooks/useToast';
 import { useTheme } from '../contexts/ThemeContext';
 import { ValidatedForm } from './forms/ValidatedForm';
 import { userSettingsSchema, changePasswordSchema } from '../schemas/validationSchemas';
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { cleanFormData } from '../utils/formValidation';
 
 const SettingsPage = ({ session }) => {
   const [activeTab, setActiveTab] = useState('general');
@@ -17,15 +19,18 @@ const SettingsPage = ({ session }) => {
   const userEmail = user?.email || 'usuario@example.com';
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuario';
   
-  const [companyInfo, setCompanyInfo] = useState({
-    name: 'AquaPool Distribuidora',
-    legalName: 'AquaPool S.A. de C.V.',
-    taxId: 'APO123456789',
-    email: 'contacto@aquapool.com',
-    phone: '555-123-4567',
-    address: 'Av. de las Albercas 123, Col. Acuática, CDMX',
-    website: 'www.aquapool.com',
-    logo: null // Will show a default company icon instead
+  const [companyInfo, setCompanyInfo] = useState(() => {
+    const saved = localStorage.getItem('companyInfo');
+    return saved ? JSON.parse(saved) : {
+      name: 'AquaPool Distribuidora',
+      legalName: 'AquaPool S.A. de C.V.',
+      taxId: 'APO123456789',
+      email: 'contacto@aquapool.com',
+      phone: '555-123-4567',
+      address: 'Av. de las Albercas 123, Col. Acuática, CDMX',
+      website: 'www.aquapool.com',
+      logo: null // Will show a default company icon instead
+    };
   });
   
   const [userSettings, setUserSettings] = useState({
@@ -186,13 +191,16 @@ const SettingsPage = ({ session }) => {
     }
   };
   
-  const [systemSettings, setSystemSettings] = useState({
-    currency: 'MXN',
-    dateFormat: 'DD/MM/YYYY',
-    timeZone: 'America/Mexico_City',
-    taxRate: 16,
-    backupFrequency: 'daily',
-    autoLogout: 30
+  const [systemSettings, setSystemSettings] = useState(() => {
+    const saved = localStorage.getItem('systemSettings');
+    return saved ? JSON.parse(saved) : {
+      currency: 'MXN',
+      dateFormat: 'DD/MM/YYYY',
+      timeZone: 'America/Mexico_City',
+      taxRate: 16,
+      backupFrequency: 'daily',
+      autoLogout: 30
+    };
   });
 
   // Security-related state
@@ -238,6 +246,16 @@ const SettingsPage = ({ session }) => {
       [name]: value
     });
   };
+
+  // Handle save company info
+  const handleSaveCompanyInfo = async () => {
+    await handleFormSubmission(async () => {
+      const cleanedData = cleanFormData(companyInfo);
+      // Save to localStorage for now (in production, this would be an API call)
+      localStorage.setItem('companyInfo', JSON.stringify(cleanedData));
+      handleSuccess('Información de la empresa guardada correctamente');
+    }, 'Error al guardar la información de la empresa');
+  };
   
   // Handle user settings change
   const handleUserSettingsChange = (e) => {
@@ -274,6 +292,16 @@ const SettingsPage = ({ session }) => {
       ...systemSettings,
       [name]: value
     });
+  };
+
+  // Handle save system settings
+  const handleSaveSystemSettings = async () => {
+    await handleFormSubmission(async () => {
+      const cleanedData = cleanFormData(systemSettings);
+      // Save to localStorage for now (in production, this would be an API call)
+      localStorage.setItem('systemSettings', JSON.stringify(cleanedData));
+      handleSuccess('Configuración del sistema guardada correctamente');
+    }, 'Error al guardar la configuración del sistema');
   };
 
   // Security-related handlers
@@ -449,15 +477,14 @@ const SettingsPage = ({ session }) => {
       return;
     }
 
-    try {
+    await handleFormSubmission(async () => {
       // Update password using Supabase
       const { error } = await supabase.auth.updateUser({
         password: passwordData.newPassword
       });
 
       if (error) {
-        console.error('Error updating password:', error);
-        toast.error(`Error al actualizar la contraseña: ${error.message}`);
+        handleError(error, 'update password', `Error al actualizar la contraseña: ${error.message}`);
         return;
       }
 
@@ -472,10 +499,7 @@ const SettingsPage = ({ session }) => {
         confirmPassword: ''
       });
       setPasswordStrength(0);
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      alert('Error inesperado al actualizar la contraseña');
-    }
+    }, 'Error inesperado al actualizar la contraseña');
   };
   
   // Render tab content
@@ -602,7 +626,14 @@ const SettingsPage = ({ session }) => {
             </div>
             
             <div className="flex justify-end">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSaveCompanyInfo();
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
                 Guardar Cambios
               </button>
             </div>
@@ -1042,7 +1073,7 @@ const SettingsPage = ({ session }) => {
                   // Update profile information in Supabase if username or email changed
                   const success = await handleProfileUpdate('username', userSettings.username);
                   if (success) {
-                    alert('Configuración guardada exitosamente');
+                    handleSuccess('Configuración guardada exitosamente');
                   }
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
@@ -1152,7 +1183,14 @@ const SettingsPage = ({ session }) => {
             </div>
             
             <div className="flex justify-end">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleSaveSystemSettings();
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              >
                 Guardar Cambios
               </button>
             </div>

@@ -568,6 +568,51 @@ FROM quotes q
 JOIN clients c ON q.client_id = c.id;
 
 -- ============================================================================
+-- SERVICE RECORDS TABLE
+-- ============================================================================
+-- Table to store detailed service history for maintenance contracts
+CREATE TABLE IF NOT EXISTS service_records (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  maintenance_id UUID REFERENCES maintenances(id) ON DELETE CASCADE,
+  service_date DATE NOT NULL,
+  service_type VARCHAR(100) NOT NULL,
+  description TEXT,
+  employee_id UUID REFERENCES employees(id),
+  cost DECIMAL(10,2) DEFAULT 0,
+  duration_hours DECIMAL(4,2),
+  status VARCHAR(20) DEFAULT 'completed' CHECK (status IN ('pending', 'in_progress', 'completed', 'cancelled')),
+  notes TEXT,
+  products_used JSONB, -- Array of products used: [{product_id, quantity, price}]
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_service_records_maintenance_id ON service_records(maintenance_id);
+CREATE INDEX IF NOT EXISTS idx_service_records_service_date ON service_records(service_date);
+CREATE INDEX IF NOT EXISTS idx_service_records_employee_id ON service_records(employee_id);
+CREATE INDEX IF NOT EXISTS idx_service_records_status ON service_records(status);
+
+-- Add RLS policies
+ALTER TABLE service_records ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Users can view all service records
+CREATE POLICY "Users can view service records" ON service_records
+    FOR SELECT USING (true);
+
+-- Policy: Users can insert service records
+CREATE POLICY "Users can insert service records" ON service_records
+    FOR INSERT WITH CHECK (true);
+
+-- Policy: Users can update service records
+CREATE POLICY "Users can update service records" ON service_records
+    FOR UPDATE USING (true);
+
+-- Policy: Users can delete service records
+CREATE POLICY "Users can delete service records" ON service_records
+    FOR DELETE USING (true);
+
+-- ============================================================================
 -- INITIAL DATA SETUP COMMENTS
 -- ============================================================================
 

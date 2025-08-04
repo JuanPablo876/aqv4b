@@ -18,12 +18,6 @@ const DashboardTopItems = ({ title, items = [], type, onViewAll }) => {
     <VenetianTile className="p-6">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-blue-800 font-medium">{title}</h3>
-        <button 
-          className="text-sm text-blue-600 hover:text-blue-800"
-          onClick={onViewAll}
-        >
-          Ver todo
-        </button>
       </div>
       
       <div className="space-y-4">

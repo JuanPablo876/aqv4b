@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useData } from '../hooks/useData';
 import VenetianTile from './VenetianTile';
+import { generateUniqueTestOrderNumber } from '../utils/orderNumberGenerator';
 
 const DatabaseTest = () => {
   const { data: orders = [], loading: ordersLoading, create: createOrder } = useData('orders');
@@ -38,9 +39,10 @@ const DatabaseTest = () => {
 
       // Create sample orders with different dates
       const today = new Date();
+      
       const sampleOrders = [
         {
-          order_number: 'ORD-001',
+          order_number: generateUniqueTestOrderNumber(1),
           client_id: clientId,
           date: new Date(today.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 day ago
           status: 'completed',
@@ -52,7 +54,7 @@ const DatabaseTest = () => {
           notes: 'Entrega de químicos para piscina principal'
         },
         {
-          order_number: 'ORD-002',
+          order_number: generateUniqueTestOrderNumber(2),
           client_id: clientId,
           date: new Date(today.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 5 days ago
           status: 'pending',
@@ -64,7 +66,7 @@ const DatabaseTest = () => {
           notes: 'Mantenimiento mensual programado'
         },
         {
-          order_number: 'ORD-003',
+          order_number: generateUniqueTestOrderNumber(3),
           client_id: clientId,
           date: new Date(today.getTime() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 15 days ago
           status: 'delivered',
@@ -76,7 +78,7 @@ const DatabaseTest = () => {
           notes: 'Instalación de sistema de filtración'
         },
         {
-          order_number: 'ORD-004',
+          order_number: generateUniqueTestOrderNumber(4),
           client_id: clientId,
           date: new Date(today.getTime() - 45 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 45 days ago (within 3 months)
           status: 'completed',
@@ -88,7 +90,7 @@ const DatabaseTest = () => {
           notes: 'Químicos y accesorios'
         },
         {
-          order_number: 'ORD-005',
+          order_number: generateUniqueTestOrderNumber(5),
           client_id: clientId,
           date: new Date(today.getTime() - 75 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 75 days ago (within 3 months)
           status: 'completed',

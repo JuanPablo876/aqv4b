@@ -4,6 +4,9 @@ import { useData } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { sendOrderEmail, printOrder } from '../utils/emailPrint';
 import { calculateSubtotal, calculateDiscount, calculateTax, calculateTotal } from '../utils/helpers';
+import { validateInventoryAvailability, updateInventoryFromOrder } from '../utils/inventoryManager';
+import { handleError, handleSuccess } from '../utils/errorHandling';
+import { generateUniqueOrderNumber } from '../utils/orderNumberGenerator';
 
 const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, editingOrder = null }) => {
   const { data: clientsList, loading: clientsLoading } = useData('clients');
@@ -95,20 +98,7 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
   
   // Generate next sequential order number based on current date
   const generateNextOrderNumber = () => {
-    const today = new Date();
-    const day = today.getDate().toString().padStart(2, '0');
-    const month = (today.getMonth() + 1).toString().padStart(2, '0');
-    const year = today.getFullYear();
-    const dateStr = `${day}${month}${year}`; // DDMMYYYY format
-    
-    // Count orders created today
-    const todayOrders = (ordersList || []).filter(order => {
-      const orderDate = new Date(order.date);
-      return orderDate.toDateString() === today.toDateString();
-    });
-    
-    const nextNumber = todayOrders.length + 1;
-    return `AQV-${dateStr}${nextNumber}`;
+    return generateUniqueOrderNumber(ordersList || [], 'AQV');
   };
 
   // Get product details by ID
@@ -152,11 +142,38 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
   };
   
   // Handle add product to order
-  const handleAddProductToOrder = () => {
+  const handleAddProductToOrder = async () => {
     if (!selectedProductToAdd || productQuantityToAdd <= 0) return;
     
     const product = getProductDetails(selectedProductToAdd);
     if (!product) return;
+    
+    // Check current inventory availability for this product
+    const inventoryItem = inventoryList.find(inv => 
+      inv.product_id === product.id || 
+      inv.product_id === parseInt(product.id)
+    );
+    
+    if (inventoryItem) {
+      const availableQuantity = inventoryItem.quantity || 0;
+      const requestedQuantity = parseInt(productQuantityToAdd);
+      
+      // Calculate total already requested in this order
+      const alreadyInOrder = newOrder.items
+        .filter(item => item.productId === product.id || item.productId === parseInt(product.id))
+        .reduce((sum, item) => sum + (item.quantity || 0), 0);
+      
+      const totalRequested = alreadyInOrder + requestedQuantity;
+      
+      if (totalRequested > availableQuantity) {
+        handleError(
+          new Error(`Stock insuficiente para ${product.name}. Disponible: ${availableQuantity}, Ya en pedido: ${alreadyInOrder}, Solicitado: ${requestedQuantity}`),
+          'inventory check',
+          'No se puede agregar el producto por falta de stock'
+        );
+        return;
+      }
+    }
     
     const newItem = {
       productId: product.id,
@@ -190,12 +207,37 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
   // Handle save order
   const handleSaveOrder = async () => {
     if (!newOrder.clientId || newOrder.items.length === 0) {
-      alert('Por favor, selecciona un cliente y agrega al menos un producto.');
+      handleError(new Error('Por favor, selecciona un cliente y agrega al menos un producto.'), 'validation');
       return;
     }
     
     setSaving(true);
     try {
+      // For new orders, validate inventory availability
+      if (!editingOrder) {
+        console.log('🔍 Validating inventory availability...');
+        const validation = await validateInventoryAvailability(newOrder.items);
+        
+        if (!validation.isValid) {
+          const unavailableItems = validation.items
+            .filter(item => !item.isAvailable)
+            .map(item => {
+              const product = productsList.find(p => p.id === item.productId);
+              return `${product?.name || 'Producto'}: ${item.message}`;
+            })
+            .join('\n');
+          
+          handleError(
+            new Error(`Stock insuficiente:\n${unavailableItems}`), 
+            'inventory validation',
+            'No se puede crear el pedido por falta de stock'
+          );
+          return;
+        }
+        
+        console.log('✅ Inventory validation passed');
+      }
+      
       const subtotal = calculateSubtotal(newOrder.items);
       const discount = calculateDiscount(newOrder.items);
       const tax = calculateTax(subtotal, discount);
@@ -206,8 +248,6 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
         (editingOrder.orderNumber || editingOrder.order_number) : 
         generateNextOrderNumber();
       
-      // For display purposes, we'll let the table handle the numbering
-      // But we'll still generate a unique ID for database reference
       const orderToSave = {
         ...(editingOrder ? { id: editingOrder.id } : {}), // Keep existing ID for edits
         order_number: editingOrder ? (editingOrder.order_number || `AQV-2024-${editingOrder.id}`) : generateNextOrderNumber(),
@@ -232,28 +272,42 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
         items: newOrder.items // Include items in the order
       };
       
+      // Save the order first
+      const savedOrder = await onSave(orderToSave);
+      const orderId = savedOrder?.id || orderToSave.id || 'NEW';
+      
       // Update inventory for new orders only
-      if (!editingOrder) {
-        // Reduce inventory quantities for ordered items
-        for (const item of newOrder.items) {
-          const inventoryItem = inventoryList.find(inv => 
-            inv.product_id === item.productId || 
-            inv.product_id === parseInt(item.productId)
+      if (!editingOrder && newOrder.items.length > 0) {
+        try {
+          console.log('📦 Updating inventory for new order...');
+          const inventoryUpdates = await updateInventoryFromOrder(
+            newOrder.items, 
+            'reduce', 
+            'Venta', 
+            orderId
           );
           
-          if (inventoryItem) {
-            const newQuantity = Math.max(0, inventoryItem.quantity - item.quantity);
-            console.log(`📦 Actualizando inventario: ${inventoryItem.product_name} ${inventoryItem.quantity} → ${newQuantity}`);
-            // In a real app, you would update the inventory via API
-            // await updateInventory(inventoryItem.id, { quantity: newQuantity });
+          if (inventoryUpdates.length > 0) {
+            console.log(`✅ Inventory updated for ${inventoryUpdates.length} items`);
+            handleSuccess(`Pedido creado exitosamente. Inventario actualizado: ${inventoryUpdates.length} productos.`);
+          } else {
+            handleSuccess('Pedido creado exitosamente.');
           }
+        } catch (inventoryError) {
+          console.error('❌ Error updating inventory:', inventoryError);
+          handleError(
+            inventoryError, 
+            'inventory update',
+            'Pedido creado pero hubo un error al actualizar el inventario. Verifique manualmente.'
+          );
         }
+      } else {
+        handleSuccess(editingOrder ? 'Pedido actualizado exitosamente.' : 'Pedido creado exitosamente.');
       }
       
-      await onSave(orderToSave);
     } catch (error) {
       console.error('❌ Error saving order:', error);
-      alert('Error al guardar el pedido: ' + error.message);
+      handleError(error, 'save order', 'Error al guardar el pedido');
     } finally {
       setSaving(false);
     }

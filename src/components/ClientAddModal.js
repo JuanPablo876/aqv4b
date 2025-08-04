@@ -33,7 +33,6 @@ const ClientAddModal = ({ isOpen, onClose, onSave }) => {
     city: '',
     state: '',
     zipCode: '',
-    company: '',
     contactPerson: '',
     notes: '',
     type: 'individual',
@@ -118,16 +117,6 @@ const ClientAddModal = ({ isOpen, onClose, onSave }) => {
 
 
                             placeholder="Nombre del contacto principal"
-                          />
-                        )}
-                        
-                        {clientType === 'individual' && (
-                          <FormField
-                            label="Empresa (Opcional)"
-                            name="company"
-
-
-                            placeholder="Empresa donde trabaja"
                           />
                         )}
                       </div>

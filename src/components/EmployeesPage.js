@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useEmployees } from '../hooks/useData';
 import { formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { cleanFormData } from '../utils/formValidation';
 import VenetianTile from './VenetianTile';
 
 const EmployeesPage = () => {
@@ -63,13 +65,14 @@ const EmployeesPage = () => {
   
   // Handle save new employee
   const handleSaveEmployee = async () => {
-    try {
+    await handleFormSubmission(async () => {
       const newEmployeeData = {
         ...newEmployee,
         hire_date: newEmployee.hire_date || new Date().toISOString().split('T')[0]
       };
       
-      await createEmployee(newEmployeeData);
+      const cleanedData = cleanFormData(newEmployeeData);
+      await createEmployee(cleanedData);
       setIsAddModalOpen(false);
       setNewEmployee({
         name: '',
@@ -81,10 +84,8 @@ const EmployeesPage = () => {
         address: '',
         google_maps_link: ''
       });
-    } catch (error) {
-      console.error('Error saving employee:', error);
-      alert('Error al guardar empleado: ' + error.message);
-    }
+      return 'Empleado creado exitosamente';
+    });
   };
   
   // Handle close employee details
@@ -566,14 +567,22 @@ const EmployeesPage = () => {
               
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => setIsAddModalOpen(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsAddModalOpen(false);
+                  }}
                   className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cancelar
                 </button>
                 
                 <button
-                  onClick={handleSaveEmployee}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveEmployee();
+                  }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Guardar Empleado
@@ -582,8 +591,6 @@ const EmployeesPage = () => {
             </div>
           </VenetianTile>
         </div>
-      )}
-      </>
       )}
 
       {/* Edit employee modal */}
@@ -725,22 +732,27 @@ const EmployeesPage = () => {
               
               <div className="flex justify-end space-x-3 pt-4">
                 <button
-                  onClick={handleCloseEditModal}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleCloseEditModal();
+                  }}
                   className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cancelar
                 </button>
                 
                 <button
-                  onClick={async () => {
-                    try {
-                      await updateEmployee(selectedEmployee.id, newEmployee);
+                  type="button"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    await handleFormSubmission(async () => {
+                      const cleanedData = cleanFormData(newEmployee);
+                      await updateEmployee(selectedEmployee.id, cleanedData);
                       setIsEditModalOpen(false);
                       setSelectedEmployee(null);
-                    } catch (error) {
-                      console.error('Error updating employee:', error);
-                      alert('Error al actualizar empleado: ' + error.message);
-                    }
+                      return 'Empleado actualizado exitosamente';
+                    });
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
@@ -837,6 +849,8 @@ const EmployeesPage = () => {
             </div>
           </VenetianTile>
         </div>
+      )}
+      </>
       )}
     </div>
   );

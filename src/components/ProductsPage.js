@@ -3,6 +3,9 @@ import { useProducts } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import { DEFAULT_PRODUCT_IMAGE } from '../utils/placeholders';
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { cleanFormData, productSchema } from '../utils/formValidation';
+import { supabase } from '../lib/supabase';
 import VenetianTile from './VenetianTile';
 
 const ProductsPage = () => {
@@ -11,8 +14,12 @@ const ProductsPage = () => {
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [isPriceHistoryModalOpen, setIsPriceHistoryModalOpen] = useState(false);
   const [selectedHistoryProduct, setSelectedHistoryProduct] = useState(null);
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [priceHistoryLoading, setPriceHistoryLoading] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('');
   const [newProduct, setNewProduct] = useState({
     name: '',
@@ -153,17 +160,20 @@ const ProductsPage = () => {
   
   // Handle save new product
   const handleSaveProduct = async () => {
-    try {
+    await handleFormSubmission(async () => {
+      // Clean and validate form data
+      const cleanedData = cleanFormData(newProduct);
+      
       // Convert string values to numbers where needed
       const formattedProduct = {
-        ...newProduct,
-        price: parseFloat(newProduct.price) || 0,
-        cost: parseFloat(newProduct.cost) || 0,
-        stock: parseInt(newProduct.stock) || 0,
-        min_stock: parseInt(newProduct.min_stock) || 0,
-        image_url: newProduct.image_url || DEFAULT_PRODUCT_IMAGE,
-        installation_required: Boolean(newProduct.installation_required),
-        last_restock_date: newProduct.last_restock_date || null
+        ...cleanedData,
+        price: parseFloat(cleanedData.price) || 0,
+        cost: parseFloat(cleanedData.cost) || 0,
+        stock: parseInt(cleanedData.stock) || 0,
+        min_stock: parseInt(cleanedData.min_stock) || 0,
+        image_url: cleanedData.image_url || DEFAULT_PRODUCT_IMAGE,
+        installation_required: Boolean(cleanedData.installation_required),
+        last_restock_date: cleanedData.last_restock_date || null
       };
       
       await create(formattedProduct);
@@ -190,21 +200,140 @@ const ProductsPage = () => {
         seasonal_demand: 'moderate',
         last_restock_date: ''
       });
-    } catch (error) {
-      alert('Error al guardar el producto: ' + error.message);
-    }
+      
+      return 'Producto creado exitosamente';
+    });
   };
   
+  // Fetch price history for a product
+  const fetchPriceHistory = async (productId) => {
+    setPriceHistoryLoading(true);
+    try {
+      // First, check if we have a price_history table
+      const { data: priceHistoryData, error: historyError } = await supabase
+        .from('price_history')
+        .select('*')
+        .eq('product_id', productId)
+        .order('change_date', { ascending: false });
+
+      if (historyError && historyError.code === 'PGRST116') {
+        // Table doesn't exist, create mock data for now
+        console.log('Price history table not found, using mock data');
+        return generateMockPriceHistory();
+      } else if (historyError) {
+        throw historyError;
+      }
+
+      if (priceHistoryData && priceHistoryData.length > 0) {
+        return priceHistoryData;
+      } else {
+        // No price history found, generate some based on current price
+        return generateMockPriceHistory();
+      }
+    } catch (error) {
+      handleError(error, 'fetch price history', 'Error al cargar el historial de precios');
+      return generateMockPriceHistory();
+    } finally {
+      setPriceHistoryLoading(false);
+    }
+  };
+
+  // Generate mock price history for demonstration
+  const generateMockPriceHistory = () => {
+    const currentProduct = selectedHistoryProduct;
+    if (!currentProduct) return [];
+
+    const currentPrice = parseFloat(currentProduct.price) || 100;
+    const mockHistory = [];
+    
+    // Generate 5 historical price changes
+    for (let i = 0; i < 5; i++) {
+      const daysAgo = (i + 1) * 30; // 30, 60, 90, 120, 150 days ago
+      const priceVariation = 0.8 + (Math.random() * 0.4); // ±20% variation
+      const oldPrice = currentPrice * priceVariation;
+      
+      mockHistory.push({
+        id: `mock-${i}`,
+        change_date: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
+        old_price: oldPrice,
+        new_price: i === 0 ? currentPrice : mockHistory[i-1].old_price,
+        change_reason: i === 0 ? 'Actualización de precio actual' : 
+                     Math.random() > 0.5 ? 'Ajuste por inflación' : 'Cambio de proveedor',
+        changed_by: 'Sistema',
+        notes: i === 0 ? 'Precio actual del producto' : 
+               `Cambio de precio ${oldPrice < currentPrice ? 'incremento' : 'reducción'}`,
+        is_mock: true
+      });
+    }
+    
+    return mockHistory;
+  };
+
   // Handle price history
-  const handlePriceHistory = (product) => {
+  const handlePriceHistory = async (product) => {
     console.log(`Viendo historial de precios para: ${product.name}`);
     setSelectedHistoryProduct(product);
     setIsPriceHistoryModalOpen(true);
+    
+    // Fetch price history
+    const history = await fetchPriceHistory(product.id);
+    setPriceHistory(history);
   };
   
   // Handle close product details
   const handleCloseDetails = () => {
     setSelectedProduct(null);
+  };
+
+  // Handle edit product
+  const handleEditProduct = (product) => {
+    setEditingProduct({ ...product });
+    setIsEditModalOpen(true);
+  };
+
+  // Handle edit form input change
+  const handleEditInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setEditingProduct(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Handle update product
+  const handleUpdateProduct = async () => {
+    await handleFormSubmission(async () => {
+      // Clean and validate form data
+      const cleanedData = cleanFormData(editingProduct);
+      
+      // Convert string values to numbers where needed
+      const processedProduct = {
+        ...cleanedData,
+        price: parseFloat(cleanedData.price) || 0,
+        cost: parseFloat(cleanedData.cost) || 0,
+        stock: parseInt(cleanedData.stock) || 0,
+        min_stock: parseInt(cleanedData.min_stock) || 0,
+        weight: parseFloat(cleanedData.weight) || 0
+      };
+
+      await update(editingProduct.id, processedProduct);
+      setIsEditModalOpen(false);
+      setEditingProduct(null);
+      
+      return 'Producto actualizado exitosamente';
+    });
+  };
+
+  // Handle delete product with confirmation
+  const handleDeleteProduct = async (productId) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este producto? Esta acción no se puede deshacer.')) {
+      try {
+        await deleteProduct(productId);
+        handleSuccess('Producto eliminado exitosamente');
+      } catch (error) {
+        handleError(error, 'Error al eliminar producto');
+      }
+    }
   };
   
   // Calculate profit margin
@@ -323,6 +452,28 @@ const ProductsPage = () => {
                   <p className="text-sm font-medium text-blue-800">{product.stock} unidades</p>
                   <p className="text-xs text-gray-500">Mín: {product.min_stock}</p>
                 </div>
+              </div>
+              
+              {/* Action buttons */}
+              <div className="mt-4 flex justify-end space-x-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditProduct(product);
+                  }}
+                  className="px-3 py-1.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-md hover:bg-blue-200 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteProduct(product.id);
+                  }}
+                  className="px-3 py-1.5 bg-red-100 text-red-700 text-xs font-medium rounded-md hover:bg-red-200 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                >
+                  Eliminar
+                </button>
               </div>
             </div>
           </VenetianTile>
@@ -445,13 +596,23 @@ const ProductsPage = () => {
                   <div className="mt-6">
                     <h4 className="text-lg font-medium text-blue-800 mb-4">Acciones Rápidas</h4>
                     
-                    <div className="grid grid-cols-2 gap-3">
-                      <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                    <div className="grid grid-cols-3 gap-3">
+                      <button 
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        onClick={() => handleEditProduct(selectedProduct)}
+                      >
                         Editar Producto
                       </button>
                       
                       <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                         Ajustar Inventario
+                      </button>
+
+                      <button 
+                        className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        onClick={() => handleDeleteProduct(selectedProduct.id)}
+                      >
+                        Eliminar
                       </button>
                       
                       <button 
@@ -653,14 +814,22 @@ const ProductsPage = () => {
               
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => setIsAddModalOpen(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsAddModalOpen(false);
+                  }}
                   className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cancelar
                 </button>
                 
                 <button
-                  onClick={handleSaveProduct}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveProduct();
+                  }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Guardar Producto
@@ -704,81 +873,236 @@ const ProductsPage = () => {
                 </p>
               </div>
 
-              {/* Mock price history data */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <p className="text-yellow-800 text-sm">
-                  <strong>Nota:</strong> Esta funcionalidad muestra datos de ejemplo. 
-                  En producción se conectará a los registros reales de cambios de precio.
-                </p>
-              </div>
+              {/* Show if data is mock or real */}
+              {priceHistory.length > 0 && priceHistory[0]?.is_mock && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <p className="text-yellow-800 text-sm">
+                    <strong>Nota:</strong> Los datos mostrados son de ejemplo. 
+                    Para conectar con datos reales, se necesita crear la tabla price_history en la base de datos.
+                  </p>
+                </div>
+              )}
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-blue-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Fecha
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Precio Anterior
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Precio Nuevo
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Cambio
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Motivo
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Usuario
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {/* Mock data - replace with real price history */}
-                    {[
-                      { date: '2025-08-01', oldPrice: 3500, newPrice: 3899.99, change: 399.99, reason: 'Ajuste por inflación', user: 'Admin' },
-                      { date: '2025-07-15', oldPrice: 3200, newPrice: 3500, change: 300, reason: 'Aumento de costos de proveedor', user: 'Admin' },
-                      { date: '2025-06-01', oldPrice: 3000, newPrice: 3200, change: 200, reason: 'Actualización de precios de temporada', user: 'Admin' },
-                      { date: '2025-05-10', oldPrice: 2800, newPrice: 3000, change: 200, reason: 'Ajuste por demanda del mercado', user: 'Admin' }
-                    ].map((priceChange, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(priceChange.date).toLocaleDateString('es-ES')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(priceChange.oldPrice)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {formatCurrency(priceChange.newPrice)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`text-sm font-medium ${
-                            priceChange.change > 0 ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {priceChange.change > 0 ? '+' : ''}{formatCurrency(priceChange.change)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {priceChange.reason}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {priceChange.user}
-                        </td>
+              {priceHistoryLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Cargando historial...</span>
+                </div>
+              ) : priceHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No hay historial de precios disponible para este producto.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-blue-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Fecha
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Precio Anterior
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Precio Nuevo
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Cambio
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Motivo
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Usuario
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {priceHistory.map((priceChange, index) => {
+                        const oldPrice = parseFloat(priceChange.old_price) || 0;
+                        const newPrice = parseFloat(priceChange.new_price) || 0;
+                        const change = newPrice - oldPrice;
+                        
+                        return (
+                          <tr key={priceChange.id || index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {formatDate(priceChange.change_date)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {formatCurrency(oldPrice)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {formatCurrency(newPrice)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`text-sm font-medium ${
+                                change > 0 ? 'text-green-600' : change < 0 ? 'text-red-600' : 'text-gray-600'
+                              }`}>
+                                {change > 0 ? '+' : ''}{formatCurrency(change)}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {priceChange.change_reason || 'No especificado'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {priceChange.changed_by || 'Sistema'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <div className="mt-6 flex justify-end">
                 <button
-                  onClick={() => setIsPriceHistoryModalOpen(false)}
+                  onClick={() => {
+                    setIsPriceHistoryModalOpen(false);
+                    setPriceHistory([]);
+                  }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cerrar
+                </button>
+              </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
+
+      {/* Edit product modal */}
+      {isEditModalOpen && editingProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-blue-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-blue-800">Editar Producto</h3>
+                <button 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nombre del Producto *
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editingProduct.name || ''}
+                    onChange={handleEditInputChange}
+                    required
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Precio de Venta *
+                  </label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={editingProduct.price || ''}
+                    onChange={handleEditInputChange}
+                    step="0.01"
+                    min="0"
+                    required
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Costo
+                  </label>
+                  <input
+                    type="number"
+                    name="cost"
+                    value={editingProduct.cost || ''}
+                    onChange={handleEditInputChange}
+                    step="0.01"
+                    min="0"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Stock Actual
+                  </label>
+                  <input
+                    type="number"
+                    name="stock"
+                    value={editingProduct.stock || ''}
+                    onChange={handleEditInputChange}
+                    min="0"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Stock Mínimo
+                  </label>
+                  <input
+                    type="number"
+                    name="min_stock"
+                    value={editingProduct.min_stock || ''}
+                    onChange={handleEditInputChange}
+                    min="0"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Categoría
+                  </label>
+                  <input
+                    type="text"
+                    name="category"
+                    value={editingProduct.category || ''}
+                    onChange={handleEditInputChange}
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Descripción
+                  </label>
+                  <textarea
+                    name="description"
+                    value={editingProduct.description || ''}
+                    onChange={handleEditInputChange}
+                    rows="3"
+                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleUpdateProduct}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  Guardar Cambios
                 </button>
               </div>
             </div>

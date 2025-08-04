@@ -39,7 +39,6 @@ export const clientSchema = z.object({
   city: requiredString('La ciudad es requerida'),
   state: requiredString('El estado es requerido'),
   zipCode: z.string().regex(/^\d{5}$/, 'El código postal debe tener 5 dígitos'),
-  company: z.string().optional(),
   contactPerson: z.string().optional(),
   notes: z.string().optional(),
   type: z.enum(['individual', 'business'], {

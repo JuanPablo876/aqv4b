@@ -157,6 +157,7 @@ export default function InvitationManagement() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-bold text-primary">Nueva Invitación</h2>
               <button
+                type="button"
                 onClick={() => setShowCreateForm(false)}
                 className="text-muted-foreground hover:text-primary transition-colors p-1"
                 aria-label="Cerrar"
@@ -297,12 +298,14 @@ export default function InvitationManagement() {
                         {invitation.status === 'pending' && (
                           <>
                             <button
+                              type="button"
                               onClick={() => handleResendInvitation(invitation.id)}
                               className="text-primary hover:text-primary/80 transition-colors"
                             >
                               Reenviar
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleCancelInvitation(invitation.id)}
                               className="text-destructive hover:text-destructive/80 transition-colors"
                             >

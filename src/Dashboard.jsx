@@ -18,10 +18,15 @@ import SettingsPage from './components/SettingsPage';
 import UserProfilePage from './components/UserProfilePage';
 import InvitationManagement from './components/InvitationManagement';
 import DatabaseTest from './components/DatabaseTest';
+import DatabaseDiagnostic from './components/DatabaseDiagnostic';
+import AuditLogsPage from './components/AuditLogsPage';
+import NotificationSettingsPage from './components/NotificationSettingsPage';
 import VenetianBackground from './components/VenetianBackground';
 import ModuleSidebar from './components/ModuleSidebar';
 import { isStorageAvailable } from './utils/storage';
 import { useDatabaseInit } from './hooks/useDatabaseInit';
+import { useBusinessNotifications } from './hooks/useBusinessNotifications';
+import { emailNotificationService } from './services/emailNotificationService';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -31,6 +36,18 @@ export default function Dashboard() {
   
   // Initialize database when dashboard loads
   const { isInitialized, isLoading, error } = useDatabaseInit();
+  
+  // Initialize business notifications for real-time alerts
+  useBusinessNotifications();
+
+  // Initialize email notification service when dashboard loads
+  useEffect(() => {
+    if (isInitialized && !isLoading) {
+      emailNotificationService.initialize().catch(error => {
+        console.error('Error initializing email notification service:', error);
+      });
+    }
+  }, [isInitialized, isLoading]);
   
   // Initialize modules with dev modules if in development
   const initializeModules = () => {
@@ -235,12 +252,18 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
         );
       case 'reports':
         return <ReportsPage />;
+      case 'dbdiagnostic':
+        return <DatabaseDiagnostic />;
       case 'settings':
         return <SettingsPage session={session} />;
+      case 'notifications':
+        return <NotificationSettingsPage />;
       case 'profile':
         return <UserProfilePage session={session} />;
       case 'invitations':
         return <InvitationManagement />;
+      case 'audit':
+        return <AuditLogsPage />;
       case 'dbtest':
         return <DatabaseTest />;
       default:

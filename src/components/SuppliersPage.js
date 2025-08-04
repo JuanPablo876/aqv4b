@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useSuppliers, useProducts } from '../hooks/useData';
-import { formatCurrency } from '../utils/storage'; // Import formatCurrency
+import { formatCurrency, formatDate } from '../utils/storage'; // Import formatCurrency
 import { filterBySearchTerm, sortByField } from '../utils/helpers';
+import { validateFormData, formSchemas, cleanFormData } from '../utils/formValidation';
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { supabase } from '../lib/supabase';
 import VenetianTile from './VenetianTile';
 
 const SuppliersPage = () => {
@@ -15,6 +18,10 @@ const SuppliersPage = () => {
   const [isPurchaseHistoryModalOpen, setIsPurchaseHistoryModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
   const [selectedHistorySupplier, setSelectedHistorySupplier] = useState(null);
+  const [purchaseHistory, setPurchaseHistory] = useState([]);
+  const [purchaseHistoryLoading, setPurchaseHistoryLoading] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSupplier, setNewSupplier] = useState({
     name: '',
     contact_person: '', // Updated to match database field name
@@ -125,48 +132,87 @@ const SuppliersPage = () => {
       ...newSupplier,
       [name]: value
     });
+    
+    // Clear specific field error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: ''
+      });
+    }
   };
   
   // Handle save new supplier
   const handleSaveSupplier = async (e) => {
     e.preventDefault();
-    try {
-      await create(newSupplier);
-      setIsAddModalOpen(false);
-      setNewSupplier({
-        name: '',
-        contact_person: '',
-        email: '',
-        phone: '',
-        address: '',
-        lead_time: '',
-        payment_terms: '',
-        notes: '',
-        status: 'active'
-      });
-    } catch (error) {
-      console.error('Error creating supplier:', error);
-      alert('Error al crear proveedor: ' + error.message);
-    }
+    await handleFormSubmission(
+      async () => {
+        // Validate form data
+        const validation = validateFormData(newSupplier, formSchemas.supplier);
+        if (!validation.isValid) {
+          setFormErrors(validation.errors);
+          throw new Error('Por favor corrige los errores en el formulario');
+        }
+
+        // Clean and prepare data
+        const cleanedData = cleanFormData(validation.data);
+        await create(cleanedData);
+        
+        // Reset form and close modal
+        setIsAddModalOpen(false);
+        setNewSupplier({
+          name: '',
+          contact_person: '',
+          email: '',
+          phone: '',
+          address: '',
+          lead_time: '',
+          payment_terms: '',
+          notes: '',
+          status: 'active'
+        });
+        setFormErrors({});
+        
+        handleSuccess('Proveedor creado exitosamente');
+      },
+      setIsSubmitting,
+      'create supplier'
+    );
   };
   
   // Handle edit supplier
   const handleEditSupplier = (supplier) => {
     setEditingSupplier({ ...supplier });
     setIsEditModalOpen(true);
+    setFormErrors({}); // Clear any previous errors
   };
 
   // Handle save edited supplier
   const handleSaveEditedSupplier = async (e) => {
     e.preventDefault();
-    try {
-      await update(editingSupplier.id, editingSupplier);
-      setIsEditModalOpen(false);
-      setEditingSupplier(null);
-    } catch (error) {
-      console.error('Error updating supplier:', error);
-      alert('Error al actualizar proveedor: ' + error.message);
-    }
+    await handleFormSubmission(
+      async () => {
+        // Validate form data
+        const validation = validateFormData(editingSupplier, formSchemas.supplier);
+        if (!validation.isValid) {
+          setFormErrors(validation.errors);
+          throw new Error('Por favor corrige los errores en el formulario');
+        }
+
+        // Clean and update data
+        const cleanedData = cleanFormData(validation.data);
+        await update(editingSupplier.id, cleanedData);
+        
+        // Reset form and close modal
+        setIsEditModalOpen(false);
+        setEditingSupplier(null);
+        setFormErrors({});
+        
+        handleSuccess('Proveedor actualizado exitosamente');
+      },
+      setIsSubmitting,
+      'update supplier'
+    );
   };
 
   // Handle input change for editing supplier
@@ -176,6 +222,14 @@ const SuppliersPage = () => {
       ...editingSupplier,
       [name]: value
     });
+    
+    // Clear specific field error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: ''
+      });
+    }
   };
   
   // Handle close supplier details
@@ -183,11 +237,136 @@ const SuppliersPage = () => {
     setSelectedSupplier(null);
   };
   
+  // Fetch purchase history for a supplier
+  const fetchPurchaseHistory = async (supplierId, supplierName) => {
+    setPurchaseHistoryLoading(true);
+    try {
+      // Try to get purchase orders or orders from this supplier
+      // First attempt: Check if there's a purchase_orders table
+      let { data: purchaseOrders, error: poError } = await supabase
+        .from('purchase_orders')
+        .select('*')
+        .eq('supplier_id', supplierId)
+        .order('created_at', { ascending: false });
+
+      if (poError && poError.code === 'PGRST116') {
+        // purchase_orders table doesn't exist, try to get products from this supplier and related orders
+        const { data: supplierProducts, error: spError } = await supabase
+          .from('products')
+          .select('id, name')
+          .eq('supplier_id', supplierId);
+
+        if (spError) throw spError;
+
+        if (supplierProducts && supplierProducts.length > 0) {
+          const productIds = supplierProducts.map(p => p.id);
+          
+          // Get orders that contain products from this supplier
+          const { data: orderItems, error: oiError } = await supabase
+            .from('order_items')
+            .select(`
+              *, 
+              orders!inner(id, date, total, status, client_id, created_at),
+              products!inner(name, supplier_id)
+            `)
+            .in('product_id', productIds);
+
+          if (oiError) throw oiError;
+
+          if (orderItems && orderItems.length > 0) {
+            // Group by order and calculate supplier totals
+            const orderMap = new Map();
+            orderItems.forEach(item => {
+              const order = item.orders;
+              const orderKey = order.id;
+              
+              if (!orderMap.has(orderKey)) {
+                orderMap.set(orderKey, {
+                  id: orderKey,
+                  date: order.date || order.created_at,
+                  order_number: `ORD-${orderKey.slice(-6)}`,
+                  items: [],
+                  total: 0,
+                  status: order.status || 'completed',
+                  type: 'order',
+                  supplier_total: 0
+                });
+              }
+              
+              const orderData = orderMap.get(orderKey);
+              orderData.items.push({
+                product_name: item.products.name,
+                quantity: item.quantity,
+                price: item.price
+              });
+              orderData.supplier_total += (item.quantity * item.price);
+            });
+
+            return Array.from(orderMap.values());
+          }
+        }
+        
+        // No real data found, generate mock data
+        return generateMockPurchaseHistory(supplierName);
+      } else if (poError) {
+        throw poError;
+      }
+
+      if (purchaseOrders && purchaseOrders.length > 0) {
+        return purchaseOrders.map(po => ({
+          ...po,
+          order_number: po.order_number || `PO-${po.id.slice(-6)}`,
+          type: 'purchase_order'
+        }));
+      } else {
+        // No purchase orders found, generate mock data
+        return generateMockPurchaseHistory(supplierName);
+      }
+    } catch (error) {
+      console.error('Error fetching purchase history:', error);
+      handleError(error, 'fetch purchase history', 'Error al cargar el historial de compras');
+      return generateMockPurchaseHistory(supplierName);
+    } finally {
+      setPurchaseHistoryLoading(false);
+    }
+  };
+
+  // Generate mock purchase history for demonstration
+  const generateMockPurchaseHistory = (supplierName) => {
+    const mockHistory = [];
+    
+    // Generate 5 mock purchase transactions
+    for (let i = 0; i < 5; i++) {
+      const daysAgo = (i + 1) * 15; // 15, 30, 45, 60, 75 days ago
+      const baseAmount = 5000 + (Math.random() * 10000); // Random amount between 5k-15k
+      
+      mockHistory.push({
+        id: `mock-${i}`,
+        date: new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString(),
+        order_number: `PO-${String(Math.floor(Math.random() * 999999)).padStart(6, '0')}`,
+        items: [
+          { product_name: `Producto ${i + 1} de ${supplierName}`, quantity: Math.floor(Math.random() * 10) + 1, price: baseAmount / 3 },
+          { product_name: `Producto ${i + 2} de ${supplierName}`, quantity: Math.floor(Math.random() * 5) + 1, price: baseAmount / 4 }
+        ],
+        supplier_total: baseAmount,
+        status: Math.random() > 0.7 ? 'pending' : 'completed',
+        type: 'mock_purchase',
+        is_mock: true
+      });
+    }
+    
+    return mockHistory;
+  };
+
   // Handle purchase history
-  const handlePurchaseHistory = (supplier) => {
+  const handlePurchaseHistory = async (supplier) => {
     console.log(`Viendo historial de compras para: ${supplier.name}`);
     setSelectedHistorySupplier(supplier);
     setIsPurchaseHistoryModalOpen(true);
+    
+    // Fetch purchase history
+    const history = await fetchPurchaseHistory(supplier.id, supplier.name);
+    setPurchaseHistory(history);
   };
   
   return (
@@ -556,8 +735,13 @@ const SuppliersPage = () => {
                     name="name"
                     value={newSupplier.name}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      formErrors.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {formErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -663,10 +847,16 @@ const SuppliersPage = () => {
                 
                 <button
                   type="button"
-                  onClick={handleSaveSupplier}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveSupplier();
+                  }}
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Guardar Proveedor
+                  {isSubmitting ? 'Guardando...' : 'Guardar Proveedor'}
                 </button>
               </div>
             </div>
@@ -829,10 +1019,17 @@ const SuppliersPage = () => {
                 </button>
                 
                 <button
-                  onClick={handleSaveEditedSupplier}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveEditedSupplier(e);
+                  }}
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Actualizar Proveedor
+                  {isSubmitting ? 'Actualizando...' : 'Actualizar Proveedor'}
                 </button>
               </div>
             </div>
@@ -873,81 +1070,107 @@ const SuppliersPage = () => {
                 </p>
               </div>
 
-              {/* Mock purchase history data */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <p className="text-yellow-800 text-sm">
-                  <strong>Nota:</strong> Esta funcionalidad muestra datos de ejemplo. 
-                  En producción se conectará a los registros reales de órdenes de compra y facturas del proveedor.
-                </p>
-              </div>
+              {/* Show if data is mock or real */}
+              {purchaseHistory.length > 0 && purchaseHistory[0]?.is_mock && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <p className="text-yellow-800 text-sm">
+                    <strong>Nota:</strong> Los datos mostrados son de ejemplo. 
+                    Para datos reales se conectará a purchase_orders o order_items relacionados con productos de este proveedor.
+                  </p>
+                </div>
+              )}
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-blue-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Fecha
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        N° Orden/Factura
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Productos
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Total
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Estado
-                      </th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
-                        Método de Pago
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {/* Mock data - replace with real purchase history */}
-                    {[
-                      { date: '2025-08-01', orderNumber: 'PO-2025-001', products: 'Bomba Centrífuga, Filtros (x5)', total: 15500, status: 'entregado', payment: 'Transferencia' },
-                      { date: '2025-07-20', orderNumber: 'PO-2025-002', products: 'Químicos para Piscina (x10)', total: 8900, status: 'en_transito', payment: 'Cheque' },
-                      { date: '2025-07-05', orderNumber: 'PO-2025-003', products: 'Accesorios de Limpieza', total: 3200, status: 'entregado', payment: 'Efectivo' },
-                      { date: '2025-06-15', orderNumber: 'PO-2025-004', products: 'Calentador Solar', total: 12000, status: 'entregado', payment: 'Transferencia' }
-                    ].map((purchase, index) => (
-                      <tr key={index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(purchase.date).toLocaleDateString('es-ES')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {purchase.orderNumber}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                          {purchase.products}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {formatCurrency(purchase.total)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            purchase.status === 'entregado' ? 'bg-green-100 text-green-800' :
-                            purchase.status === 'en_transito' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {purchase.status === 'entregado' ? 'Entregado' :
-                             purchase.status === 'en_transito' ? 'En Tránsito' : 'Pendiente'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {purchase.payment}
-                        </td>
+              {purchaseHistoryLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Cargando historial...</span>
+                </div>
+              ) : purchaseHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No hay historial de compras disponible para este proveedor.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-blue-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Fecha
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          N° Orden/Factura
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Productos
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Total
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Estado
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-blue-800 uppercase tracking-wider">
+                          Tipo
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {purchaseHistory.map((purchase, index) => {
+                        const productsSummary = purchase.items && purchase.items.length > 0 
+                          ? purchase.items.map(item => `${item.product_name} (${item.quantity})`).join(', ')
+                          : 'Productos no especificados';
+                        
+                        const total = purchase.supplier_total || purchase.total || 0;
+                        
+                        return (
+                          <tr key={purchase.id || index}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {formatDate(purchase.date)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {purchase.order_number || `#${purchase.id?.slice(-6)}`}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={productsSummary}>
+                              {productsSummary}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {formatCurrency(total)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                purchase.status === 'completed' || purchase.status === 'entregado' ? 'bg-green-100 text-green-800' :
+                                purchase.status === 'pending' || purchase.status === 'en_transito' ? 'bg-yellow-100 text-yellow-800' :
+                                purchase.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {purchase.status === 'completed' ? 'Completado' :
+                                 purchase.status === 'pending' ? 'Pendiente' :
+                                 purchase.status === 'cancelled' ? 'Cancelado' :
+                                 purchase.status === 'entregado' ? 'Entregado' :
+                                 purchase.status === 'en_transito' ? 'En Tránsito' :
+                                 purchase.status || 'Sin estado'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {purchase.type === 'purchase_order' ? 'Orden de Compra' :
+                               purchase.type === 'order' ? 'Pedido Cliente' :
+                               purchase.type === 'mock_purchase' ? 'Ejemplo' :
+                               'No especificado'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
               <div className="mt-6 flex justify-end">
                 <button
-                  onClick={() => setIsPurchaseHistoryModalOpen(false)}
+                  onClick={() => {
+                    setIsPurchaseHistoryModalOpen(false);
+                    setPurchaseHistory([]);
+                  }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cerrar

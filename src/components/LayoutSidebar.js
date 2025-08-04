@@ -88,6 +88,21 @@ const LayoutSidebar = ({ activePage, setActivePage, session, onSidebarToggle }) 
         <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
       </svg>
     ) },
+    { id: 'audit', label: 'Auditoría', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H7a1 1 0 00-1 1v6a1 1 0 01-1 1H2a1 1 0 110-2V4zm3 8V8h2v4H7z" clipRule="evenodd" />
+      </svg>
+    ) },
+    { id: 'dbdiagnostic', label: 'DB Diagnostic', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+      </svg>
+    ) },
+    { id: 'notifications', label: 'Notificaciones', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
+      </svg>
+    ) },
     { id: 'settings', label: 'Configuración', icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
         <path fillRule="evenodd" d="M11.3 1.046a1 1 0 011.4 0l2.598 2.598a1 1 0 010 1.4l-1.292 1.292a8.027 8.027 0 011.19 4.664 8.027 8.027 0 01-1.19 4.664l1.292 1.292a1 1 0 010 1.4l-2.598 2.598a1 1 0 01-1.4 0l-1.292-1.292a8.027 8.027 0 01-4.664 1.19 8.027 8.027 0 01-4.664-1.19L2.302 18.954a1 1 0 01-1.4-1.4l1.292-1.292a8.027 8.027 0 01-1.19-4.664 8.027 8.027 0 011.19-4.664L.902 5.044a1 1 0 010-1.4L3.5 1.046a1 1 0 011.4 0l1.292 1.292a8.027 8.027 0 014.664-1.19 8.027 8.027 0 014.664 1.19L11.3 1.046zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />

@@ -107,15 +107,10 @@ const OrdersEditModal = ({ isOpen, onClose, onSave, editingOrder = null }) => {
       const total = subtotal - discount + tax;
 
       const updatedOrder = {
-        id: editingOrder.id,
-        orderNumber: editingOrder.orderNumber || editingOrder.order_number,
-        clientId: orderData.clientId,
         client_id: orderData.clientId,
         date: orderData.date,
         status: orderData.status,
-        paymentStatus: orderData.paymentStatus,
         payment_status: orderData.paymentStatus,
-        paymentMethod: orderData.paymentMethod,
         payment_method: orderData.paymentMethod,
         subtotal: parseFloat(subtotal.toFixed(2)),
         discount: parseFloat(discount.toFixed(2)),
@@ -126,9 +121,11 @@ const OrdersEditModal = ({ isOpen, onClose, onSave, editingOrder = null }) => {
         delivery_time: isDelivery ? orderData.delivery.time : null,
         delivery_address: isDelivery ? orderData.delivery.address : null,
         delivery_google_maps_link: isDelivery ? orderData.delivery.googleMapsLink : null,
-        delivery: isDelivery ? orderData.delivery : null,
         items: orderData.items
       };
+
+      // Filter out virtual/computed fields that don't exist in database
+      // Removed: id (redundant for updates), orderNumber (virtual field)
 
       await onSave(updatedOrder);
     } catch (error) {

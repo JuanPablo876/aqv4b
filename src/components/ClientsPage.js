@@ -3,6 +3,8 @@ import { useClients } from '../hooks/useData';
 import { useData } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
+import { validateFormData, formSchemas, cleanFormData } from '../utils/formValidation';
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
 import VenetianTile from './VenetianTile';
 import HistoryModal, { historyColumns } from './HistoryModal';
 
@@ -19,6 +21,8 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [historyTitle, setHistoryTitle] = useState('');
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newClient, setNewClient] = useState({
     name: '',
     contact: '',
@@ -119,34 +123,57 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
       ...newClient,
       [name]: value
     });
+    
+    // Clear specific field error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: ''
+      });
+    }
   };
   
   // Handle save new client
   const handleSaveClient = async () => {
-    try {
-      const clientData = {
-        ...newClient,
-        last_purchase: new Date().toISOString().split('T')[0],
-        total_spent: 0
-      };
-      
-      await create(clientData);
-      setIsAddModalOpen(false);
-      setNewClient({
-        name: '',
-        contact: '',
-        email: '',
-        phone: '',
-        address: '',
-        google_maps_link: '',
-        type: '',
-        status: 'active',
-        rfc: ''
-      });
-    } catch (error) {
-      console.error('Error creating client:', error);
-      alert('Error al crear cliente: ' + error.message);
-    }
+    await handleFormSubmission(
+      async () => {
+        // Validate form data
+        const validation = validateFormData(newClient, formSchemas.client);
+        if (!validation.isValid) {
+          setFormErrors(validation.errors);
+          throw new Error('Por favor corrige los errores en el formulario');
+        }
+
+        // Clean and prepare data
+        const cleanedData = cleanFormData(validation.data);
+        const clientData = {
+          ...cleanedData,
+          last_purchase: new Date().toISOString().split('T')[0],
+          total_spent: 0
+        };
+        
+        await create(clientData);
+        
+        // Reset form and close modal
+        setIsAddModalOpen(false);
+        setNewClient({
+          name: '',
+          contact: '',
+          email: '',
+          phone: '',
+          address: '',
+          google_maps_link: '',
+          type: '',
+          status: 'active',
+          rfc: ''
+        });
+        setFormErrors({});
+        
+        handleSuccess('Cliente creado exitosamente');
+      },
+      setIsSubmitting,
+      'create client'
+    );
   };
   
   // Handle close client details
@@ -158,18 +185,34 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
   const handleEditClient = (client) => {
     setEditingClient({ ...client });
     setIsEditModalOpen(true);
+    setFormErrors({}); // Clear any previous errors
   };
 
   // Handle save edited client
   const handleSaveEditedClient = async () => {
-    try {
-      await update(editingClient.id, editingClient);
-      setIsEditModalOpen(false);
-      setEditingClient(null);
-    } catch (error) {
-      console.error('Error updating client:', error);
-      alert('Error al actualizar cliente: ' + error.message);
-    }
+    await handleFormSubmission(
+      async () => {
+        // Validate form data
+        const validation = validateFormData(editingClient, formSchemas.client);
+        if (!validation.isValid) {
+          setFormErrors(validation.errors);
+          throw new Error('Por favor corrige los errores en el formulario');
+        }
+
+        // Clean and update data
+        const cleanedData = cleanFormData(validation.data);
+        await update(editingClient.id, cleanedData);
+        
+        // Reset form and close modal
+        setIsEditModalOpen(false);
+        setEditingClient(null);
+        setFormErrors({});
+        
+        handleSuccess('Cliente actualizado exitosamente');
+      },
+      setIsSubmitting,
+      'update client'
+    );
   };
 
   // Handle input change for editing client
@@ -179,6 +222,14 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
       ...editingClient,
       [name]: value
     });
+    
+    // Clear specific field error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors({
+        ...formErrors,
+        [name]: ''
+      });
+    }
   };
   
   // Handle view order history
@@ -644,8 +695,13 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
                     name="name"
                     value={newClient.name}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      formErrors.name ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {formErrors.name && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -691,8 +747,13 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
                     name="email"
                     value={newClient.email}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 ${
+                      formErrors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {formErrors.email && (
+                    <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
+                  )}
                 </div>
                 
                 <div>
@@ -765,17 +826,28 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
               
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => setIsAddModalOpen(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsAddModalOpen(false);
+                  }}
                   className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cancelar
                 </button>
                 
                 <button
-                  onClick={handleSaveClient}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveClient();
+                  }}
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Guardar Cliente
+                  {isSubmitting ? 'Guardando...' : 'Guardar Cliente'}
                 </button>
               </div>
             </div>
@@ -895,7 +967,9 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
               
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => {
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
                     setIsEditModalOpen(false);
                     setEditingClient(null);
                   }}
@@ -905,10 +979,17 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
                 </button>
                 
                 <button
-                  onClick={handleSaveEditedClient}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveEditedClient();
+                  }}
+                  disabled={isSubmitting}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
                 >
-                  Actualizar Cliente
+                  {isSubmitting ? 'Actualizando...' : 'Actualizar Cliente'}
                 </button>
               </div>
             </div>

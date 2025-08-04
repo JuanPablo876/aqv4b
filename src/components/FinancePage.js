@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../hooks/useData';
+import { financialService } from '../services/financialService';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass, getOrderNumber } from '../utils/helpers';
 import { exportToTextForExcel } from '../utils/export'; // Import export utility
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { cleanFormData } from '../utils/formValidation';
 import VenetianTile from './VenetianTile';
 import FinanceAddInvoiceModal from './FinanceAddInvoiceModal'; // Import the new modal
+import FinancialDashboard from './FinancialDashboard'; // Import the new dashboard
 
 const FinancePage = () => {
   const { data: bankAccountsList, loading: bankAccountsLoading } = useData('bankAccounts');
@@ -12,13 +16,24 @@ const FinancePage = () => {
   const { data: transactionsList, loading: transactionsLoading, create: createTransaction } = useData('transactions');
   const { data: invoicesList, loading: invoicesLoading, create: createInvoice } = useData('invoices');
   
+  // Enhanced state for real financial data
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'date', direction: 'desc' });
   const [typeFilter, setTypeFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [dateRange, setDateRange] = useState({
+    start: '',
+    end: ''
+  });
+  
+  // Modal states
   const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
-  const [isAddInvoiceModalOpen, setIsAddInvoiceModalOpen] = useState(false); // State for add invoice modal
-  const [isViewTransactionModalOpen, setIsViewTransactionModalOpen] = useState(false); // State for view transaction modal
+  const [isAddInvoiceModalOpen, setIsAddInvoiceModalOpen] = useState(false);
+  const [isViewTransactionModalOpen, setIsViewTransactionModalOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
+  
+  // Enhanced transaction state with more fields
   const [newTransaction, setNewTransaction] = useState({
     date: new Date().toISOString().split('T')[0],
     transaction_type: 'income',
@@ -31,6 +46,28 @@ const FinancePage = () => {
     reference_document: '',
     notes: ''
   });
+
+  // Financial summary state
+  const [financialSummary, setFinancialSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+
+  // Load financial summary on component mount
+  useEffect(() => {
+    loadFinancialSummary();
+  }, []);
+
+  const loadFinancialSummary = async () => {
+    try {
+      setSummaryLoading(true);
+      const summary = await financialService.getFinancialSummary('month');
+      setFinancialSummary(summary);
+    } catch (error) {
+      console.error('Error loading financial summary:', error);
+      handleError(error, 'load financial summary', 'Error al cargar el resumen financiero');
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
   
   // Filter and sort transactions
   const filteredTransactions = sortByField(
@@ -84,16 +121,17 @@ const FinancePage = () => {
   
   // Handle save new transaction
   const handleSaveTransaction = async (transactionData) => {
-    try {
-      const newTransactionData = {
+    await handleFormSubmission(async () => {
+      const cleanedData = cleanFormData({
         ...transactionData,
         amount: parseFloat(transactionData.amount) || 0,
         account_id: transactionData.account_type === 'bank' ? transactionData.account_id : null,
         status: 'completed'
-      };
+      });
       
-      await createTransaction(newTransactionData);
+      await createTransaction(cleanedData);
       setIsAddTransactionModalOpen(false);
+      
       // Reset form
       setNewTransaction({
         date: new Date().toISOString().split('T')[0],
@@ -101,53 +139,63 @@ const FinancePage = () => {
         category: '',
         description: '',
         amount: '',
+        currency: 'MXN',
         account_type: 'bank',
         account_id: '',
         reference_document: '',
         notes: ''
       });
-    } catch (error) {
-      console.error('Error saving transaction:', error);
-      alert('Error al guardar transacción: ' + error.message);
-    }
+      
+      // Refresh financial summary
+      await loadFinancialSummary();
+      
+      handleSuccess('Transacción guardada exitosamente');
+    }, 'Error al guardar transacción');
   };
   
   // Handle save new invoice from modal
-  const handleSaveInvoice = (invoiceData) => {
-    const newInvoiceWithId = {
-      ...invoiceData,
-      id: invoicesList.length + 1,
-      total: parseFloat(invoiceData.total) || 0,
-      orderId: invoiceData.orderId ? parseInt(invoiceData.orderId) : null
-    };
-    setInvoicesList([...invoicesList, newInvoiceWithId]);
-    setIsAddInvoiceModalOpen(false);
+  const handleSaveInvoice = async (invoiceData) => {
+    await handleFormSubmission(async () => {
+      const cleanedData = cleanFormData({
+        ...invoiceData,
+        total: parseFloat(invoiceData.total) || 0,
+        order_id: invoiceData.orderId ? parseInt(invoiceData.orderId) : null
+      });
+      
+      await createInvoice(cleanedData);
+      setIsAddInvoiceModalOpen(false);
+      
+      // Refresh financial summary
+      await loadFinancialSummary();
+      
+      handleSuccess('Factura guardada exitosamente');
+    }, 'Error al guardar factura');
   };
   
   // Get source name (bank account or cash box)
   const getSourceName = (transaction) => {
-    if (transaction.source === 'bank' && transaction.accountId) {
-      const account = bankAccountsList.find(acc => acc.id === transaction.accountId);
+    if (transaction.account_type === 'bank' && transaction.account_id) {
+      const account = bankAccountsList.find(acc => acc.id === transaction.account_id);
       return account ? account.name : 'Cuenta Desconocida';
     }
-    if (transaction.source === 'cash' && transaction.cashBoxId) {
-      const cashBox = cashBoxesList.find(box => box.id === transaction.cashBoxId);
+    if (transaction.account_type === 'cash' && transaction.account_id) {
+      const cashBox = cashBoxesList.find(box => box.id === transaction.account_id);
       return cashBox ? cashBox.name : 'Caja Desconocida';
     }
-    return 'N/A';
+    return transaction.account_type === 'bank' ? 'Cuenta Bancaria' : 'Caja';
   };
   
   // Handle export transactions
   const handleExportTransactions = () => {
     const dataToExport = filteredTransactions.map(t => ({
       Fecha: formatDate(t.date),
-      Tipo: t.type === 'income' ? 'Ingreso' : 'Gasto',
+      Tipo: t.transaction_type === 'income' ? 'Ingreso' : 'Gasto',
       Categoría: t.category,
       Descripción: t.description,
       Origen_Destino: getSourceName(t),
       Monto: t.amount,
       Moneda: t.currency,
-      Pedido: t.orderId || '',
+      Referencia: t.reference_document || '',
       Notas: t.notes || ''
     }));
     exportToTextForExcel(dataToExport, 'transacciones');
@@ -157,13 +205,13 @@ const FinancePage = () => {
   const handleExportInvoices = () => {
     const dataToExport = filteredInvoices.map(i => ({
       Fecha: formatDate(i.date),
-      Numero_Factura: i.invoiceNumber,
+      Numero_Factura: i.invoice_number,
       RFC: i.rfc,
-      Razon_Social: i.razonSocial,
+      Razon_Social: i.razon_social,
       Total: i.total,
       Estado: i.status === 'paid' ? 'Pagada' : 'Pendiente',
-      Metodo_Pago: i.paymentMethod,
-      Pedido: i.orderId || '',
+      Metodo_Pago: i.payment_method,
+      Pedido: i.order_id || '',
       Notas: i.notes || ''
     }));
     exportToTextForExcel(dataToExport, 'facturas_notas');
@@ -178,15 +226,12 @@ const FinancePage = () => {
   // Handle delete transaction
   const handleDeleteTransaction = async (transactionId) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar esta transacción?')) {
-      try {
+      await handleFormSubmission(async () => {
         // In a real app, you would call a delete API here
         // await deleteTransaction(transactionId);
-        alert('Funcionalidad "Eliminar Transacción" pendiente de implementar en la API');
+        handleError(new Error('Funcionalidad pendiente de implementar'), 'delete transaction', 'Funcionalidad "Eliminar Transacción" pendiente de implementar en la API');
         console.log('Deleting transaction:', transactionId);
-      } catch (error) {
-        console.error('Error deleting transaction:', error);
-        alert('Error al eliminar la transacción: ' + error.message);
-      }
+      }, 'Error al eliminar la transacción');
     }
   };
   
@@ -281,6 +326,11 @@ const FinancePage = () => {
             </div>
           </button>
         </div>
+      </div>
+
+      {/* Financial Dashboard */}
+      <div className="mb-8">
+        <FinancialDashboard onSummaryUpdate={setFinancialSummary} />
       </div>
       
       {/* Account and Cash Box Balances */}
@@ -436,9 +486,9 @@ const FinancePage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      transaction.transaction_type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
-                      {transaction.type === 'income' ? 'Ingreso' : 'Gasto'}
+                      {transaction.transaction_type === 'income' ? 'Ingreso' : 'Gasto'}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -455,9 +505,9 @@ const FinancePage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className={`text-sm font-medium ${
-                      transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
+                      transaction.transaction_type === 'income' ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                      {transaction.transaction_type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -622,16 +672,16 @@ const FinancePage = () => {
                     <div className="text-sm text-gray-900">{formatDate(invoice.date)}</div>
                   </td>
                    <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{invoice.invoiceNumber}</div>
-                    {invoice.orderId && (
-                       <div className="text-xs text-gray-500">Pedido: {getOrderNumber(invoice.orderId)}</div>
+                    <div className="text-sm font-medium text-gray-900">{invoice.invoice_number}</div>
+                    {invoice.order_id && (
+                       <div className="text-xs text-gray-500">Pedido: {getOrderNumber(invoice.order_id)}</div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{invoice.rfc}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{invoice.razonSocial}</div>
+                    <div className="text-sm text-gray-900">{invoice.razon_social}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="text-sm font-medium text-gray-900">{formatCurrency(invoice.total)}</div>
@@ -643,14 +693,24 @@ const FinancePage = () => {
                   </td>
                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
+                      type="button"
                       className="text-blue-600 hover:text-blue-900 mr-3"
-                      // onClick={() => handleViewInvoice(invoice)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleError(new Error('Funcionalidad pendiente'), 'view invoice', 'Ver factura funcionalidad pendiente');
+                      }}
                     >
                       Ver
                     </button>
                     <button 
+                      type="button"
                       className="text-gray-600 hover:text-gray-900"
-                      // onClick={() => handleDeleteInvoice(invoice.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        if (confirm('¿Está seguro de que desea eliminar esta factura?')) {
+                          handleError(new Error('Funcionalidad pendiente'), 'delete invoice', 'Eliminar factura funcionalidad pendiente');
+                        }
+                      }}
                     >
                       Eliminar
                     </button>
@@ -850,14 +910,22 @@ const FinancePage = () => {
               
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => setIsAddTransactionModalOpen(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsAddTransactionModalOpen(false);
+                  }}
                   className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cancelar
                 </button>
                 
                 <button
-                  onClick={handleSaveTransaction}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveTransaction();
+                  }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Guardar Transacción

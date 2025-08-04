@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { useQuotes, useClients, useProducts } from '../hooks/useData';
+import { useQuotes, useClients, useProducts, useOrders } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass, getQuoteNumber } from '../utils/helpers';
 import { sendQuoteEmail, printQuote } from '../utils/emailPrint';
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { cleanFormData } from '../utils/formValidation';
+import { generateUniqueOrderNumber } from '../utils/orderNumberGenerator';
 import VenetianTile from './VenetianTile';
 import QuotesAddModal from './QuotesAddModal'; // Import the new modal
 
@@ -10,6 +13,7 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
   const { data: quotesList, loading: quotesLoading, error: quotesError, update: updateQuote, create: createQuote } = useQuotes();
   const { data: clientsList, loading: clientsLoading } = useClients();
   const { data: productsList, loading: productsLoading } = useProducts();
+  const { data: ordersList, create: createOrder } = useOrders();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'created_at', direction: 'desc' });
   const [statusFilter, setStatusFilter] = useState('');
@@ -73,11 +77,16 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
   
   // Handle quote selection
   const handleSelectQuote = (quote) => {
+    console.log('🔍 Quote selected:', quote);
+    console.log('📦 Quote items:', quote.items);
+    console.log('📋 Products list:', productsList);
+    
     // Enhance quote with product details
     const quoteWithProductDetails = {
       ...quote,
       items: (quote.items || []).map(item => {
         const product = (productsList || []).find(p => p.id === item.product_id) || {};
+        console.log(`🔗 Mapping item ${item.product_id} to product:`, product);
         return {
           ...item,
           productName: product.name || 'Producto Desconocido',
@@ -87,6 +96,7 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
       })
     };
     
+    console.log('✅ Enhanced quote with products:', quoteWithProductDetails);
     setSelectedQuote(quoteWithProductDetails);
   };
   
@@ -103,9 +113,10 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
       if (selectedQuote && selectedQuote.id === quoteId) {
         setSelectedQuote({ ...selectedQuote, status: newStatus });
       }
+      
+      handleSuccess('Estado de cotización actualizado');
     } catch (error) {
-      console.error('Error updating quote status:', error);
-      alert('Error al actualizar estado de la cotización: ' + error.message);
+      handleError(error, 'Error al actualizar estado de la cotización');
     }
   };
   
@@ -146,12 +157,15 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
   // Handle save edited quote
   const handleSaveEditedQuote = async () => {
     try {
-      await updateQuote(editingQuote.id, editingQuote);
+      // Filter out virtual/computed fields that don't exist in database
+      const { clientName, clientContact, clientEmail, clientPhone, ...quoteData } = editingQuote;
+      
+      await updateQuote(editingQuote.id, quoteData);
       setIsEditModalOpen(false);
       setEditingQuote(null);
+      handleSuccess('Cotización actualizada exitosamente');
     } catch (error) {
-      console.error('Error updating quote:', error);
-      alert('Error al actualizar cotización: ' + error.message);
+      handleError(error, 'Error al actualizar cotización');
     }
   };
 
@@ -162,6 +176,47 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
       ...editingQuote,
       [name]: value
     });
+  };
+
+  // Handle create order from quote
+  const handleCreateOrderFromQuote = async (quote) => {
+    if (!quote) {
+      handleError(new Error('No quote selected'), 'Error al crear pedido');
+      return;
+    }
+
+    try {
+      // Filter out virtual/computed fields that don't exist in database
+      const { clientName, clientContact, clientEmail, clientPhone, quote_number, ...quoteData } = quote;
+      
+      // Create order data from quote
+      const orderData = {
+        client_id: quote.client_id,
+        quote_id: quote.id,
+        order_number: generateUniqueOrderNumber(ordersList || [], 'AQV'),
+        date: new Date().toISOString().split('T')[0],
+        status: 'pending',
+        payment_status: 'pending',
+        subtotal: quote.subtotal,
+        discount: quote.discount || 0,
+        tax: quote.tax || 0,
+        total: quote.total,
+        notes: quote.notes,
+        priority: 'normal',
+        items: quote.items || []
+      };
+
+      // Create the order using useOrders hook
+      const createdOrder = await createOrder(orderData);
+      
+      handleSuccess(`Pedido #${createdOrder.order_number || createdOrder.id} creado exitosamente desde cotización`);
+      
+      // Update quote status to 'approved' to indicate it was converted
+      await handleStatusChange(quote.id, 'approved');
+      
+    } catch (error) {
+      handleError(error, 'Error al crear pedido desde cotización');
+    }
   };
 
   // Handle email quote
@@ -603,31 +658,39 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {selectedQuote.items.map((item, index) => {
-                      const product = productsList.find(p => p.id === item.product_id);
-                      return (
-                        <tr key={index}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">{product?.name || 'Producto Desconocido'}</div>
-                            <div className="text-xs text-gray-500">{product?.sku || 'N/A'}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{item.quantity}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{formatCurrency(item.price)}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{formatCurrency(item.discount || 0)}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right">
-                            <div className="text-sm font-medium text-gray-900">
-                              {formatCurrency((item.price * item.quantity) - (item.discount || 0))}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {(selectedQuote.items && selectedQuote.items.length > 0) ? (
+                      selectedQuote.items.map((item, index) => {
+                        const product = productsList.find(p => p.id === item.product_id);
+                        return (
+                          <tr key={index}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">{product?.name || 'Producto Desconocido'}</div>
+                              <div className="text-xs text-gray-500">{product?.sku || 'N/A'}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{item.quantity}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(item.price)}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{formatCurrency(item.discount || 0)}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right">
+                              <div className="text-sm font-medium text-gray-900">
+                                {formatCurrency((item.price * item.quantity) - (item.discount || 0))}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                          No hay productos en esta cotización
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -719,7 +782,10 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
                 )}
                 
                 {selectedQuote.status === 'approved' && (
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                  <button 
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    onClick={() => handleCreateOrderFromQuote(selectedQuote)}
+                  >
                     Crear Pedido
                   </button>
                 )}
@@ -801,13 +867,21 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
               
               <div className="flex justify-end space-x-3 mt-6">
                 <button
-                  onClick={() => setIsEditModalOpen(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsEditModalOpen(false);
+                  }}
                   className="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cancelar
                 </button>
                 <button
-                  onClick={handleSaveEditedQuote}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveEditedQuote();
+                  }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Guardar Cambios

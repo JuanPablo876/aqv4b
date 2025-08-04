@@ -1,7 +1,8 @@
 // React Hook for Database Service Integration
-// Provides easy access to CRUD operations with automatic re-rendering
+// Provides easy access to CRUD operations with automatic re-rendering and audit logging
 import { useState, useEffect, useCallback } from 'react';
 import databaseService from '../services/databaseService';
+import auditService from '../services/auditService';
 import { supabase } from '../supabaseClient';
 
 export const useData = (entity, options = {}) => {
@@ -56,14 +57,38 @@ export const useData = (entity, options = {}) => {
     }
   }, [autoLoad, loadData]);
 
-  // CRUD Operations with automatic data refresh
+  // CRUD Operations with automatic data refresh and audit logging
   const create = useCallback(async (newItem) => {
     try {
       setError(null);
       const created = await databaseService.create(entity, newItem);
+      
+      // Log the creation
+      await auditService.logCreate(
+        entity,
+        created.id,
+        created,
+        entity,
+        { operation: 'create', success: true }
+      );
+      
       await loadData(); // Refresh data
       return created;
     } catch (err) {
+      // Log failed creation attempt
+      await auditService.log({
+        tableName: entity,
+        action: 'CREATE',
+        module: entity,
+        description: `Intento fallido de crear ${entity}`,
+        metadata: { 
+          operation: 'create', 
+          success: false, 
+          error: err.message,
+          attempted_data: newItem
+        }
+      });
+      
       setError(err.message);
       throw err;
     }
@@ -72,10 +97,40 @@ export const useData = (entity, options = {}) => {
   const update = useCallback(async (id, updates) => {
     try {
       setError(null);
+      
+      // Get old values for audit logging
+      const oldItem = await databaseService.getById(entity, id);
+      
       const updated = await databaseService.update(entity, id, updates);
+      
+      // Log the update
+      await auditService.logUpdate(
+        entity,
+        id,
+        oldItem,
+        { ...oldItem, ...updates },
+        entity,
+        { operation: 'update', success: true }
+      );
+      
       await loadData(); // Refresh data
       return updated;
     } catch (err) {
+      // Log failed update attempt
+      await auditService.log({
+        tableName: entity,
+        recordId: id,
+        action: 'UPDATE',
+        module: entity,
+        description: `Intento fallido de actualizar ${entity}`,
+        metadata: { 
+          operation: 'update', 
+          success: false, 
+          error: err.message,
+          attempted_data: updates
+        }
+      });
+      
       setError(err.message);
       throw err;
     }
@@ -84,10 +139,38 @@ export const useData = (entity, options = {}) => {
   const deleteItem = useCallback(async (id) => {
     try {
       setError(null);
+      
+      // Get item data before deletion for audit logging
+      const itemToDelete = await databaseService.getById(entity, id);
+      
       const result = await databaseService.delete(entity, id);
+      
+      // Log the deletion
+      await auditService.logDelete(
+        entity,
+        id,
+        itemToDelete,
+        entity,
+        { operation: 'delete', success: true }
+      );
+      
       await loadData(); // Refresh data
       return result;
     } catch (err) {
+      // Log failed deletion attempt
+      await auditService.log({
+        tableName: entity,
+        recordId: id,
+        action: 'DELETE',
+        module: entity,
+        description: `Intento fallido de eliminar ${entity}`,
+        metadata: { 
+          operation: 'delete', 
+          success: false, 
+          error: err.message
+        }
+      });
+      
       setError(err.message);
       throw err;
     }
@@ -456,7 +539,180 @@ export const useOrders = (options) => {
 export const useInvoices = (options) => useData('invoices', options);
 export const useSuppliers = (options) => useData('suppliers', options);
 export const useEmployees = (options) => useData('employees', options);
-export const useQuotes = (options) => useData('quotes', options);
+export const useQuotes = (options) => {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Simple load function without complex dependencies
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Get quotes with their items
+      const quotesResult = await databaseService.getAll('quotes');
+      console.log('🔍 useQuotes: Loaded', quotesResult?.length || 0, 'quotes');
+      
+      // For each quote, fetch its items
+      const quotesWithItems = await Promise.all(
+        quotesResult.map(async (quote) => {
+          try {
+            // Get quote items from quote_items table
+            const { data: items, error: itemsError } = await supabase
+              .from('quote_items')
+              .select('*')
+              .eq('quote_id', quote.id);
+              
+            if (itemsError) {
+              console.error('Error fetching quote items for quote', quote.id, ':', itemsError);
+              return { ...quote, items: [] };
+            }
+            
+            console.log(`📋 Quote ${quote.id}: ${items?.length || 0} items`);
+            return { ...quote, items: items || [] };
+          } catch (err) {
+            console.error('Error fetching items for quote', quote.id, ':', err);
+            return { ...quote, items: [] };
+          }
+        })
+      );
+      
+      console.log('✅ useQuotes: All quotes loaded with items');
+      setData(quotesWithItems);
+    } catch (err) {
+      console.error('Error loading quotes:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []); // No dependencies to prevent loops
+
+  // Load data on mount only
+  useEffect(() => {
+    loadData();
+  }, []); // Empty dependency array
+
+  // CRUD operations
+  const create = useCallback(async (newItem) => {
+    try {
+      setError(null);
+      console.log('🔍 useQuotes create: Saving quote with items:', newItem);
+      
+      // Extract items from quote
+      const { items, ...quoteData } = newItem;
+      
+      // Create the quote first
+      const createdQuote = await databaseService.create('quotes', quoteData);
+      
+      // Then create the quote items using direct Supabase query
+      if (items && items.length > 0) {
+        const quoteItems = items.map(item => ({
+          ...item,
+          quote_id: createdQuote.id
+        }));
+        
+        const { data: savedItems, error: itemsError } = await supabase
+          .from('quote_items')
+          .insert(quoteItems)
+          .select();
+          
+        if (itemsError) {
+          console.error('❌ Error saving quote items:', itemsError);
+          // Don't throw error, just log it - quote was already created
+        } else {
+          console.log('✅ Quote items saved:', savedItems);
+        }
+      }
+      
+      await loadData(); // Refresh data
+      return createdQuote;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [loadData]);
+
+  const update = useCallback(async (id, updates) => {
+    try {
+      setError(null);
+      console.log('🔍 useQuotes update: Updating quote with items:', id, updates);
+      
+      // Extract items from updates
+      const { items, ...quoteData } = updates;
+      
+      // Update the quote first
+      const updatedQuote = await databaseService.update('quotes', id, quoteData);
+      
+      // If items are provided, update them
+      if (items !== undefined) {
+        // Delete existing items
+        await supabase
+          .from('quote_items')
+          .delete()
+          .eq('quote_id', id);
+        
+        // Create new items using direct Supabase query
+        if (items.length > 0) {
+          const quoteItems = items.map(item => ({
+            ...item,
+            quote_id: id
+          }));
+          
+          const { data: savedItems, error: itemsError } = await supabase
+            .from('quote_items')
+            .insert(quoteItems)
+            .select();
+            
+          if (itemsError) {
+            console.error('❌ Error updating quote items:', itemsError);
+            // Don't throw error, just log it - quote was already updated
+          } else {
+            console.log('✅ Quote items updated:', savedItems);
+          }
+        }
+      }
+      
+      await loadData(); // Refresh data
+      return updatedQuote;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [loadData]);
+
+  const deleteItem = useCallback(async (id) => {
+    try {
+      setError(null);
+      
+      // Delete quote items first
+      await supabase
+        .from('quote_items')
+        .delete()
+        .eq('quote_id', id);
+      
+      // Then delete the quote
+      const result = await databaseService.delete('quotes', id);
+      await loadData();
+      return result;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  }, [loadData]);
+
+  return {
+    data,
+    loading,
+    error,
+    loadData,
+    create,
+    update,
+    delete: deleteItem,
+    count: data.length,
+    isEmpty: data.length === 0
+  };
+};
 export const useInventory = (options) => useData('inventory', options);
 export const useMaintenances = (options) => useData('maintenances', options);
 

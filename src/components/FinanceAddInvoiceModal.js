@@ -6,7 +6,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
   const { data: clientsList, loading: clientsLoading } = useData('clients');
   
   const [newInvoice, setNewInvoice] = useState({
-    clientId: '',
+    client_id: '',
     rfc: '',
     razonSocial: '',
     invoiceNumber: '',
@@ -14,7 +14,7 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
     total: '',
     status: 'paid', // Default to paid for simplicity
     paymentMethod: '',
-    orderId: '',
+    order_id: '',
     notes: ''
   });
   
@@ -29,22 +29,31 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
     });
   };
   
+  // Get client details by ID with robust matching
+  const getClientDetails = (clientId) => {
+    // Support both string and integer comparison for ID matching
+    const client = (clientsList || []).find(c => {
+      return c.id === clientId || c.id === parseInt(clientId) || c.id.toString() === clientId.toString();
+    });
+    return client || null;
+  };
+
   // Handle client selection to pre-fill RFC and Razon Social
   const handleClientSelect = (e) => {
-    const clientId = e.target.value;
-    const client = clientsList.find(c => c.id === parseInt(clientId));
+    const client_id = e.target.value;
+    const client = getClientDetails(client_id);
     setNewInvoice({
       ...newInvoice,
-      clientId: clientId ? parseInt(clientId) : '',
+      client_id: client_id,
       rfc: client?.rfc || '', // Assuming clients mock has rfc
-      razonSocial: client?.razonSocial || '' // Assuming clients mock has razonSocial
+      razonSocial: client?.razonSocial || client?.name || '' // Fallback to name if razonSocial not available
     });
   };
   
   // Handle save new invoice
   const handleSaveInvoice = (e) => {
     e.preventDefault();
-    if (!newInvoice.clientId || !newInvoice.invoiceNumber || !newInvoice.total) {
+    if (!newInvoice.client_id || !newInvoice.invoiceNumber || !newInvoice.total) {
       alert('Por favor, completa los campos obligatorios (Cliente, N° Factura/Nota, Total).');
       return;
     }
@@ -96,8 +105,8 @@ const FinanceAddInvoiceModal = ({ isOpen, onClose, onSave }) => {
                 Cliente
               </label>
               <select
-                name="clientId"
-                value={newInvoice.clientId}
+                name="client_id"
+                value={newInvoice.client_id}
                 onChange={handleClientSelect}
                 className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               >

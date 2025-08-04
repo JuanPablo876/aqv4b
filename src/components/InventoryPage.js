@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useInventory, useProducts } from '../hooks/useData';
 import { formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { cleanFormData } from '../utils/formValidation';
+import { supabase } from '../supabaseClient';
 import VenetianTile from './VenetianTile';
 import InventoryOrderButton from './InventoryOrderButton'; // Import the new button
 import InventoryMovementModal from './InventoryMovementModal'; // Import the new modal
 import ProductsAddModal from './ProductsAddModal'; // Import the ProductsAddModal
 
 const InventoryPage = () => {
-  const { data: inventoryList, loading: inventoryLoading } = useInventory();
+  const { data: inventoryList, loading: inventoryLoading, update: updateInventory } = useInventory();
   const { data: productsList, loading: productsLoading } = useProducts();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,6 +23,8 @@ const InventoryPage = () => {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false); // State for history modal
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
+  const [movementHistory, setMovementHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [adjustmentData, setAdjustmentData] = useState({
     quantity: '',
     reason: '',
@@ -87,21 +92,22 @@ const InventoryPage = () => {
   };
   
   // Handle save adjustment
-  const handleSaveAdjustment = () => {
-    const updatedInventory = inventoryList.map(item => {
-      if (item.id === selectedItem.id) {
-        return {
-          ...item,
-          quantity: parseInt(adjustmentData.quantity),
-          last_updated: new Date().toISOString(),
-          notes: adjustmentData.notes
-        };
-      }
-      return item;
+  const handleSaveAdjustment = async () => {
+    await handleFormSubmission(async () => {
+      const cleanedData = cleanFormData(adjustmentData);
+      
+      const updatedItem = {
+        quantity: parseInt(cleanedData.quantity),
+        last_updated: new Date().toISOString(),
+        notes: cleanedData.notes
+      };
+      
+      await updateInventory(selectedItem.id, updatedItem);
+      setIsAdjustModalOpen(false);
+      setAdjustmentData({ quantity: '', reason: '', notes: '' });
+      
+      return 'Ajuste de inventario guardado exitosamente';
     });
-    
-    setInventoryList(updatedInventory);
-    setIsAdjustModalOpen(false);
   };
   
   // Handle add new movement
@@ -134,14 +140,55 @@ const InventoryPage = () => {
     console.log(`Simulando creación de pedido de compra para producto: ${product.name}`);
     // In a real app, this would navigate to the order creation page
     // or open a modal to create a purchase order for this product.
-    alert(`Funcionalidad "Realizar Pedido" para ${product.name} pendiente de implementar.`);
+    handleSuccess(`Funcionalidad "Realizar Pedido" para ${product.name} pendiente de implementar.`);
   };
   
   // Handle view inventory history
-  const handleViewHistory = (item) => {
+  const handleViewHistory = async (item) => {
     console.log(`Viendo historial de movimientos para: ${item.product_name}`);
     setSelectedHistoryItem(item);
     setIsHistoryModalOpen(true);
+    
+    // Fetch real movement history from database
+    await fetchMovementHistory(item.product_id);
+  };
+  
+  // Fetch movement history for a specific product
+  const fetchMovementHistory = async (productId) => {
+    try {
+      setHistoryLoading(true);
+      
+      const { data, error } = await supabase
+        .from('inventory_movements')
+        .select(`
+          *,
+          products:product_id (
+            name,
+            sku
+          )
+        `)
+        .eq('product_id', productId)
+        .order('movement_date', { ascending: false })
+        .limit(50); // Get last 50 movements
+        
+      if (error) {
+        throw error;
+      }
+      
+      console.log('📦 Movement history loaded:', {
+        productId,
+        movementsCount: data?.length || 0,
+        movements: data
+      });
+      
+      setMovementHistory(data || []);
+    } catch (error) {
+      console.error('Error fetching movement history:', error);
+      handleError(error, 'fetch movement history', 'Error al cargar el historial de movimientos');
+      setMovementHistory([]);
+    } finally {
+      setHistoryLoading(false);
+    }
   };
   
   return (
@@ -534,14 +581,22 @@ const InventoryPage = () => {
               
               <div className="mt-6 flex justify-end space-x-3">
                 <button
-                  onClick={() => setIsAdjustModalOpen(false)}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsAdjustModalOpen(false);
+                  }}
                   className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Cancelar
                 </button>
                 
                 <button
-                  onClick={handleSaveAdjustment}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSaveAdjustment();
+                  }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                 >
                   Guardar Ajuste
@@ -602,13 +657,25 @@ const InventoryPage = () => {
                 </p>
               </div>
 
-              {/* Mock history data - in a real app this would come from database */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                <p className="text-yellow-800 text-sm">
-                  <strong>Nota:</strong> Esta funcionalidad muestra datos de ejemplo. 
-                  En producción se conectará a los registros reales de movimientos de inventario.
-                </p>
-              </div>
+              {/* Movement history status */}
+              {historyLoading ? (
+                <div className="flex justify-center items-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Cargando historial...</span>
+                </div>
+              ) : movementHistory.length === 0 ? (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                  <p className="text-gray-800 text-sm">
+                    No se encontraron movimientos para este producto.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <p className="text-green-800 text-sm">
+                    <strong>✅ Datos reales:</strong> Mostrando {movementHistory.length} movimientos del historial de inventario.
+                  </p>
+                </div>
+              )}
 
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -635,40 +702,50 @@ const InventoryPage = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {/* Mock data - replace with real movement history */}
-                    {[
-                      { date: '2025-08-01', type: 'Entrada', quantity: 50, previousStock: 100, newStock: 150, reason: 'Compra a proveedor' },
-                      { date: '2025-07-28', type: 'Salida', quantity: -25, previousStock: 125, newStock: 100, reason: 'Venta a cliente' },
-                      { date: '2025-07-25', type: 'Ajuste', quantity: 5, previousStock: 120, newStock: 125, reason: 'Corrección de inventario' },
-                      { date: '2025-07-20', type: 'Salida', quantity: -30, previousStock: 150, newStock: 120, reason: 'Pedido #ORD-001234' }
-                    ].map((movement, index) => (
-                      <tr key={index}>
+                    {/* Real movement history data */}
+                    {movementHistory.map((movement, index) => (
+                      <tr key={movement.id || index}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(movement.date).toLocaleDateString('es-ES')}
+                          {formatDate(movement.movement_date || movement.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            movement.type === 'Entrada' ? 'bg-green-100 text-green-800' :
-                            movement.type === 'Salida' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            movement.movement_type === 'entrada' ? 'bg-green-100 text-green-800' :
+                            movement.movement_type === 'salida' ? 'bg-red-100 text-red-800' :
+                            movement.movement_type === 'ajuste' ? 'bg-blue-100 text-blue-800' :
+                            'bg-gray-100 text-gray-800'
                           }`}>
-                            {movement.type}
+                            {movement.movement_type?.charAt(0).toUpperCase() + movement.movement_type?.slice(1) || 'N/A'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {movement.quantity > 0 ? '+' : ''}{movement.quantity}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <span className={`font-medium ${
+                            movement.quantity_change > 0 ? 'text-green-600' : 
+                            movement.quantity_change < 0 ? 'text-red-600' : 'text-gray-600'
+                          }`}>
+                            {movement.quantity_change > 0 ? '+' : ''}{movement.quantity_change || 0}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {movement.previousStock}
+                          {movement.previous_stock || 0}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {movement.newStock}
+                          {movement.new_stock || 0}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {movement.reason}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {movement.notes || movement.reference_type || 'Sin motivo especificado'}
                         </td>
                       </tr>
                     ))}
+                    
+                    {/* Show message if no movements */}
+                    {!historyLoading && movementHistory.length === 0 && (
+                      <tr>
+                        <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                          No hay movimientos registrados para este producto
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -685,7 +762,7 @@ const InventoryPage = () => {
           </VenetianTile>
         </div>
       )}
-        </>
+      </>
       )}
     </div>
   );

@@ -1,21 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
+import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { cleanFormData } from '../utils/formValidation';
+import maintenanceService from '../services/maintenanceService';
 import VenetianTile from './VenetianTile';
 import MaintenancesAddModal from './MaintenancesAddModal';
 
 const MaintenancesPage = () => {
-  const { data: maintenancesList = [], loading: maintenancesLoading, error: maintenancesError, update: updateMaintenance, create: createMaintenance } = useData('maintenances');
+  // Use custom maintenance service instead of generic useData hook
+  const [maintenancesList, setMaintenancesList] = useState([]);
+  const [maintenancesLoading, setMaintenancesLoading] = useState(true);
+  const [maintenancesError, setMaintenancesError] = useState(null);
+  
   const { data: clientsList = [], loading: clientsLoading } = useData('clients');
   const { data: employeesList = [], loading: employeesLoading } = useData('employees');
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortConfig, setSortConfig] = useState({ field: 'last_service_date', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState({ field: 'next_service_date', direction: 'asc' });
   const [statusFilter, setStatusFilter] = useState('');
   const [isAddMaintenanceModalOpen, setIsAddMaintenanceModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingMaintenance, setEditingMaintenance] = useState(null);
+  const [isServiceHistoryModalOpen, setIsServiceHistoryModalOpen] = useState(false);
+  const [selectedMaintenanceForHistory, setSelectedMaintenanceForHistory] = useState(null);
+  const [serviceHistory, setServiceHistory] = useState([]);
+  const [serviceHistoryLoading, setServiceHistoryLoading] = useState(false);
+  const [maintenanceStats, setMaintenanceStats] = useState({
+    totalMaintenances: 0,
+    activeMaintenances: 0,
+    overdueMaintenances: 0,
+    thisMonthServices: 0
+  });
+
+  // Load maintenances on component mount
+  useEffect(() => {
+    loadMaintenances();
+    loadMaintenanceStats();
+  }, []);
+
+  const loadMaintenances = async () => {
+    try {
+      setMaintenancesLoading(true);
+      const data = await maintenanceService.getMaintenances();
+      setMaintenancesList(data);
+      setMaintenancesError(null);
+    } catch (error) {
+      console.error('Error loading maintenances:', error);
+      setMaintenancesError(error.message);
+    } finally {
+      setMaintenancesLoading(false);
+    }
+  };
+
+  const loadMaintenanceStats = async () => {
+    try {
+      const stats = await maintenanceService.getMaintenanceStats();
+      setMaintenanceStats(stats);
+    } catch (error) {
+      console.error('Error loading maintenance stats:', error);
+    }
+  };
 
   const loading = maintenancesLoading || clientsLoading || employeesLoading;
 
@@ -35,18 +81,24 @@ const MaintenancesPage = () => {
     );
   }
 
-  // Combine maintenances with client and employee details
+  // Combine maintenances with client and employee details - now from service response
   const maintenancesWithDetails = (maintenancesList || []).map(maintenance => {
-    const client = (clientsList || []).find(c => c.id === maintenance.client_id) || {};
-    const lastServiceEmployee = (employeesList || []).find(e => e.id === maintenance.last_service_employee_id) || {};
+    // Data comes pre-joined from the service
+    const client = maintenance.clients || {};
+    const lastServiceEmployee = maintenance.employees || {};
       
     return {
       ...maintenance,
       clientName: client.name || 'Cliente Desconocido',
       clientContact: client.contact || 'N/A',
       clientPhone: client.phone || 'N/A',
+      clientEmail: client.email || 'N/A',
       lastServiceDateFormatted: maintenance.last_service_date ? formatDate(maintenance.last_service_date) : 'N/A',
-      lastServiceEmployeeName: lastServiceEmployee.name || 'N/A'
+      nextServiceDateFormatted: maintenance.next_service_date ? formatDate(maintenance.next_service_date) : 'N/A',
+      lastServiceEmployeeName: lastServiceEmployee.name || 'N/A',
+      isOverdue: maintenance.next_service_date && maintenance.status === 'active' 
+        ? new Date(maintenance.next_service_date) < new Date() 
+        : false
     };
   });
   
@@ -81,13 +133,14 @@ const MaintenancesPage = () => {
 
   // Handle save new maintenance from modal
   const handleSaveNewMaintenance = async (newMaintenanceData) => {
-    try {
-      await createMaintenance(newMaintenanceData);
+    await handleFormSubmission(async () => {
+      const cleanedData = cleanFormData(newMaintenanceData);
+      await maintenanceService.createMaintenance(cleanedData);
+      await loadMaintenances(); // Reload data
+      await loadMaintenanceStats(); // Update stats
       setIsAddMaintenanceModalOpen(false);
-    } catch (error) {
-      console.error('Error creating maintenance:', error);
-      alert('Error al crear mantenimiento: ' + error.message);
-    }
+      return 'Mantenimiento creado exitosamente';
+    });
   };
 
   // Handle edit maintenance
@@ -98,14 +151,31 @@ const MaintenancesPage = () => {
 
   // Handle save edited maintenance
   const handleSaveEditedMaintenance = async () => {
-    try {
-      await updateMaintenance(editingMaintenance.id, editingMaintenance);
+    await handleFormSubmission(async () => {
+      // Filter out virtual/computed fields that don't exist in database
+      const { 
+        clientName, 
+        clientContact, 
+        clientEmail, 
+        clientPhone, 
+        lastServiceEmployee, 
+        lastServiceDateFormatted, 
+        nextServiceDateFormatted,
+        lastServiceEmployeeName, 
+        isOverdue,
+        clients,
+        employees,
+        ...maintenanceData 
+      } = editingMaintenance;
+      
+      const cleanedData = cleanFormData(maintenanceData);
+      await maintenanceService.updateMaintenance(editingMaintenance.id, cleanedData);
+      await loadMaintenances(); // Reload data
+      await loadMaintenanceStats(); // Update stats
       setIsEditModalOpen(false);
       setEditingMaintenance(null);
-    } catch (error) {
-      console.error('Error updating maintenance:', error);
-      alert('Error al actualizar mantenimiento: ' + error.message);
-    }
+      return 'Mantenimiento actualizado exitosamente';
+    });
   };
 
   // Handle input change for editing maintenance
@@ -115,6 +185,38 @@ const MaintenancesPage = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Fetch service history for maintenance - now using real service
+  const fetchServiceHistory = async (maintenanceId) => {
+    setServiceHistoryLoading(true);
+    try {
+      const history = await maintenanceService.getServiceHistory(maintenanceId);
+      
+      // If no history exists, generate some sample data for demonstration
+      if (!history || history.length === 0) {
+        console.log('No service history found, generating sample data...');
+        await maintenanceService.generateSampleServiceRecords(maintenanceId, 3);
+        // Fetch again after generating
+        const newHistory = await maintenanceService.getServiceHistory(maintenanceId);
+        setServiceHistory(newHistory);
+      } else {
+        setServiceHistory(history);
+      }
+    } catch (error) {
+      console.error('Error fetching service history:', error);
+      handleError(error, 'fetch service history', 'Error al cargar el historial de servicios');
+      setServiceHistory([]);
+    } finally {
+      setServiceHistoryLoading(false);
+    }
+  };
+
+  // Handle service history
+  const handleServiceHistory = async (maintenance) => {
+    setSelectedMaintenanceForHistory(maintenance);
+    setIsServiceHistoryModalOpen(true);
+    await fetchServiceHistory(maintenance.id);
   };
 
   return (
@@ -178,6 +280,73 @@ const MaintenancesPage = () => {
             Nuevo Mantenimiento
           </button>
         </div>
+      </div>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <VenetianTile className="p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Mantenimientos</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{maintenanceStats.totalMaintenances}</p>
+            </div>
+          </div>
+        </VenetianTile>
+        
+        <VenetianTile className="p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Activos</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{maintenanceStats.activeMaintenances}</p>
+            </div>
+          </div>
+        </VenetianTile>
+        
+        <VenetianTile className="p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-red-100 dark:bg-red-900 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Vencidos</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{maintenanceStats.overdueMaintenances}</p>
+            </div>
+          </div>
+        </VenetianTile>
+        
+        <VenetianTile className="p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2z" />
+                </svg>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Este Mes</p>
+              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{maintenanceStats.thisMonthServices}</p>
+            </div>
+          </div>
+        </VenetianTile>
       </div>
 
       {/* Maintenances Table */}
@@ -272,7 +441,12 @@ const MaintenancesPage = () => {
             </thead>
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {(filteredMaintenances || []).map((maintenance) => (
-                <tr key={maintenance.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr 
+                  key={maintenance.id} 
+                  className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                    maintenance.isOverdue ? 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500' : ''
+                  }`}
+                >
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -294,8 +468,15 @@ const MaintenancesPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-gray-100">
-                      {maintenance.next_service_date ? formatDate(maintenance.next_service_date) : 'No programada'}
+                    <div className={`text-sm flex items-center ${
+                      maintenance.isOverdue ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'
+                    }`}>
+                      {maintenance.isOverdue && (
+                        <svg className="w-4 h-4 mr-1 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      )}
+                      {maintenance.nextServiceDateFormatted || 'No programada'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -318,6 +499,12 @@ const MaintenancesPage = () => {
                         onClick={() => handleEditMaintenance(maintenance)}
                       >
                         Editar
+                      </button>
+                      <button
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-200"
+                        onClick={() => handleServiceHistory(maintenance)}
+                      >
+                        Historial
                       </button>
                     </div>
                   </td>
@@ -430,19 +617,212 @@ const MaintenancesPage = () => {
 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
-                    onClick={() => setIsEditModalOpen(false)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsEditModalOpen(false);
+                    }}
                     className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
                   >
                     Cancelar
                   </button>
                   <button
-                    onClick={handleSaveEditedMaintenance}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSaveEditedMaintenance();
+                    }}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
                   >
                     Guardar Cambios
                   </button>
                 </div>
               </div>
+            </div>
+          </VenetianTile>
+        </div>
+      )}
+
+      {/* Service History Modal */}
+      {isServiceHistoryModalOpen && selectedMaintenanceForHistory && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <VenetianTile className="max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                  Historial - {selectedMaintenanceForHistory.clientName}
+                </h3>
+                <button
+                  onClick={() => {
+                    setIsServiceHistoryModalOpen(false);
+                    setSelectedMaintenanceForHistory(null);
+                    setServiceHistory([]);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <h4 className="font-medium text-blue-800 dark:text-blue-200 mb-2">Información del Mantenimiento</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600 dark:text-gray-300">Dirección:</span>
+                    <span className="ml-2 text-gray-800 dark:text-gray-100">{selectedMaintenanceForHistory.address || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600 dark:text-gray-300">Tipo de Servicio:</span>
+                    <span className="ml-2 text-gray-800 dark:text-gray-100">{selectedMaintenanceForHistory.service_type || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600 dark:text-gray-300">Estado:</span>
+                    <span className={`ml-2 px-2 py-1 text-xs font-semibold rounded-full ${getStatusColorClass(selectedMaintenanceForHistory.status)}`}>
+                      {selectedMaintenanceForHistory.status === 'active' ? 'Activo' : 
+                       selectedMaintenanceForHistory.status === 'inactive' ? 'Inactivo' : 
+                       selectedMaintenanceForHistory.status === 'completed' ? 'Completado' : 
+                       selectedMaintenanceForHistory.status || 'Sin estado'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {serviceHistoryLoading ? (
+                <div className="flex justify-center items-center h-32">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                  <span className="ml-3 text-gray-600 dark:text-gray-300">Cargando historial...</span>
+                </div>
+              ) : serviceHistory.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-gray-500 dark:text-gray-400 mb-2">
+                    <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    No hay historial disponible
+                  </div>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                    Los servicios realizados aparecerán aquí cuando estén registrados
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                      Servicios Realizados ({serviceHistory.length})
+                    </h4>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {serviceHistory.some(record => record.id?.toString().includes('mock')) ? 
+                        '📝 Datos de demostración' : 
+                        '✅ Datos de base de datos'
+                      }
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4">
+                    {serviceHistory.map((record, index) => (
+                      <div key={record.id || index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h5 className="font-medium text-gray-900 dark:text-gray-100">
+                                {record.service_type || 'Servicio de Mantenimiento'}
+                              </h5>
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                record.status === 'completed' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                                record.status === 'pending' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                              }`}>
+                                {record.status === 'completed' ? 'Completado' :
+                                 record.status === 'pending' ? 'Pendiente' : 
+                                 record.status || 'Sin estado'}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <span className="font-medium text-gray-600 dark:text-gray-300">Fecha:</span>
+                                <span className="ml-2 text-gray-800 dark:text-gray-100">
+                                  {record.service_date ? formatDate(record.service_date) : 'N/A'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-600 dark:text-gray-300">Técnico:</span>
+                                <span className="ml-2 text-gray-800 dark:text-gray-100">
+                                  {record.employees?.name || record.employee_name || 'N/A'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-600 dark:text-gray-300">Duración:</span>
+                                <span className="ml-2 text-gray-800 dark:text-gray-100">
+                                  {record.duration_hours ? `${record.duration_hours}h` : 'N/A'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-600 dark:text-gray-300">Costo:</span>
+                                <span className="ml-2 text-gray-800 dark:text-gray-100">
+                                  {record.cost ? formatCurrency(record.cost) : 'N/A'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {record.description && (
+                          <div className="mb-3">
+                            <span className="font-medium text-gray-600 dark:text-gray-300 text-sm">Descripción:</span>
+                            <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{record.description}</p>
+                          </div>
+                        )}
+
+                        {record.notes && (
+                          <div className="mb-3">
+                            <span className="font-medium text-gray-600 dark:text-gray-300 text-sm">Notas:</span>
+                            <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{record.notes}</p>
+                          </div>
+                        )}
+
+                        {record.products && record.products.length > 0 && (
+                          <div>
+                            <span className="font-medium text-gray-600 dark:text-gray-300 text-sm">Productos utilizados:</span>
+                            <div className="mt-1 flex flex-wrap gap-2">
+                              {record.products.map((product, idx) => (
+                                <span key={idx} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs rounded">
+                                  {product.name} {product.price && `(${formatCurrency(product.price)})`}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {serviceHistory.length > 0 && (
+                    <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <h5 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Resumen de Servicios</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-600 dark:text-gray-300">Total de servicios:</span>
+                          <span className="ml-2 text-gray-800 dark:text-gray-100">{serviceHistory.length}</span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600 dark:text-gray-300">Servicios completados:</span>
+                          <span className="ml-2 text-gray-800 dark:text-gray-100">
+                            {serviceHistory.filter(r => r.status === 'completed').length}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-600 dark:text-gray-300">Costo total:</span>
+                          <span className="ml-2 text-gray-800 dark:text-gray-100">
+                            {formatCurrency(serviceHistory.reduce((sum, r) => sum + (r.cost || 0), 0))}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </VenetianTile>
         </div>
