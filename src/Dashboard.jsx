@@ -21,6 +21,7 @@ import DatabaseTest from './components/DatabaseTest';
 import DatabaseDiagnostic from './components/DatabaseDiagnostic';
 import AuditLogsPage from './components/AuditLogsPage';
 import NotificationSettingsPage from './components/NotificationSettingsPage';
+import ReviewsPage from './components/ReviewsPage';
 import VenetianBackground from './components/VenetianBackground';
 import ModuleSidebar from './components/ModuleSidebar';
 import { isStorageAvailable } from './utils/storage';
@@ -264,6 +265,8 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
         return <InvitationManagement />;
       case 'audit':
         return <AuditLogsPage />;
+      case 'reviews':
+        return <ReviewsPage />;
       case 'dbtest':
         return <DatabaseTest />;
       default:

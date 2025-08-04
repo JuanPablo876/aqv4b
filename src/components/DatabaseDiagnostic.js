@@ -42,6 +42,79 @@ const DatabaseDiagnostic = () => {
     }
   };
 
+  const initializeReviewsTable = async () => {
+    try {
+      setGenerating(true);
+      
+      // Create the reviews table with sample data
+      const sampleReviews = [
+        {
+          review_type: 'general',
+          title: 'Excelente servicio al cliente',
+          content: 'El equipo de AquaLiquim siempre responde rápidamente a nuestras consultas y necesidades. Muy profesionales.',
+          rating: 5,
+          status: 'approved',
+          is_public: true,
+          source: 'internal',
+          tags: ['servicio-cliente', 'comunicacion'],
+          priority: 'medium'
+        },
+        {
+          review_type: 'general',
+          title: 'Productos de alta calidad',
+          content: 'Los químicos que compramos siempre llegan en perfectas condiciones y con excelente calidad.',
+          rating: 5,
+          status: 'approved',
+          is_public: true,
+          source: 'internal',
+          tags: ['calidad', 'productos'],
+          priority: 'medium'
+        },
+        {
+          review_type: 'service',
+          title: 'Mantenimiento de piscina excelente',
+          content: 'El técnico llegó puntual y realizó un trabajo impecable. La piscina quedó cristalina.',
+          rating: 5,
+          status: 'pending',
+          is_public: false,
+          source: 'internal',
+          tags: ['mantenimiento', 'piscina'],
+          priority: 'high'
+        },
+        {
+          review_type: 'general',
+          title: 'Precios competitivos',
+          content: 'Los precios son justos para la calidad de productos y servicios que ofrecen.',
+          rating: 4,
+          status: 'approved',
+          is_public: true,
+          source: 'internal',
+          tags: ['precios', 'valor'],
+          priority: 'low'
+        }
+      ];
+
+      // Insert sample reviews
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from('reviews')
+        .insert(sampleReviews);
+
+      if (reviewsError) {
+        console.error('Error inserting sample reviews:', reviewsError);
+        alert('❌ Error initializing reviews: ' + reviewsError.message);
+        return;
+      }
+
+      await runDiagnostic(); // Refresh the diagnostic
+      alert('✅ Reviews table initialized with sample data successfully!');
+    } catch (error) {
+      console.error('Error initializing reviews table:', error);
+      alert('❌ Error initializing reviews: ' + error.message);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const runDiagnostic = async () => {
     try {
       setLoading(true);
@@ -167,6 +240,18 @@ const DatabaseDiagnostic = () => {
         error: maintenancesError?.message || null
       };
 
+      // Check reviews table
+      const { data: reviews, error: reviewsError } = await supabase
+        .from('reviews')
+        .select('*')
+        .limit(5);
+      
+      results.reviews = {
+        count: reviews?.length || 0,
+        sample: reviews?.[0] || null,
+        error: reviewsError?.message || null
+      };
+
       setDiagnosticData(results);
     } catch (error) {
       console.error('Diagnostic error:', error);
@@ -251,6 +336,14 @@ const DatabaseDiagnostic = () => {
           disabled={generating}
         >
           Clear Sample Data
+        </button>
+        
+        <button
+          onClick={initializeReviewsTable}
+          className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+          disabled={generating}
+        >
+          Initialize Reviews
         </button>
       </div>
     </div>

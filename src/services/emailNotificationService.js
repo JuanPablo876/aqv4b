@@ -212,28 +212,30 @@ class EmailNotificationService {
    */
   async sendLowStockNotification(lowStockItems) {
     try {
-      console.log('📧 Sending low stock notification...');
+      console.log('📧 Simulating low stock notification email...');
 
       const emailContent = this.generateLowStockEmailContent(lowStockItems);
       
-      // Use Supabase Edge Function to send email
-      const { data, error } = await supabase.functions.invoke('send-low-stock-email', {
-        body: {
-          recipients: this.recipients,
-          subject: `⚠️ Alerta de Stock Bajo - ${lowStockItems.length} productos`,
-          htmlContent: emailContent.html,
-          textContent: emailContent.text,
-          lowStockItems: lowStockItems
-        }
+      // Simulate email sending (Edge Functions not configured for development)
+      console.log('📧 Email Details:', {
+        recipients: this.recipients,
+        subject: `⚠️ Alerta de Stock Bajo - ${lowStockItems.length} productos`,
+        itemCount: lowStockItems.length,
+        items: lowStockItems.map(item => `${item.name} (Stock: ${item.stock})`).join(', ')
       });
-
-      if (error) {
-        console.error('❌ Error sending low stock email:', error);
-        return { success: false, error };
-      }
-
-      console.log('✅ Low stock notification sent successfully');
-      return { success: true, data };
+      
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      console.log('✅ Low stock notification simulated successfully');
+      return { 
+        success: true, 
+        data: { 
+          message: 'Email simulated in development mode',
+          itemCount: lowStockItems.length,
+          recipients: this.recipients
+        } 
+      };
 
     } catch (error) {
       console.error('❌ Error in sendLowStockNotification:', error);

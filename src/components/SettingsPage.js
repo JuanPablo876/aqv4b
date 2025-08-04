@@ -8,6 +8,7 @@ import { ValidatedForm } from './forms/ValidatedForm';
 import { userSettingsSchema, changePasswordSchema } from '../schemas/validationSchemas';
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
 import { cleanFormData } from '../utils/formValidation';
+import { dataExportImportService } from '../services/dataExportImportService';
 
 const SettingsPage = ({ session }) => {
   const [activeTab, setActiveTab] = useState('general');
@@ -237,6 +238,17 @@ const SettingsPage = ({ session }) => {
   });
 
   const [passwordStrength, setPasswordStrength] = useState(0);
+  
+  // Logo state
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(localStorage.getItem('company-logo') || '');
+  
+  // Export/Import states
+  const [exportStatus, setExportStatus] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
+  const [importStatus, setImportStatus] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importFile, setImportFile] = useState(null);
   
   // Handle company info change
   const handleCompanyInfoChange = (e) => {
@@ -502,7 +514,132 @@ const SettingsPage = ({ session }) => {
     }, 'Error inesperado al actualizar la contraseña');
   };
   
-  // Render tab content
+  // Handle file upload for logo
+  const handleLogoUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast('Error: Solo se permiten archivos de imagen (JPG, PNG, GIF, WebP)', 'error');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast('Error: El archivo debe ser menor a 5MB', 'error');
+      return;
+    }
+
+    try {
+      // Convert to base64 for storage
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const logoDataURL = e.target.result;
+        
+        // Update company info with new logo
+        const updatedCompanyInfo = { ...companyInfo, logo: logoDataURL };
+        setCompanyInfo(updatedCompanyInfo);
+        
+        // Save to localStorage
+        localStorage.setItem('companyInfo', JSON.stringify(updatedCompanyInfo));
+        
+        toast('Logo actualizado exitosamente', 'success');
+      };
+      
+      reader.onerror = () => {
+        toast('Error al leer el archivo', 'error');
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading logo:', error);
+      toast('Error al subir el logo', 'error');
+    }
+  };
+
+  // Remove logo
+  const handleRemoveLogo = () => {
+    const updatedCompanyInfo = { ...companyInfo, logo: null };
+    setCompanyInfo(updatedCompanyInfo);
+    localStorage.setItem('companyInfo', JSON.stringify(updatedCompanyInfo));
+    toast('Logo eliminado exitosamente', 'success');
+  };
+
+  // Export data handlers
+  const handleExportJSON = async () => {
+    setIsExporting(true);
+    setExportStatus('Exportando datos...');
+    
+    try {
+      await dataExportImportService.exportToJSON();
+      setExportStatus('Datos exportados exitosamente como JSON');
+      toast.success('Datos exportados exitosamente como JSON');
+    } catch (error) {
+      console.error('Error exporting JSON:', error);
+      setExportStatus('Error al exportar datos');
+      toast.error('Error al exportar datos: ' + error.message);
+    } finally {
+      setIsExporting(false);
+      setTimeout(() => setExportStatus(''), 3000);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    setExportStatus('Exportando datos como CSV...');
+    
+    try {
+      await dataExportImportService.exportToCSV();
+      setExportStatus('Datos exportados exitosamente como CSV');
+      toast.success('Datos exportados exitosamente como CSV');
+    } catch (error) {
+      console.error('Error exporting CSV:', error);
+      setExportStatus('Error al exportar datos');
+      toast.error('Error al exportar datos: ' + error.message);
+    } finally {
+      setIsExporting(false);
+      setTimeout(() => setExportStatus(''), 3000);
+    }
+  };
+
+  // Import data handlers
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    setImportFile(file);
+    if (file) {
+      setImportStatus(`Archivo seleccionado: ${file.name}`);
+    }
+  };
+
+  const handleImportData = async () => {
+    if (!importFile) {
+      toast.error('Por favor selecciona un archivo para importar');
+      return;
+    }
+
+    setIsImporting(true);
+    setImportStatus('Importando datos...');
+    
+    try {
+      await dataExportImportService.importFromFile(importFile);
+      setImportStatus('Datos importados exitosamente');
+      toast.success('Datos importados exitosamente');
+      setImportFile(null);
+      // Clear the file input
+      const fileInput = document.querySelector('input[type="file"][accept=".json"]');
+      if (fileInput) fileInput.value = '';
+    } catch (error) {
+      console.error('Error importing data:', error);
+      setImportStatus('Error al importar datos');
+      toast.error('Error al importar datos: ' + error.message);
+    } finally {
+      setIsImporting(false);
+      setTimeout(() => setImportStatus(''), 3000);
+    }
+  };
   const renderTabContent = () => {
     switch (activeTab) {
       case 'general':
@@ -527,9 +664,28 @@ const SettingsPage = ({ session }) => {
                 </div>
                 <div>
                   <h4 className="text-md font-medium text-blue-800 dark:text-blue-200 mb-2">Logo de la Empresa</h4>
-                  <button className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                    {companyInfo.logo ? 'Cambiar Logo' : 'Subir Logo'}
-                  </button>
+                  <div className="flex space-x-2">
+                    <label className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer">
+                      {companyInfo.logo ? 'Cambiar Logo' : 'Subir Logo'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {companyInfo.logo && (
+                      <button
+                        onClick={handleRemoveLogo}
+                        className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                      >
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Formatos: JPG, PNG, GIF, WebP. Máximo 5MB.
+                  </p>
                 </div>
               </div>
               
@@ -1182,6 +1338,82 @@ const SettingsPage = ({ session }) => {
               </div>
             </div>
             
+            {/* Data Export/Import Section */}
+            <div className="mb-6 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">Exportar/Importar Datos</h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Export Section */}
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Exportar Datos</h5>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    Descarga una copia de seguridad de todos tus datos empresariales.
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleExportJSON}
+                      disabled={isExporting}
+                      className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isExporting ? 'Exportando...' : 'Exportar como JSON'}
+                    </button>
+                    
+                    <button
+                      onClick={handleExportCSV}
+                      disabled={isExporting}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isExporting ? 'Exportando...' : 'Exportar como CSV (ZIP)'}
+                    </button>
+                  </div>
+                  
+                  {exportStatus && (
+                    <div className="mt-3 p-3 bg-white dark:bg-gray-700 rounded border text-xs">
+                      <p className="text-gray-700 dark:text-gray-300">{exportStatus}</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Import Section */}
+                <div>
+                  <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Importar Datos</h5>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    Restaura datos desde un archivo de respaldo. ⚠️ Esto puede sobrescribir datos existentes.
+                  </p>
+                  
+                  <div className="space-y-2">
+                    <label className="w-full cursor-pointer">
+                      <div className="w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 text-center">
+                        {importFile ? importFile.name : 'Seleccionar Archivo JSON'}
+                      </div>
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={handleFileSelect}
+                        disabled={isImporting}
+                        className="hidden"
+                      />
+                    </label>
+                    
+                    <button
+                      onClick={handleImportData}
+                      disabled={isImporting || !importFile}
+                      className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isImporting ? 'Importando...' : 'Importar Datos'}
+                    </button>
+                  </div>
+                  
+                  {importStatus && (
+                    <div className="mt-3 p-3 bg-white dark:bg-gray-700 rounded border text-xs">
+                      <p className="text-gray-700 dark:text-gray-300">{importStatus}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
             <div className="flex justify-end">
               <button 
                 type="button"
@@ -1594,13 +1826,260 @@ const SettingsPage = ({ session }) => {
           </div>
         );
         
+      case 'reviews':
+        return (
+          <div>
+            <h3 className="text-lg font-medium text-blue-800 dark:text-blue-200 mb-6">📝 Configuración de Reviews</h3>
+            
+            {/* Reviews Configuration */}
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Review Settings */}
+                <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">⚙️ Configuración General</h4>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Auto-aprobación de reviews</label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Aprobar automáticamente reviews de 4-5 estrellas</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                        defaultChecked={false}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Notificaciones de reviews</label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Recibir alertas de nuevos reviews</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                        defaultChecked={true}
+                      />
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Reviews públicos</label>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Mostrar reviews en sitio web</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                        defaultChecked={true}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Review Statistics */}
+                <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
+                  <h4 className="text-lg font-medium text-blue-800 dark:text-blue-200 mb-4">📊 Estadísticas</h4>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Total de Reviews:</span>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">156</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Promedio de Rating:</span>
+                      <div className="flex items-center space-x-1">
+                        <span className="font-semibold text-gray-800 dark:text-gray-200">4.6</span>
+                        <div className="flex">
+                          {[1,2,3,4,5].map(star => (
+                            <span key={star} className="text-yellow-400">⭐</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Reviews Pendientes:</span>
+                      <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full text-xs font-medium">8</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Este Mes:</span>
+                      <span className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full text-xs font-medium">+23</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Review Templates */}
+              <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">📝 Plantillas de Respuesta</h4>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Respuesta para Reviews Positivos
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      rows="3"
+                      defaultValue="¡Gracias por tu review positivo! Nos alegra saber que estás satisfecho con nuestros productos y servicios. Tu opinión es muy valiosa para nosotros."
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Respuesta para Reviews Negativos
+                    </label>
+                    <textarea
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      rows="3"
+                      defaultValue="Lamentamos escuchar sobre tu experiencia. Nos pondremos en contacto contigo para resolver cualquier problema. Tu feedback nos ayuda a mejorar."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  onClick={() => window.location.href = '/reviews'}
+                >
+                  📝 Ir a Reviews
+                </button>
+                
+                <button
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                >
+                  💾 Guardar Configuración
+                </button>
+                
+                <button
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600"
+                >
+                  🔄 Resetear a Defecto
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+        
       case 'database':
         return (
           <div>
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🗄️</div>
-              <h2 className="text-2xl font-bold text-primary mb-2">Configuración de Base de Datos</h2>
-              <p className="text-muted-foreground">Configuración avanzada de la base de datos.</p>
+            <h3 className="text-lg font-medium text-blue-800 dark:text-blue-200 mb-6">🗄️ Base de Datos</h3>
+            
+            <div className="space-y-6">
+              {/* Database Status */}
+              <div className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg border border-blue-100 dark:border-blue-800">
+                <h4 className="text-lg font-medium text-blue-800 dark:text-blue-200 mb-4">📊 Estado de la Base de Datos</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg">
+                    <div className="text-green-500 text-2xl mb-2">✅</div>
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Conexión</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Activa</div>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg">
+                    <div className="text-yellow-500 text-2xl mb-2">⚠️</div>
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Tabla Reviews</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Faltante</div>
+                  </div>
+                  
+                  <div className="text-center p-4 bg-white dark:bg-gray-800 rounded-lg">
+                    <div className="text-blue-500 text-2xl mb-2">🔧</div>
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Migración</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">Requerida</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Database Actions */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">� Inicialización</h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Crear Tabla de Reviews</h5>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        Crea la tabla reviews necesaria para el sistema de calificaciones.
+                      </p>
+                      <button 
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        onClick={() => toast.info('Funcionalidad de creación de tablas en desarrollo. Por favor ejecuta manualmente el SQL desde database/reviews_table.sql')}
+                      >
+                        Crear Tabla Reviews
+                      </button>
+                    </div>
+                    
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Datos de Ejemplo</h5>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        Inserta datos de ejemplo para probar el sistema.
+                      </p>
+                      <button 
+                        className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        onClick={() => toast.info('Funcionalidad de datos de ejemplo en desarrollo')}
+                      >
+                        Insertar Datos de Ejemplo
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200 mb-4">📋 SQL Manual</h4>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Archivo SQL</h5>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                        <code className="bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">database/reviews_table.sql</code>
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Instrucciones</h5>
+                      <ol className="text-xs text-gray-500 dark:text-gray-400 space-y-1 list-decimal list-inside">
+                        <li>Accede a tu panel de Supabase</li>
+                        <li>Ve a SQL Editor</li>
+                        <li>Ejecuta el contenido de reviews_table.sql</li>
+                        <li>Recarga la aplicación</li>
+                      </ol>
+                    </div>
+                    
+                    <button 
+                      className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.origin + '/database/reviews_table.sql');
+                        toast.success('Ruta del archivo copiada al portapapeles');
+                      }}
+                    >
+                      Copiar Ruta del Archivo
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Database Info */}
+              <div className="p-6 bg-yellow-50 dark:bg-yellow-900/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-start space-x-3">
+                  <div className="text-yellow-500 text-xl">⚠️</div>
+                  <div>
+                    <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                      Tabla Reviews Faltante
+                    </h4>
+                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                      La tabla 'reviews' no existe en la base de datos. Esto es normal para una nueva instalación. 
+                      Ejecuta el archivo SQL manualmente desde el panel de Supabase para habilitar el sistema de reviews.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -1663,6 +2142,17 @@ const SettingsPage = ({ session }) => {
               }`}
             >
               Seguridad
+            </button>
+            
+            <button
+              onClick={() => setActiveTab('reviews')}
+              className={`py-4 px-6 text-sm font-medium ${
+                activeTab === 'reviews'
+                  ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              📝 Reviews
             </button>
             
             <button

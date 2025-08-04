@@ -216,7 +216,8 @@ export const validateInventoryAvailability = async (orderItems) => {
  */
 export const getLowStockAlerts = async () => {
   try {
-    const { data: alerts, error } = await supabase
+    // First get all inventory items with their products
+    const { data: inventoryData, error } = await supabase
       .from('inventory')
       .select(`
         id,
@@ -229,15 +230,20 @@ export const getLowStockAlerts = async () => {
           sku,
           min_stock
         )
-      `)
-      .lte('quantity', supabase.raw('products.min_stock'));
+      `);
     
     if (error) {
-      console.error('❌ Error fetching low stock alerts:', error);
+      console.error('❌ Error fetching inventory data:', error);
       return [];
     }
+
+    // Filter items where quantity is less than or equal to min_stock
+    const lowStockAlerts = inventoryData?.filter(item => {
+      const minStock = item.products?.min_stock || 0;
+      return item.quantity <= minStock;
+    }) || [];
     
-    return alerts?.map(alert => ({
+    return lowStockAlerts?.map(alert => ({
       inventoryId: alert.id,
       productId: alert.product_id,
       productName: alert.products.name,

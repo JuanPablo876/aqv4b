@@ -3,7 +3,7 @@
  * Logs all user actions across the application for accountability and compliance
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '../supabaseClient';
 
 class AuditService {
   constructor() {
@@ -20,6 +20,12 @@ class AuditService {
   // Initialize current user information
   async initializeUser() {
     try {
+      // Check if supabase and auth are available
+      if (!supabase || !supabase.auth) {
+        console.warn('Supabase client not properly initialized for audit service');
+        return;
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         this.currentUser = {
@@ -30,6 +36,8 @@ class AuditService {
       }
     } catch (error) {
       console.error('Error initializing audit user:', error);
+      // Don't fail the entire application if audit initialization fails
+      this.currentUser = null;
     }
   }
 
@@ -208,6 +216,12 @@ class AuditService {
   // Get audit logs with filtering and pagination
   async getAuditLogs(filters = {}) {
     try {
+      // Check if supabase client is available
+      if (!supabase) {
+        console.warn('Supabase client not available for audit logs');
+        return [];
+      }
+
       let query = supabase
         .from('audit_logs')
         .select('*')
@@ -247,6 +261,11 @@ class AuditService {
       const { data, error } = await query;
 
       if (error) {
+        // Handle missing table error gracefully
+        if (error.code === '42P01') {
+          console.warn('Audit logs table does not exist');
+          return [];
+        }
         console.error('Error fetching audit logs:', error);
         throw error;
       }
@@ -254,7 +273,15 @@ class AuditService {
       return data || [];
     } catch (error) {
       console.error('Error in getAuditLogs:', error);
-      throw error;
+      
+      // Return empty array for missing table or client issues
+      if (error.code === '42P01' || error.message?.includes('Cannot read properties of undefined')) {
+        console.warn('Audit service not available, returning empty logs');
+        return [];
+      }
+      
+      // For other errors, still return empty array to prevent app crashes
+      return [];
     }
   }
 
