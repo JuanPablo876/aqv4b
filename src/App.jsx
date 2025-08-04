@@ -11,11 +11,13 @@ import NotFoundPage from './components/NotFoundPage';
 import PWAStatus from './components/PWAStatus';
 import PWATestPage from './components/PWATestPage';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { RBACProvider } from './hooks/useRBAC';
 
 export default function App() {
   return (
     <NotificationProvider>
-      <Routes>
+      <RBACProvider>
+        <Routes>
         {/* Public routes - redirect authenticated users to dashboard */}
         <Route 
           path="/login" 
@@ -74,6 +76,7 @@ export default function App() {
       
       {/* PWA Status Indicator */}
       <PWAStatus />
+      </RBACProvider>
     </NotificationProvider>
   );
 }

@@ -4,8 +4,9 @@ import { useData } from '../hooks/useData';
 import { handleError, handleSuccess } from '../utils/errorHandling';
 import reportsService from '../services/reportsService';
 import VenetianTile from './VenetianTile';
+import ProtectedRoute from './ProtectedRoute';
 
-const ReportsPage = () => {
+const ReportsPageContent = () => {
   const { data: invoicesList, loading: invoicesLoading } = useData('invoices');
   const { data: productsList, loading: productsLoading } = useData('products');
   const { data: clientsList, loading: clientsLoading } = useData('clients');
@@ -510,6 +511,24 @@ const ReportsPage = () => {
         {renderReportContent()}
       </div>
     </div>
+  );
+};
+
+const ReportsPage = () => {
+  return (
+    <ProtectedRoute 
+      requiredPermission="view_reports"
+      fallback={
+        <div className="p-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Access Restricted</h3>
+            <p className="text-yellow-700">You don't have permission to view reports.</p>
+          </div>
+        </div>
+      }
+    >
+      <ReportsPageContent />
+    </ProtectedRoute>
   );
 };
 

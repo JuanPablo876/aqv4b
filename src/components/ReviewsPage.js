@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { reviewService } from '../services/reviewService';
+import VenetianTile from './VenetianTile';
 
 const ReviewsPage = () => {
   const [reviews, setReviews] = useState([]);
@@ -109,10 +110,10 @@ const ReviewsPage = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: 'text-yellow-600 bg-yellow-100',
-      approved: 'text-green-600 bg-green-100',
-      rejected: 'text-red-600 bg-red-100',
-      archived: 'text-gray-600 bg-gray-100'
+      pending: 'text-yellow-700 bg-yellow-100 dark:text-yellow-200 dark:bg-yellow-900',
+      approved: 'text-green-700 bg-green-100 dark:text-green-200 dark:bg-green-900',
+      rejected: 'text-red-700 bg-red-100 dark:text-red-200 dark:bg-red-900',
+      archived: 'text-muted-foreground bg-secondary'
     };
     return colors[status] || colors.pending;
   };
@@ -140,8 +141,8 @@ const ReviewsPage = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestión de Reseñas</h1>
-          <p className="text-gray-600">Administra las reseñas y comentarios de los clientes</p>
+          <h1 className="text-2xl font-bold text-primary">Gestión de Reseñas</h1>
+          <p className="text-muted-foreground">Administra las reseñas y comentarios de los clientes</p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -154,74 +155,74 @@ const ReviewsPage = () => {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow">
+          <VenetianTile className="p-6">
             <div className="flex items-center">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Reseñas</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.total || 0}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Reseñas</p>
+                <p className="text-2xl font-bold text-primary">{stats?.total || 0}</p>
               </div>
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-600 dark:text-blue-300" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>
               </div>
             </div>
-          </div>
+          </VenetianTile>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <VenetianTile className="p-6">
             <div className="flex items-center">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Promedio</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-muted-foreground">Promedio</p>
+                <p className="text-2xl font-bold text-primary">
                   {stats?.averageRating && !isNaN(stats.averageRating) 
                     ? Number(stats.averageRating).toFixed(1) 
                     : 'N/A'}
                 </p>
-                <p className="text-sm text-gray-500">{getRatingStars(Math.round(Number(stats?.averageRating) || 0))}</p>
+                <p className="text-sm text-muted-foreground">{getRatingStars(Math.round(Number(stats?.averageRating) || 0))}</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-green-600 dark:text-green-300" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               </div>
             </div>
-          </div>
+          </VenetianTile>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <VenetianTile className="p-6">
             <div className="flex items-center">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Pendientes</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.statusDistribution?.pending || 0}</p>
+                <p className="text-sm font-medium text-muted-foreground">Pendientes</p>
+                <p className="text-2xl font-bold text-primary">{stats?.statusDistribution?.pending || 0}</p>
               </div>
-              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-300" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
               </div>
             </div>
-          </div>
+          </VenetianTile>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <VenetianTile className="p-6">
             <div className="flex items-center">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Este Mes</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.recentReviews || 0}</p>
+                <p className="text-sm font-medium text-muted-foreground">Este Mes</p>
+                <p className="text-2xl font-bold text-primary">{stats?.recentReviews || 0}</p>
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-600 dark:text-purple-300" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                 </svg>
               </div>
             </div>
-          </div>
+          </VenetianTile>
         </div>
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow">
+      <VenetianTile className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <label className="block text-sm font-medium text-primary mb-1">Estado</label>
             <select
               value={filters.status}
               onChange={(e) => setFilters({...filters, status: e.target.value})}
@@ -266,11 +267,11 @@ const ReviewsPage = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+            <label className="block text-sm font-medium text-primary mb-1">Prioridad</label>
             <select
               value={filters.priority}
               onChange={(e) => setFilters({...filters, priority: e.target.value})}
-              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full venetian-border rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 venetian-bg"
             >
               <option value="">Todas</option>
               <option value="urgent">Urgente</option>
@@ -280,7 +281,7 @@ const ReviewsPage = () => {
             </select>
           </div>
         </div>
-      </div>
+      </VenetianTile>
 
       {/* Error Message */}
       {error && (

@@ -1,8 +1,10 @@
 import React, { Fragment, useState } from 'react';
 import PropTypes from 'prop-types';
+import { useRBAC } from '../hooks/useRBAC';
 
 const LayoutSidebar = ({ activePage, setActivePage, session, onSidebarToggle }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { isAdmin } = useRBAC();
   
   const toggleSidebar = () => {
     const newState = !isCollapsed;
@@ -23,6 +25,16 @@ const LayoutSidebar = ({ activePage, setActivePage, session, onSidebarToggle }) 
   const isRoleAllowed = (requiredRoles) => {
     if (!requiredRoles) return true; // No role restriction
     return requiredRoles.includes(userRole);
+  };
+
+  // Filter menu items based on admin permissions
+  const isItemAllowed = (item) => {
+    // Check if item is admin-only
+    if (item.adminOnly && !isAdmin()) {
+      return false;
+    }
+    // Check role-based permissions
+    return isRoleAllowed(item.roleRequired);
   };
 
   const menuItems = [
@@ -98,6 +110,11 @@ const LayoutSidebar = ({ activePage, setActivePage, session, onSidebarToggle }) 
         <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-6a1 1 0 00-1-1H7a1 1 0 00-1 1v6a1 1 0 01-1 1H2a1 1 0 110-2V4zm3 8V8h2v4H7z" clipRule="evenodd" />
       </svg>
     ) },
+    { id: 'roles', label: 'Roles', icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+      </svg>
+    ), adminOnly: true },
     { id: 'notifications', label: 'Notificaciones', icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
         <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" />
@@ -165,7 +182,7 @@ const LayoutSidebar = ({ activePage, setActivePage, session, onSidebarToggle }) 
       <div className="flex-1 overflow-y-auto">
         <ul className="py-2">
           {menuItems
-            .filter(item => isRoleAllowed(item.roleRequired))
+            .filter(item => isItemAllowed(item))
             .map((item) => (
             <Fragment key={item.id}>
               {item.id === 'reports' && (

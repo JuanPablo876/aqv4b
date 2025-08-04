@@ -22,8 +22,10 @@ import DatabaseDiagnostic from './components/DatabaseDiagnostic';
 import AuditLogsPage from './components/AuditLogsPage';
 import NotificationSettingsPage from './components/NotificationSettingsPage';
 import ReviewsPage from './components/ReviewsPage';
+import RoleManagementPage from './components/RoleManagementPage';
 import VenetianBackground from './components/VenetianBackground';
 import ModuleSidebar from './components/ModuleSidebar';
+import ProtectedRoute from './components/ProtectedRoute';
 import { isStorageAvailable } from './utils/storage';
 import { useDatabaseInit } from './hooks/useDatabaseInit';
 import { useBusinessNotifications } from './hooks/useBusinessNotifications';
@@ -267,6 +269,12 @@ Current dev modules: ${modules.filter(m => m.isDevModule).length}
         return <AuditLogsPage />;
       case 'reviews':
         return <ReviewsPage />;
+      case 'roles':
+        return (
+          <ProtectedRoute requiredRole="admin">
+            <RoleManagementPage />
+          </ProtectedRoute>
+        );
       case 'dbtest':
         return <DatabaseTest />;
       default:

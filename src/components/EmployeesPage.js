@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEmployees } from '../hooks/useData';
 import { formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
 import { cleanFormData } from '../utils/formValidation';
 import VenetianTile from './VenetianTile';
+import ProtectedRoute from './ProtectedRoute';
+import { employeeActivityService } from '../services/employeeActivityService';
+import { 
+  getRelativeTime, 
+  getActivityIcon, 
+  calculatePerformanceGrade,
+  formatWorkHours,
+  getActivityTrend
+} from '../utils/employeeActivityUtils';
 
-const EmployeesPage = () => {
+const EmployeesPageContent = () => {
   const { data: employeesList, loading: employeesLoading, create: createEmployee, update: updateEmployee } = useEmployees();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,6 +24,8 @@ const EmployeesPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
+  const [activityData, setActivityData] = useState(null);
+  const [loadingActivity, setLoadingActivity] = useState(false);
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     role: '',
@@ -116,14 +127,43 @@ const EmployeesPage = () => {
   };
 
   // Handle view activity
-  const handleViewActivity = (employee) => {
+  const handleViewActivity = async (employee) => {
     setSelectedEmployee(employee);
     setIsActivityModalOpen(true);
+    setLoadingActivity(true);
+    
+    try {
+      // Fetch real employee activity data
+      const activity = await employeeActivityService.getEmployeeActivity(employee.id, 30);
+      setActivityData(activity);
+    } catch (error) {
+      console.error('Error loading employee activity:', error);
+      handleError(error, 'Error al cargar la actividad del empleado');
+      // Fallback to empty data structure
+      setActivityData({
+        activities: [],
+        stats: {
+          totalActivities: 0,
+          completedTasks: 0,
+          completionRate: 0,
+          satisfactionRate: 0,
+          workHours: 0,
+          ordersCompleted: 0,
+          maintenancesCompleted: 0
+        },
+        period: { days: 30 }
+      });
+    } finally {
+      setLoadingActivity(false);
+    }
   };
 
   // Handle close activity modal
   const handleCloseActivityModal = () => {
     setIsActivityModalOpen(false);
+    setSelectedEmployee(null);
+    setActivityData(null);
+    setLoadingActivity(false);
   };
   
   return (
@@ -785,58 +825,194 @@ const EmployeesPage = () => {
             </div>
             
             <div className="p-6">
-              <div className="mb-6">
-                <h4 className="text-lg font-medium text-blue-800 mb-3">Actividad Reciente</h4>
-                <div className="space-y-3">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium text-blue-800">Mantenimiento Completado</p>
-                        <p className="text-sm text-blue-600">Sistema de aire acondicionado - Cliente ABC Corp</p>
-                      </div>
-                      <span className="text-xs text-blue-500">Hace 2 horas</span>
+              {loadingActivity ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-gray-600">Cargando actividad...</span>
+                </div>
+              ) : activityData ? (
+                <>
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-lg font-medium text-blue-800">
+                        Actividad Reciente ({activityData.period?.days} días)
+                      </h4>
+                      {activityData.activities.length > 0 && (
+                        <div className="flex items-center text-sm text-gray-600">
+                          {(() => {
+                            const trend = getActivityTrend(activityData.activities, activityData.period?.days);
+                            return (
+                              <>
+                                <span className="mr-1">{trend.icon}</span>
+                                <span>{trend.message}</span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
+                    {activityData.activities.length > 0 ? (
+                      <div className="space-y-3">
+                        {activityData.activities.map((activity, index) => (
+                          <div 
+                            key={activity.id} 
+                            className={`p-4 rounded-lg border-l-4 ${
+                              activity.type === 'order' ? 'bg-blue-50 border-blue-400' :
+                              activity.type === 'maintenance' ? 'bg-green-50 border-green-400' :
+                              'bg-gray-50 border-gray-400'
+                            }`}
+                          >
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-start space-x-3">
+                                <span className="text-lg mt-0.5">
+                                  {getActivityIcon(activity.type)}
+                                </span>
+                                <div>
+                                  <p className={`font-medium ${
+                                    activity.type === 'order' ? 'text-blue-800' :
+                                    activity.type === 'maintenance' ? 'text-green-800' :
+                                    'text-gray-800'
+                                  }`}>
+                                    {activity.title}
+                                  </p>
+                                  <p className={`text-sm ${
+                                    activity.type === 'order' ? 'text-blue-600' :
+                                    activity.type === 'maintenance' ? 'text-green-600' :
+                                    'text-gray-600'
+                                  }`}>
+                                    {activity.description}
+                                  </p>
+                                  {activity.metadata && activity.status && (
+                                    <div className="mt-1">
+                                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                        activity.status === 'completed' || activity.status === 'delivered' ? 
+                                        'bg-green-100 text-green-800' :
+                                        activity.status === 'in_progress' ? 
+                                        'bg-blue-100 text-blue-800' :
+                                        'bg-yellow-100 text-yellow-800'
+                                      }`}>
+                                        {activity.status}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <span className={`text-xs font-medium ${
+                                activity.type === 'order' ? 'text-blue-500' :
+                                activity.type === 'maintenance' ? 'text-green-500' :
+                                'text-gray-500'
+                              }`}>
+                                {getRelativeTime(activity.created_at)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 p-6 rounded-lg text-center">
+                        <div className="text-gray-400 text-lg mb-2">📋</div>
+                        <p className="text-gray-600">No hay actividad reciente registrada</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          Las actividades aparecerán cuando se asignen órdenes o mantenimientos
+                        </p>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium text-gray-800">Orden de Trabajo Asignada</p>
-                        <p className="text-sm text-gray-600">Instalación de equipo nuevo - Cliente XYZ Ltd</p>
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-lg font-medium text-blue-800">
+                        Estadísticas del Período
+                      </h4>
+                      {(() => {
+                        const performance = calculatePerformanceGrade(activityData.stats);
+                        return (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-600">Calificación:</span>
+                            <span className={`text-lg font-bold ${performance.color}`}>
+                              {performance.grade}
+                            </span>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="bg-blue-50 p-4 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-blue-600">
+                          {activityData.stats.ordersCompleted}
+                        </p>
+                        <p className="text-sm text-blue-600">Órdenes Completadas</p>
                       </div>
-                      <span className="text-xs text-gray-500">Ayer</span>
+                      <div className="bg-green-50 p-4 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-green-600">
+                          {activityData.stats.maintenancesCompleted}
+                        </p>
+                        <p className="text-sm text-green-600">Mantenimientos</p>
+                      </div>
+                      <div className="bg-purple-50 p-4 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-purple-600">
+                          {activityData.stats.satisfactionRate}%
+                        </p>
+                        <p className="text-sm text-purple-600">Satisfacción Cliente</p>
+                      </div>
+                      <div className="bg-orange-50 p-4 rounded-lg text-center">
+                        <p className="text-2xl font-bold text-orange-600">
+                          {formatWorkHours(activityData.stats.workHours)}
+                        </p>
+                        <p className="text-sm text-orange-600">Horas Estimadas</p>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="font-medium text-green-800">Capacitación Completada</p>
-                        <p className="text-sm text-green-600">Curso de seguridad industrial</p>
-                      </div>
-                      <span className="text-xs text-green-500">Hace 3 días</span>
-                    </div>
+
+                  <div className="mb-6">
+                    <h4 className="text-lg font-medium text-blue-800 mb-3">Resumen de Rendimiento</h4>
+                    {(() => {
+                      const performance = calculatePerformanceGrade(activityData.stats);
+                      return (
+                        <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-4 rounded-lg border">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Actividades Totales:</span>
+                                <span className="font-semibold">{activityData.stats.totalActivities}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Tareas Completadas:</span>
+                                <span className="font-semibold">{activityData.stats.completedTasks}</span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">Tasa de Finalización:</span>
+                                <span className="font-semibold">{activityData.stats.completionRate}%</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-center md:justify-end">
+                              <div className="text-center">
+                                <div className={`text-3xl font-bold ${performance.color} mb-1`}>
+                                  {performance.grade}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {performance.description}
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  Puntuación: {performance.score}/100
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
+                </>
+              ) : (
+                <div className="bg-red-50 p-6 rounded-lg text-center">
+                  <div className="text-red-400 text-lg mb-2">⚠️</div>
+                  <p className="text-red-600">Error al cargar los datos de actividad</p>
+                  <p className="text-sm text-red-500 mt-1">
+                    Por favor, intenta de nuevo más tarde
+                  </p>
                 </div>
-              </div>
-              
-              <div className="mb-6">
-                <h4 className="text-lg font-medium text-blue-800 mb-3">Estadísticas del Mes</h4>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-blue-50 p-4 rounded-lg text-center">
-                    <p className="text-2xl font-bold text-blue-600">12</p>
-                    <p className="text-sm text-blue-600">Trabajos Completados</p>
-                  </div>
-                  <div className="bg-green-50 p-4 rounded-lg text-center">
-                    <p className="text-2xl font-bold text-green-600">96%</p>
-                    <p className="text-sm text-green-600">Satisfacción Cliente</p>
-                  </div>
-                  <div className="bg-orange-50 p-4 rounded-lg text-center">
-                    <p className="text-2xl font-bold text-orange-600">42</p>
-                    <p className="text-sm text-orange-600">Horas Trabajadas</p>
-                  </div>
-                </div>
-              </div>
+              )}
               
               <div className="flex justify-end">
                 <button
@@ -853,6 +1029,24 @@ const EmployeesPage = () => {
       </>
       )}
     </div>
+  );
+};
+
+const EmployeesPage = () => {
+  return (
+    <ProtectedRoute 
+      requiredPermission="manage_employees"
+      fallback={
+        <div className="p-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Access Restricted</h3>
+            <p className="text-yellow-700">You don't have permission to manage employees.</p>
+          </div>
+        </div>
+      }
+    >
+      <EmployeesPageContent />
+    </ProtectedRoute>
   );
 };
 

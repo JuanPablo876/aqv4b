@@ -9,8 +9,9 @@ import { cleanFormData } from '../utils/formValidation';
 import VenetianTile from './VenetianTile';
 import FinanceAddInvoiceModal from './FinanceAddInvoiceModal'; // Import the new modal
 import FinancialDashboard from './FinancialDashboard'; // Import the new dashboard
+import ProtectedRoute from './ProtectedRoute';
 
-const FinancePage = () => {
+const FinancePageContent = () => {
   const { data: bankAccountsList, loading: bankAccountsLoading } = useData('bankAccounts');
   const { data: cashBoxesList, loading: cashBoxesLoading } = useData('cashBoxes');
   const { data: transactionsList, loading: transactionsLoading, create: createTransaction } = useData('transactions');
@@ -1042,6 +1043,24 @@ const FinancePage = () => {
         </>
       )}
     </div>
+  );
+};
+
+const FinancePage = () => {
+  return (
+    <ProtectedRoute 
+      requiredPermission="manage_finance"
+      fallback={
+        <div className="p-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-center">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Access Restricted</h3>
+            <p className="text-yellow-700">You don't have permission to access financial data.</p>
+          </div>
+        </div>
+      }
+    >
+      <FinancePageContent />
+    </ProtectedRoute>
   );
 };
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import VenetianTile from './VenetianTile';
 
-const DashboardStatsCard = ({ title, value, change, icon, color, onClick }) => {
+const DashboardStatsCard = ({ title, value, change, icon, color, onClick, disabled = false }) => {
   // Define color classes based on the color prop - using CSS variables
   const colorClasses = {
     blue: {
@@ -35,7 +35,10 @@ const DashboardStatsCard = ({ title, value, change, icon, color, onClick }) => {
     : change >= 0;
   
   return (
-    <VenetianTile className={`p-6 cursor-pointer ${onClick ? 'hover:shadow-lg transition-shadow' : ''}`} onClick={onClick}>
+    <VenetianTile 
+      className={`p-6 ${disabled ? 'opacity-50 cursor-not-allowed' : onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''}`} 
+      onClick={disabled ? undefined : onClick}
+    >
       <div className="flex justify-between items-start">
         <div>
           <p className="text-muted-foreground text-sm font-medium">{title}</p>

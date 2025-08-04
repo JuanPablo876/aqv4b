@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useClients } from '../hooks/useData';
 import { useData } from '../hooks/useData';
 import { formatCurrency, formatDate } from '../utils/storage';
@@ -7,6 +7,16 @@ import { validateFormData, formSchemas, cleanFormData } from '../utils/formValid
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
 import VenetianTile from './VenetianTile';
 import HistoryModal, { historyColumns } from './HistoryModal';
+import PaginatedTable from './PaginatedTable';
+import { 
+  useBreakpoint, 
+  getTouchOptimizedClasses, 
+  getResponsiveTableConfig,
+  ResponsiveContainer,
+  MobileDrawer,
+  TableCard
+} from '../utils/responsiveUtils';
+import { businessNotificationService } from '../services/businessNotificationService';
 
 const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClientForOrder }) => {
   const { data: clientsList, loading, error, create, update, delete: deleteClient } = useClients();
@@ -23,17 +33,232 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
   const [historyTitle, setHistoryTitle] = useState('');
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Responsive state
+  const { isMobile, isTablet } = useBreakpoint();
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [performanceMode, setPerformanceMode] = useState(false);
+  
   const [newClient, setNewClient] = useState({
     name: '',
     contact: '',
     email: '',
     phone: '',
     address: '',
-    google_maps_link: '', // Updated to match database field name
+    google_maps_link: '',
     type: '',
     status: 'active',
     rfc: ''
   });
+  
+  // Initialize business notifications
+  useEffect(() => {
+    businessNotificationService.initialize();
+  }, []);
+
+  // Responsive table configuration
+  const tableConfig = useMemo(() => {
+    return getResponsiveTableConfig(isMobile, isTablet);
+  }, [isMobile, isTablet]);
+
+  // ====== EVENT HANDLERS ======
+  
+  // Handle sort
+  const handleSort = (field) => {
+    setSortConfig({
+      field,
+      direction: 
+        sortConfig.field === field && sortConfig.direction === 'asc' 
+          ? 'desc' 
+          : 'asc'
+    });
+  };
+
+  // Handle edit client
+  const handleEditClient = (client) => {
+    setEditingClient({ ...client });
+    setIsEditModalOpen(true);
+    setFormErrors({}); // Clear any previous errors
+  };
+
+  // Handle delete client
+  const handleDeleteClient = async (clientId) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este cliente?')) {
+      try {
+        await deleteClient(clientId);
+        handleSuccess('Cliente eliminado exitosamente');
+      } catch (error) {
+        handleError(error, 'Error al eliminar cliente');
+      }
+    }
+  };
+
+  // Handle view client history
+  const handleViewHistory = (client) => {
+    const clientOrders = ordersList?.filter(order => order.client_id === client.id) || [];
+    setHistoryData(clientOrders);
+    setHistoryTitle(`Historial de ${client.name}`);
+    setIsHistoryModalOpen(true);
+  };
+
+  // Handle create quote
+  const handleCreateQuote = (client) => {
+    setSelectedClientForQuote(client);
+    setActivePage('quotes');
+  };
+
+  // Handle create order
+  const handleCreateOrder = (client) => {
+    setSelectedClientForOrder(client);
+    setActivePage('orders');
+  };
+
+  // Processed data with performance optimization
+  const processedClients = useMemo(() => {
+    if (!clientsList || clientsList.length === 0) return [];
+    
+    let filtered = clientsList;
+    
+    if (searchTerm) {
+      filtered = filterBySearchTerm(filtered, searchTerm, ['name', 'contact', 'email', 'phone', 'type']);
+    }
+
+    if (sortConfig.field) {
+      filtered = sortByField(filtered, sortConfig.field, sortConfig.direction);
+    }
+
+    return filtered;
+  }, [clientsList, searchTerm, sortConfig]);
+
+  // Table columns configuration
+  const tableColumns = useMemo(() => {
+    const baseColumns = [
+      {
+        key: 'name',
+        header: 'Nombre',
+        sortable: true,
+        render: (value, item) => (
+          <div>
+            <span className="font-semibold text-primary">{value}</span>
+            {item.rfc && (
+              <div className="text-xs text-muted-foreground font-mono">{item.rfc}</div>
+            )}
+          </div>
+        )
+      },
+      {
+        key: 'contact',
+        header: 'Contacto',
+        sortable: true,
+        render: (value, item) => (
+          <div>
+            <div className="font-medium">{value}</div>
+            {item.email && (
+              <div className="text-xs text-muted-foreground">{item.email}</div>
+            )}
+            {item.phone && (
+              <div className="text-xs text-muted-foreground">{item.phone}</div>
+            )}
+          </div>
+        )
+      },
+      {
+        key: 'type',
+        header: 'Tipo',
+        sortable: true,
+        render: (value) => (
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            value === 'wholesaler' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' :
+            value === 'retailer' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+            'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400'
+          }`}>
+            {value === 'wholesaler' && '🏢 Mayorista'}
+            {value === 'retailer' && '🏪 Minorista'}
+            {value === 'distributor' && '📦 Distribuidor'}
+            {!value && 'Sin tipo'}
+          </span>
+        )
+      },
+      {
+        key: 'status',
+        header: 'Estado',
+        sortable: true,
+        render: (value) => (
+          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+            value === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+          }`}>
+            {value === 'active' ? '✅ Activo' : '❌ Inactivo'}
+          </span>
+        )
+      }
+    ];
+
+    // Add actions column for desktop
+    if (!isMobile) {
+      baseColumns.push({
+        key: 'actions',
+        header: 'Acciones',
+        sortable: false,
+        render: (value, item) => (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditClient(item);
+              }}
+              className={`${getTouchOptimizedClasses('sm')} text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded p-1`}
+              title="Editar"
+            >
+              ✏️
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteClient(item.id);
+              }}
+              className={`${getTouchOptimizedClasses('sm')} text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded p-1`}
+              title="Eliminar"
+            >
+              🗑️
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleViewHistory(item);
+              }}
+              className={`${getTouchOptimizedClasses('sm')} text-green-600 hover:text-green-800 hover:bg-green-50 dark:hover:bg-green-900/20 rounded p-1`}
+              title="Ver historial"
+            >
+              📜
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCreateQuote(item);
+              }}
+              className={`${getTouchOptimizedClasses('sm')} text-purple-600 hover:text-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded p-1`}
+              title="Crear cotización"
+            >
+              📄
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCreateOrder(item);
+              }}
+              className={`${getTouchOptimizedClasses('sm')} text-orange-600 hover:text-orange-800 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded p-1`}
+              title="Crear pedido"
+            >
+              🛒
+            </button>
+          </div>
+        )
+      });
+    }
+
+    return baseColumns;
+  }, [isMobile]);
 
   // Show loading state
   if (loading) {
@@ -94,17 +319,6 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
     sortConfig.field,
     sortConfig.direction
   );
-  
-  // Handle sort
-  const handleSort = (field) => {
-    setSortConfig({
-      field,
-      direction: 
-        sortConfig.field === field && sortConfig.direction === 'asc' 
-          ? 'desc' 
-          : 'asc'
-    });
-  };
   
   // Handle client selection
   const handleSelectClient = (client) => {
@@ -179,13 +393,6 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
   // Handle close client details
   const handleCloseDetails = () => {
     setSelectedClient(null);
-  };
-
-  // Handle edit client
-  const handleEditClient = (client) => {
-    setEditingClient({ ...client });
-    setIsEditModalOpen(true);
-    setFormErrors({}); // Clear any previous errors
   };
 
   // Handle save edited client
