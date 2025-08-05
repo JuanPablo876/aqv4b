@@ -26,16 +26,17 @@ class RBACService {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       
       if (userError) {
-        console.error('Error getting user in RBAC:', userError);
+        // Only log error if it's not a session missing error (which is normal when not logged in)
+        if (userError.name !== 'AuthSessionMissingError') {
+          console.error('Error getting user in RBAC:', userError);
+        }
+        this.resetRBAC();
         return false;
       }
       
       if (!user) {
-        console.warn('No authenticated user found in RBAC');
-        this.currentUser = null;
-        this.userRoles = [];
-        this.userPermissions = {};
-        this.initialized = false;
+        // User not logged in - this is normal, don't log as warning
+        this.resetRBAC();
         return false;
       }
 
@@ -46,10 +47,21 @@ class RBACService {
       console.log('RBAC initialized successfully');
       return true;
     } catch (error) {
-      console.error('Error initializing RBAC:', error);
-      this.initialized = false;
+      // Only log error if it's not a session missing error
+      if (error.name !== 'AuthSessionMissingError') {
+        console.error('Error initializing RBAC:', error);
+      }
+      this.resetRBAC();
       return false;
     }
+  }
+
+  // Reset RBAC state
+  resetRBAC() {
+    this.currentUser = null;
+    this.userRoles = [];
+    this.userPermissions = {};
+    this.initialized = false;
   }
 
   // Load user roles and permissions

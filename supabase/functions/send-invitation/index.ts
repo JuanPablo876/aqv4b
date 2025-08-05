@@ -74,7 +74,7 @@ serve(async (req) => {
     }
 
     // Create invitation URL
-    const invitationUrl = `${Deno.env.get('APP_URL') || 'http://localhost:3000'}/accept-invitation?id=${invitation.id}`
+    const invitationUrl = `${Deno.env.get('APP_URL') || 'http://www.aqualiquim.mx'}/accept-invitation?id=${invitation.id}`
 
     // Email content
     const emailHtml = `
