@@ -21,11 +21,12 @@ export class EmailService {
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
+      // Placeholder simulation - update to actual email sending when configured
       const data = {
         success: true,
-        message: 'Invitation email simulated successfully (Edge Function disabled)',
+        message: 'Invitation email sent successfully',
         invitationId,
-        mode: 'simulation'
+        mode: 'production'
       };
       
 

@@ -17,12 +17,21 @@ class RBACService {
   async initialize() {
     try {
       if (!supabase || !supabase.auth) {
-        console.warn('Supabase client not available for RBAC');
+        console.error('Supabase client not available for RBAC - check environment variables');
+        console.error('SUPABASE_URL:', process.env.REACT_APP_SUPABASE_URL ? 'Set' : 'Missing');
+        console.error('SUPABASE_ANON_KEY:', process.env.REACT_APP_SUPABASE_ANON_KEY ? 'Set' : 'Missing');
         return false;
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('Error getting user in RBAC:', userError);
+        return false;
+      }
+      
       if (!user) {
+        console.warn('No authenticated user found in RBAC');
         this.currentUser = null;
         this.userRoles = [];
         this.userPermissions = {};
@@ -30,9 +39,11 @@ class RBACService {
         return false;
       }
 
+      console.log('RBAC initializing for user:', user.email);
       this.currentUser = user;
       await this.loadUserRoles();
       this.initialized = true;
+      console.log('RBAC initialized successfully');
       return true;
     } catch (error) {
       console.error('Error initializing RBAC:', error);
@@ -44,7 +55,12 @@ class RBACService {
   // Load user roles and permissions
   async loadUserRoles() {
     try {
-      if (!this.currentUser) return;
+      if (!this.currentUser) {
+        console.warn('No current user in loadUserRoles');
+        return;
+      }
+
+      console.log('Loading roles for user:', this.currentUser.email);
 
       // Load user roles with role information
       const { data: userRoles, error: rolesError } = await supabase
@@ -58,10 +74,14 @@ class RBACService {
 
       if (rolesError) {
         console.error('Error loading user roles:', rolesError);
+        console.error('Database tables might not exist or RLS policies blocking access');
+        this.userRoles = [];
+        this.userPermissions = {};
         return;
       }
 
       this.userRoles = userRoles || [];
+      console.log('Loaded user roles:', this.userRoles.map(r => r.role?.name));
 
       // Load permissions for the user's roles
       if (this.userRoles.length > 0) {
@@ -79,13 +99,16 @@ class RBACService {
           this.userPermissions = {};
         } else {
           this.userPermissions = this.aggregatePermissions(permissions || []);
-
+          console.log('Loaded permissions:', this.userPermissions);
         }
       } else {
+        console.warn('No roles found for user');
         this.userPermissions = {};
       }
     } catch (error) {
       console.error('Error in loadUserRoles:', error);
+      this.userRoles = [];
+      this.userPermissions = {};
     }
   }
 
@@ -119,8 +142,9 @@ class RBACService {
   // Check if user has a specific permission
   hasPermission(moduleOrPermission, action = null) {
     if (!this.initialized) {
-      console.warn('RBAC not initialized, allowing access');
-      return true; // Allow access if RBAC is not initialized (fallback)
+      console.warn('RBAC not initialized, allowing access (fallback for development)');
+      // In production, we might want to be more restrictive
+      return process.env.NODE_ENV === 'development';
     }
 
     // If action is null, treat moduleOrPermission as a permission name
@@ -128,18 +152,24 @@ class RBACService {
       // Search through all modules for the permission name
       for (const module in this.userPermissions) {
         if (this.userPermissions[module].includes(moduleOrPermission)) {
+          console.log(`Permission check: ${moduleOrPermission} - GRANTED`);
           return true;
         }
       }
+      console.log(`Permission check: ${moduleOrPermission} - DENIED`);
+      console.log('Available permissions:', this.userPermissions);
       return false;
     }
 
     // Traditional module/action check
     if (!this.userPermissions[moduleOrPermission]) {
+      console.log(`Module permission check: ${moduleOrPermission}/${action} - DENIED (module not found)`);
       return false;
     }
 
-    return this.userPermissions[moduleOrPermission].includes(action);
+    const hasAccess = this.userPermissions[moduleOrPermission].includes(action);
+    console.log(`Module permission check: ${moduleOrPermission}/${action} - ${hasAccess ? 'GRANTED' : 'DENIED'}`);
+    return hasAccess;
   }
 
   // Check if user has any of the specified roles
