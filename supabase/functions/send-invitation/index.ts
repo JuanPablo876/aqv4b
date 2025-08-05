@@ -178,7 +178,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'AquaLiquim <noreply@resend.dev>', // Using Resend's default domain
+          from: 'AquaLiquim <noreply@yourdomain.com>', // Replace with your verified domain
           to: [invitation.email],
           subject: `Invitación a AquaLiquim - Rol: ${invitation.role}`,
           html: emailHtml,

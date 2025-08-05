@@ -7,32 +7,12 @@ export class EmailService {
   // Send invitation email via Edge Function
   static async sendInvitationEmail(invitationId) {
     try {
-
-      
       // Validate invitation ID
       if (!invitationId) {
         throw new Error('Invitation ID is required');
       }
       
-      // For now, always use simulation mode to avoid Edge Function errors
-      // until Resend API key is properly configured
-
-      
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Placeholder simulation - update to actual email sending when configured
-      const data = {
-        success: true,
-        message: 'Invitation email sent successfully',
-        invitationId,
-        mode: 'production'
-      };
-      
-
-      return data;
-      
-      /* Edge Function call - disabled until Resend API is configured
+      // Call the Edge Function to send email
       const { data, error } = await supabase.functions.invoke('send-invitation', {
         body: { invitation_id: invitationId }
       });
@@ -40,7 +20,6 @@ export class EmailService {
       if (error) {
         console.error('❌ Edge function error:', error);
         // Fall back to simulation mode if Edge Function fails
-
         return {
           success: true,
           message: 'Invitation email simulated (Edge Function fallback)',
@@ -49,9 +28,7 @@ export class EmailService {
         };
       }
       
-
       return data;
-      */
     } catch (error) {
       console.error('Error sending invitation email:', error);
       // Instead of throwing, return a simulated success to prevent app crashes
