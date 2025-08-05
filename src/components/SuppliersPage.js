@@ -4,7 +4,7 @@ import { formatCurrency, formatDate } from '../utils/storage'; // Import formatC
 import { filterBySearchTerm, sortByField } from '../utils/helpers';
 import { validateFormData, formSchemas, cleanFormData } from '../utils/formValidation';
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../supabaseClient';
 import VenetianTile from './VenetianTile';
 
 const SuppliersPage = () => {

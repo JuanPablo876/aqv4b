@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import VenetianTile from './VenetianTile';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../supabaseClient';
 import { ToastContainer } from './ui/toast';
 import { useToast } from '../hooks/useToast';
 import { useTheme } from '../contexts/ThemeContext';

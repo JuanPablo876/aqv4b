@@ -5,7 +5,7 @@ import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/h
 import { DEFAULT_PRODUCT_IMAGE } from '../utils/placeholders';
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
 import { cleanFormData, productSchema } from '../utils/formValidation';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../supabaseClient';
 import VenetianTile from './VenetianTile';
 
 const ProductsPage = () => {
