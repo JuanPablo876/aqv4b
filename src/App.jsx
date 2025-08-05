@@ -9,7 +9,6 @@ import PrivateRoute from './PrivateRoute';
 import PublicRoute from './PublicRoute';
 import NotFoundPage from './components/NotFoundPage';
 import PWAStatus from './components/PWAStatus';
-import PWATestPage from './components/PWATestPage';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { RBACProvider } from './hooks/useRBAC';
 

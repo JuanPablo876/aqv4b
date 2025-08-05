@@ -17,8 +17,6 @@ import ReportsPage from './components/ReportsPage';
 import SettingsPage from './components/SettingsPage';
 import UserProfilePage from './components/UserProfilePage';
 import InvitationManagement from './components/InvitationManagement';
-import DatabaseTest from './components/DatabaseTest';
-import DatabaseDiagnostic from './components/DatabaseDiagnostic';
 import AuditLogsPage from './components/AuditLogsPage';
 import NotificationSettingsPage from './components/NotificationSettingsPage';
 import ReviewsPage from './components/ReviewsPage';
@@ -131,8 +129,7 @@ export default function Dashboard() {
     reports: 'Reportes',
     settings: 'Configuración',
     profile: 'Mi Perfil',
-    invitations: 'Gestión de Invitaciones',
-    dbtest: 'Database Test'
+    invitations: 'Gestión de Invitaciones'
   };
 
   // Development utilities - available in browser console
@@ -265,8 +262,6 @@ export default function Dashboard() {
             <RoleManagementPage />
           </ProtectedRoute>
         );
-      case 'dbtest':
-        return <DatabaseTest />;
       default:
         return (
           <div>

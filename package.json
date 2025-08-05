@@ -1,4 +1,12 @@
 {
+      "name": "aqv4b",
+      "version": "1.0.0",
+      "description": "AQV4 - Comprehensive business management system for inventory, clients, orders, and finance management",
+      "repository": {
+            "type": "git",
+            "url": "https://github.com/JuanPablo876/aqv4b.git"
+      },
+      "homepage": "https://github.com/JuanPablo876/aqv4b",
       "scripts": {
             "start": "react-scripts start",
             "build": "react-scripts build",

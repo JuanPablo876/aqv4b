@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -36,20 +35,20 @@ export function ForgotPasswordForm() {
       <div className="max-w-md w-full space-y-8 relative z-10">
         {success ? (
           <div className="text-center">
-            <div className="text-6xl mb-6">??</div>
+            <div className="text-6xl mb-6">📧</div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
               Revisa tu Email
             </h2>
             <div className="bg-card/90 backdrop-blur-sm py-8 px-6 shadow-xl rounded-lg border border-border/20 mt-8">
               <p className="text-sm text-muted-foreground text-center">
-                Si el email est� registrado en nuestro sistema, recibir�s las instrucciones para restablecer tu contrase�a.
+                Si el email está registrado en nuestro sistema, recibirás las instrucciones para restablecer tu contraseña.
               </p>
               <div className="mt-6 text-center">
                 <Link 
                   to="/login" 
-                  className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                  className="font-medium text-blue-600 hover:text-blue-800 transition-colors dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                  ? Volver al inicio de sesi�n
+                  ← Volver al inicio de sesión
                 </Link>
               </div>
             </div>
@@ -57,9 +56,9 @@ export function ForgotPasswordForm() {
         ) : (
           <>
             <div className="text-center">
-              <div className="text-6xl mb-6">??</div>
+              <div className="text-6xl mb-6">🔑</div>
               <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
-                Restablecer Contrase�a
+                Restablecer Contraseña
               </h2>
               <p className="mt-4 text-center text-sm text-muted-foreground">
                 Ingresa tu email para recibir las instrucciones de restablecimiento
@@ -86,7 +85,7 @@ export function ForgotPasswordForm() {
                 </div>
                 
                 {error && (
-                  <div className="text-sm text-red-500 bg-red-50 p-3 rounded border border-red-200">
+                  <div className="text-sm text-red-500 bg-red-50 p-3 rounded border border-red-200 dark:bg-red-900/20 dark:border-red-800">
                     {error}
                   </div>
                 )}
@@ -103,9 +102,9 @@ export function ForgotPasswordForm() {
               <div className="mt-6 text-center">
                 <Link 
                   to="/login" 
-                  className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                  className="font-medium text-blue-600 hover:text-blue-800 transition-colors dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                  ? Volver al inicio de sesi�n
+                  ← Volver al inicio de sesión
                 </Link>
               </div>
             </div>
@@ -115,9 +114,3 @@ export function ForgotPasswordForm() {
     </div>
   );
 }
-
-
-
-
-
-

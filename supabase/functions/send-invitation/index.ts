@@ -195,13 +195,20 @@ serve(async (req) => {
       console.log('✅ Email sent successfully! Resend ID:', emailResult.id);
 
       // Update invitation status to indicate email was sent
-      await supabaseClient
+      const { error: updateError, data: updateData } = await supabaseClient
         .from('invitations')
-        .update({ 
+        .update({
           email_sent_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', invitation_id)
+        .select();
+
+      if (updateError) {
+        console.error("❌ Failed to update invitation record:", updateError);
+      } else {
+        console.log("✅ Invitation updated:", updateData);
+      }
 
       return new Response(
         JSON.stringify({ 
@@ -217,13 +224,20 @@ serve(async (req) => {
     } else {
       console.log('⚠️ No RESEND_API_KEY found - running in simulation mode');
       // No Resend API key - simulate email sending for testing
-      await supabaseClient
+      const { error: updateError, data: updateData } = await supabaseClient
         .from('invitations')
-        .update({ 
+        .update({
           email_sent_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', invitation_id)
+        .select();
+
+      if (updateError) {
+        console.error("❌ Failed to update invitation record:", updateError);
+      } else {
+        console.log("✅ Invitation updated:", updateData);
+      }
 
       return new Response(
         JSON.stringify({ 
