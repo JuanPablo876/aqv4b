@@ -3,20 +3,20 @@ import { formatDate } from './storage'; // Import formatDate
 
 // Simulate sending an email
 const sendEmailAlert = (to, subject, body) => {
-  console.log("--- Simulando Envío de Email ---");
-  console.log("Para:", to);
-  console.log("Asunto:", subject);
-  console.log("Cuerpo:", body);
-  console.log("------------------------------");
+
+
+
+
+
   // In a real application, you would use an email sending library or API here
 };
 
 // Simulate sending a WhatsApp message
 const sendWhatsAppAlert = (to, message) => {
-  console.log("--- Simulando Envío de WhatsApp ---");
-  console.log("Para:", to);
-  console.log("Mensaje:", message);
-  console.log("---------------------------------");
+
+
+
+
   // In a real application, you would use a WhatsApp API here
 };
 

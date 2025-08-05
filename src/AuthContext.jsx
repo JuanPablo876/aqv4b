@@ -8,21 +8,21 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    console.log('🔄 AuthContext: Getting initial session...')
+// console.log('🔄 AuthContext: Getting initial session...')
     supabase.auth.getSession().then(({ data, error }) => {
-      console.log('📋 AuthContext: Initial session result:', { session: data.session, error })
+// console.log('📋 AuthContext: Initial session result:', { session: data.session, error })
       setSession(data.session)
       setLoading(false)
     })
     
-    console.log('👂 AuthContext: Setting up auth state listener...')
+// console.log('👂 AuthContext: Setting up auth state listener...')
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔔 AuthContext: Auth state changed:', { event, session })
+// console.log('🔔 AuthContext: Auth state changed:', { event, session })
       setSession(session)
     })
     
     return () => { 
-      console.log('🧹 AuthContext: Cleaning up listener...')
+// console.log('🧹 AuthContext: Cleaning up listener...')
       listener.subscription.unsubscribe() 
     }
   }, [])

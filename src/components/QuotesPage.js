@@ -77,16 +77,16 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
   
   // Handle quote selection
   const handleSelectQuote = (quote) => {
-    console.log('🔍 Quote selected:', quote);
-    console.log('📦 Quote items:', quote.items);
-    console.log('📋 Products list:', productsList);
+
+
+
     
     // Enhance quote with product details
     const quoteWithProductDetails = {
       ...quote,
       items: (quote.items || []).map(item => {
         const product = (productsList || []).find(p => p.id === item.product_id) || {};
-        console.log(`🔗 Mapping item ${item.product_id} to product:`, product);
+
         return {
           ...item,
           productName: product.name || 'Producto Desconocido',
@@ -96,7 +96,7 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
       })
     };
     
-    console.log('✅ Enhanced quote with products:', quoteWithProductDetails);
+
     setSelectedQuote(quoteWithProductDetails);
   };
   
@@ -513,17 +513,17 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
                     <div className="text-sm font-medium text-gray-900">{getQuoteNumber(quote.id)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{quote.clientName}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{quote.clientName}</div>
                     <div className="text-xs text-gray-500">{quote.clientContact}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(quote.created_at)}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{formatDate(quote.created_at)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(quote.valid_until)}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{formatDate(quote.valid_until)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{formatCurrency(quote.total)}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatCurrency(quote.total)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(quote.status)}`}>
@@ -583,12 +583,12 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Fecha:</span>
-                      <span className="text-blue-800 font-medium">{formatDate(selectedQuote.created_at)}</span>
+                      <span className="text-blue-800 dark:text-blue-400 font-medium">{formatDate(selectedQuote.created_at)}</span>
                     </div>
                     
                     <div className="flex justify-between">
                       <span className="text-gray-500">Válida hasta:</span>
-                      <span className="text-blue-800 font-medium">{formatDate(selectedQuote.valid_until)}</span>
+                      <span className="text-blue-800 dark:text-blue-400 font-medium">{formatDate(selectedQuote.valid_until)}</span>
                     </div>
                     
                     <div className="flex justify-between">

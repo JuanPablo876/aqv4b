@@ -152,7 +152,7 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
         sortable: true,
         render: (value, item) => (
           <div>
-            <div className="font-medium">{value}</div>
+            <div className="font-medium text-foreground dark:text-dark-200">{value}</div>
             {item.email && (
               <div className="text-xs text-muted-foreground">{item.email}</div>
             )}
@@ -446,12 +446,12 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
     // Filter orders for this specific client
     const clientOrders = (ordersList || []).filter(order => order.client_id === client.id);
     
-    console.log(`📊 Loading order history for ${client.name}:`, {
-      clientId: client.id,
-      totalOrders: ordersList?.length || 0,
-      clientOrders: clientOrders.length,
-      orders: clientOrders.slice(0, 3) // Show first 3 for debugging
-    });
+    // console.log(`📊 Loading order history for ${client.name}:`, {
+    //   clientId: client.id,
+    //   totalOrders: ordersList?.length || 0,
+    //   clientOrders: clientOrders.length,
+    //   orders: clientOrders.slice(0, 3) // Show first 3 for debugging
+    // });
     
     setHistoryData(clientOrders);
     setHistoryTitle(`Historial de Pedidos - ${client.name}`);
@@ -673,13 +673,13 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
                     <div className="text-sm text-gray-900">{client.type}</div>
                   </td>
                    <td className="px-6 py-4 col-narrow">
-                    <div className="text-sm text-gray-900">{client.rfc || 'N/A'}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{client.rfc || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4 col-narrow">
-                    <div className="text-sm text-gray-900">{formatDate(client.last_purchase)}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{formatDate(client.last_purchase)}</div>
                   </td>
                   <td className="px-6 py-4 col-narrow">
-                    <div className="text-sm text-gray-900">{formatCurrency(client.total_spent)}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{formatCurrency(client.total_spent)}</div>
                   </td>
                   <td className="px-6 py-4 col-narrow">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(client.status)}`}>
@@ -805,7 +805,7 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
                     
                     <div>
                       <p className="text-sm text-gray-500">Última Compra</p>
-                      <p className="text-blue-800">{formatDate(selectedClient.last_purchase)}</p>
+                      <p className="text-blue-800 dark:text-blue-400">{formatDate(selectedClient.last_purchase)}</p>
                     </div>
                   </div>
                   

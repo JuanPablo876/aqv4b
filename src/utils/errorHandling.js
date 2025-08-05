@@ -34,7 +34,7 @@ export const handleError = (error, context, userMessage, showAlert = true) => {
  * @param {boolean} showAlert - Whether to show alert (default: false)
  */
 export const handleSuccess = (message, context, showAlert = false) => {
-  console.log(`✅ Success in ${context}: ${message}`);
+
   if (showAlert) {
     alert(message);
   }

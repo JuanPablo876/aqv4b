@@ -27,7 +27,7 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
   // Calculate dashboard data when data or date range changes
   useEffect(() => {
     if (!allLoading) {
-      console.log('🔍 Dashboard Debug:', {
+// console.log('🔍 Dashboard Debug:', {
         ordersCount: orders?.length || 0,
         hasRealData: orders && orders.length > 0,
         dateRange
@@ -39,7 +39,7 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
         
         // Add mock data if no real data exists
         if (workingOrders.length === 0) {
-          console.log('⚠️ Using mock data for dashboard');
+
           const today = new Date();
           workingOrders = [
             {
@@ -223,7 +223,7 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
           { category: 'Otros', sales: 15000, percentage: 13.1, color: '#ef4444' }
         ];
 
-        console.log('📊 Calculated Dashboard Data:', {
+// console.log('📊 Calculated Dashboard Data:', {
           salesValue,
           percentageChange,
           ordersTotal: workingOrders.length,

@@ -360,7 +360,7 @@ const SuppliersPage = () => {
 
   // Handle purchase history
   const handlePurchaseHistory = async (supplier) => {
-    console.log(`Viendo historial de compras para: ${supplier.name}`);
+
     setSelectedHistorySupplier(supplier);
     setIsPurchaseHistoryModalOpen(true);
     
@@ -1124,13 +1124,13 @@ const SuppliersPage = () => {
                         
                         return (
                           <tr key={purchase.id || index}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                               {formatDate(purchase.date)}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                               {purchase.order_number || `#${purchase.id?.slice(-6)}`}
                             </td>
-                            <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={productsSummary}>
+                            <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 max-w-xs truncate" title={productsSummary}>
                               {productsSummary}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">

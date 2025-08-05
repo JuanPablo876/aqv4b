@@ -218,7 +218,7 @@ const ProductsPage = () => {
 
       if (historyError && historyError.code === 'PGRST116') {
         // Table doesn't exist, create mock data for now
-        console.log('Price history table not found, using mock data');
+
         return generateMockPriceHistory();
       } else if (historyError) {
         throw historyError;
@@ -271,7 +271,7 @@ const ProductsPage = () => {
 
   // Handle price history
   const handlePriceHistory = async (product) => {
-    console.log(`Viendo historial de precios para: ${product.name}`);
+
     setSelectedHistoryProduct(product);
     setIsPriceHistoryModalOpen(true);
     
@@ -925,13 +925,13 @@ const ProductsPage = () => {
                         
                         return (
                           <tr key={priceChange.id || index}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                               {formatDate(priceChange.change_date)}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                               {formatCurrency(oldPrice)}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                               {formatCurrency(newPrice)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">

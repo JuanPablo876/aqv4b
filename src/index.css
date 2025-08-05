@@ -638,4 +638,21 @@ body {
   .hover\:bg-primary\/90:hover {
     background-color: rgba(var(--primary), 0.9) !important;
   }
+  
+  /* Add missing primary opacity utilities */
+  .bg-primary\/10 {
+    background-color: rgba(var(--primary), 0.1) !important;
+  }
+  
+  .bg-primary\/20 {
+    background-color: rgba(var(--primary), 0.2) !important;
+  }
+  
+  .border-primary\/20 {
+    border-color: rgba(var(--primary), 0.2) !important;
+  }
+  
+  .hover\:bg-primary\/20:hover {
+    background-color: rgba(var(--primary), 0.2) !important;
+  }
 }

@@ -32,7 +32,7 @@ const UserProfilePage = ({ session }) => {
   const handleSave = (e) => {
     e.preventDefault();
     // Here you would typically update the user profile via API
-    console.log('Saving profile data:', formData);
+
     setIsEditing(false);
     // TODO: Implement actual profile update with Supabase
   };

@@ -20,7 +20,7 @@ class BusinessNotificationService {
    * Initialize the business notification service
    */
   async initialize() {
-    console.log('🔔 Initializing Business Notification Service...');
+
     
     // Load settings
     await this.loadSettings();
@@ -30,7 +30,7 @@ class BusinessNotificationService {
       this.startMonitoring();
     }
     
-    console.log('✅ Business Notification Service initialized');
+
   }
 
   /**
@@ -75,12 +75,12 @@ class BusinessNotificationService {
    */
   startMonitoring() {
     if (this.isMonitoring) {
-      console.log('⚠️ Business monitoring already running');
+
       return;
     }
 
     this.isMonitoring = true;
-    console.log('🔄 Starting business operations monitoring...');
+
 
     // Check immediately
     this.runAllChecks();
@@ -100,7 +100,7 @@ class BusinessNotificationService {
       this.monitoringInterval = null;
     }
     this.isMonitoring = false;
-    console.log('⏹️ Business monitoring stopped');
+
   }
 
   /**
@@ -108,7 +108,7 @@ class BusinessNotificationService {
    */
   async runAllChecks() {
     try {
-      console.log('🔍 Running business operations checks...');
+
       
       // Check inventory levels (delegated to existing service)
       if (emailNotificationService.enabled) {
@@ -124,7 +124,7 @@ class BusinessNotificationService {
       // Check maintenance reminders
       await this.checkMaintenanceReminders();
 
-      console.log('✅ Business operations checks completed');
+
     } catch (error) {
       console.error('❌ Error running business checks:', error);
     }
@@ -135,7 +135,7 @@ class BusinessNotificationService {
    */
   async checkOverdueInvoices() {
     try {
-      console.log('💰 Checking overdue invoices...');
+
 
       const today = new Date();
       const sevenDaysAgo = new Date(today.getTime() - (7 * 24 * 60 * 60 * 1000));
@@ -168,7 +168,7 @@ class BusinessNotificationService {
           await this.recordOverdueRemindersSent(overdueInvoices);
         }
       } else {
-        console.log('✅ No overdue invoices found');
+
       }
 
     } catch (error) {
@@ -181,7 +181,7 @@ class BusinessNotificationService {
    */
   async checkOrderStatusUpdates() {
     try {
-      console.log('📦 Checking order status updates...');
+
 
       // Get orders updated in the last 2 hours that need customer notification
       const twoHoursAgo = new Date(Date.now() - (2 * 60 * 60 * 1000));
@@ -225,7 +225,7 @@ class BusinessNotificationService {
    */
   async checkMaintenanceReminders() {
     try {
-      console.log('🔧 Checking maintenance reminders...');
+
 
       const today = new Date();
       const threeDaysFromNow = new Date(today.getTime() + (3 * 24 * 60 * 60 * 1000));
@@ -266,7 +266,7 @@ class BusinessNotificationService {
           }
         }
       } else {
-        console.log('✅ No upcoming maintenances requiring reminders');
+
       }
 
     } catch (error) {
@@ -279,22 +279,22 @@ class BusinessNotificationService {
    */
   async sendOverdueInvoiceReminders(overdueInvoices) {
     try {
-      console.log(`📧 Sending overdue invoice reminders for ${overdueInvoices.length} invoices`);
+
 
       const emailContent = this.generateOverdueInvoicesEmailContent(overdueInvoices);
       
       // Send to finance team
-      console.log('📧 Overdue Invoice Reminders Email:', {
-        recipients: this.recipients,
-        subject: `⚠️ Facturas Vencidas - ${overdueInvoices.length} pendientes`,
-        invoiceCount: overdueInvoices.length,
-        totalAmount: overdueInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0)
-      });
+      // console.log('📧 Overdue Invoice Reminders Email:', {
+      //   recipients: this.recipients,
+      //   subject: `⚠️ Facturas Vencidas - ${overdueInvoices.length} pendientes`,
+      //   invoiceCount: overdueInvoices.length,
+      //   totalAmount: overdueInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0)
+      // });
 
       // Also send individual reminders to clients (in production)
       for (const invoice of overdueInvoices) {
         if (invoice.clients?.email) {
-          console.log(`📧 Individual reminder to ${invoice.clients.email} for invoice ${invoice.invoice_number}`);
+
         }
       }
 
@@ -310,7 +310,7 @@ class BusinessNotificationService {
    */
   async sendOrderStatusNotification(order) {
     try {
-      console.log(`📧 Sending order status notification for order ${order.order_number || order.id}`);
+
 
       const statusMessages = {
         'confirmed': 'confirmado y en preparación',
@@ -326,7 +326,7 @@ class BusinessNotificationService {
         orderDetails: order
       };
 
-      console.log('📧 Order Status Notification:', emailContent);
+
 
       return { success: true };
     } catch (error) {
@@ -340,7 +340,7 @@ class BusinessNotificationService {
    */
   async sendMaintenanceReminder(maintenance) {
     try {
-      console.log(`🔧 Sending maintenance reminder for ${maintenance.clients?.name}`);
+
 
       const emailContent = {
         subject: `Recordatorio de Mantenimiento - ${maintenance.clients?.name}`,
@@ -349,7 +349,7 @@ class BusinessNotificationService {
         maintenanceDetails: maintenance
       };
 
-      console.log('🔧 Maintenance Reminder:', emailContent);
+
 
       return { success: true };
     } catch (error) {
@@ -471,19 +471,19 @@ ${overdueInvoices.map(inv => {
    * Manual test methods
    */
   async testOverdueInvoiceReminders() {
-    console.log('🧪 Testing overdue invoice reminders...');
+
     await this.checkOverdueInvoices();
     return { success: true, message: 'Overdue invoice check completed' };
   }
 
   async testOrderStatusNotifications() {
-    console.log('🧪 Testing order status notifications...');
+
     await this.checkOrderStatusUpdates();
     return { success: true, message: 'Order status check completed' };
   }
 
   async testMaintenanceReminders() {
-    console.log('🧪 Testing maintenance reminders...');
+
     await this.checkMaintenanceReminders();
     return { success: true, message: 'Maintenance reminder check completed' };
   }

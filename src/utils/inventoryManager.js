@@ -15,7 +15,7 @@ export const updateInventoryFromOrder = async (orderItems, operation = 'reduce',
   const movements = [];
   
   try {
-    console.log(`📦 Starting inventory ${operation} for ${orderItems.length} items`);
+
     
     for (const item of orderItems) {
       const productId = item.productId || item.product_id;
@@ -71,7 +71,7 @@ export const updateInventoryFromOrder = async (orderItems, operation = 'reduce',
           continue;
         }
         
-        console.log(`✅ Inventory updated: Product ${productId}, ${currentQuantity} → ${newQuantity}`);
+
         
         updates.push({
           inventoryId: inventoryItem.id,
@@ -110,11 +110,11 @@ export const updateInventoryFromOrder = async (orderItems, operation = 'reduce',
       if (movementError) {
         console.error('❌ Error saving inventory movements:', movementError);
       } else {
-        console.log(`✅ Saved ${savedMovements.length} inventory movements`);
+
       }
     }
     
-    console.log(`🎉 Inventory ${operation} completed: ${updates.length} items updated`);
+
     return updates;
     
   } catch (error) {
@@ -133,7 +133,7 @@ export const validateInventoryAvailability = async (orderItems) => {
   let allAvailable = true;
   
   try {
-    console.log(`🔍 Validating inventory for ${orderItems.length} items`);
+
     
     for (const item of orderItems) {
       const productId = item.productId || item.product_id;
@@ -331,7 +331,7 @@ export const createInventoryMovement = async (movementData) => {
       throw new Error(`Error saving movement: ${movementError.message}`);
     }
     
-    console.log(`✅ Inventory movement created: ${movementType} ${quantity} for product ${productId}`);
+
     return savedMovement;
     
   } catch (error) {

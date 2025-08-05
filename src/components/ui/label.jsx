@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 
 // Simple cn utility
 const cn = (...classes) => classes.filter(Boolean).join(' ')

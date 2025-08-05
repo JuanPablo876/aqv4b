@@ -7,7 +7,7 @@ import { supabase } from '../supabaseClient';
 class SampleDataGenerator {
   async generateSampleFinancialData() {
     try {
-      console.log('Generating sample financial data...');
+
 
       // 1. Create bank accounts if they don't exist
       const { data: existingAccounts } = await supabase
@@ -36,7 +36,7 @@ class SampleDataGenerator {
         ];
 
         await supabase.from('bank_accounts').insert(bankAccounts);
-        console.log('✅ Created sample bank accounts');
+
       }
 
       // 2. Create cash boxes if they don't exist
@@ -64,7 +64,7 @@ class SampleDataGenerator {
         ];
 
         await supabase.from('cash_boxes').insert(cashBoxes);
-        console.log('✅ Created sample cash boxes');
+
       }
 
       // 3. Generate financial transactions for the last 3 months
@@ -115,7 +115,7 @@ class SampleDataGenerator {
         }
 
         await supabase.from('transactions').insert(transactions);
-        console.log('✅ Created sample financial transactions');
+
       }
 
       // 4. Generate sample orders with realistic data
@@ -124,7 +124,7 @@ class SampleDataGenerator {
       // 5. Generate sample invoices
       await this.generateSampleInvoices();
 
-      console.log('🎉 Sample financial data generation completed!');
+
       return true;
 
     } catch (error) {
@@ -140,7 +140,7 @@ class SampleDataGenerator {
       .limit(1);
 
     if (existingOrders && existingOrders.length > 0) {
-      console.log('Orders already exist, skipping...');
+
       return;
     }
 
@@ -149,7 +149,7 @@ class SampleDataGenerator {
     const { data: products } = await supabase.from('products').select('id, price').limit(20);
 
     if (!clients || clients.length === 0 || !products || products.length === 0) {
-      console.log('Need clients and products to generate orders');
+
       return;
     }
 
@@ -208,11 +208,11 @@ class SampleDataGenerator {
 
     // Insert orders first
     await supabase.from('orders').insert(orders);
-    console.log('✅ Created sample orders');
+
     
     // Then insert order items
     await supabase.from('order_items').insert(orderItems);
-    console.log('✅ Created sample order items');
+
   }
 
   async generateSampleInvoices() {
@@ -222,7 +222,7 @@ class SampleDataGenerator {
       .limit(1);
 
     if (existingInvoices && existingInvoices.length > 0) {
-      console.log('Invoices already exist, skipping...');
+
       return;
     }
 
@@ -230,7 +230,7 @@ class SampleDataGenerator {
     const { data: clients } = await supabase.from('clients').select('id').limit(10);
 
     if (!clients || clients.length === 0) {
-      console.log('Need clients to generate invoices');
+
       return;
     }
 
@@ -263,12 +263,12 @@ class SampleDataGenerator {
     }
 
     await supabase.from('invoices').insert(invoices);
-    console.log('✅ Created sample invoices');
+
   }
 
   async clearAllSampleData() {
     try {
-      console.log('Clearing all sample data...');
+
       
       // Clear in order due to foreign key constraints
       await supabase.from('order_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -278,7 +278,7 @@ class SampleDataGenerator {
       await supabase.from('cash_boxes').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       await supabase.from('bank_accounts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
       
-      console.log('✅ Sample data cleared');
+
     } catch (error) {
       console.error('Error clearing sample data:', error);
       throw error;

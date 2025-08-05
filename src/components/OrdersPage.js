@@ -182,7 +182,7 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
   
   // Handle edit order
   const handleEditOrder = (order) => {
-    console.log('🔧 Editing order:', order);
+
     setEditingOrder(order);
     setIsEditOrderModalOpen(true);
   };
@@ -317,7 +317,11 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
         key: 'date',
         header: 'Fecha',
         sortable: true,
-        render: (value) => formatDate(value)
+        render: (value) => (
+          <span className="text-foreground dark:text-dark-200">
+            {formatDate(value)}
+          </span>
+        )
       },
       {
         key: 'status',
@@ -901,13 +905,13 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
       <OrdersEditModal 
         isOpen={isEditOrderModalOpen}
         onClose={() => {
-          console.log('🔒 Closing edit modal'); // Debug log
+// console.log('🔒 Closing edit modal'); // Debug log
           setIsEditOrderModalOpen(false);
           setEditingOrder(null);
         }}
         onSave={async (updatedOrder) => {
           try {
-            console.log('💾 Saving updated order:', updatedOrder); // Debug log
+// console.log('💾 Saving updated order:', updatedOrder); // Debug log
             await update(editingOrder.id, updatedOrder);
             setIsEditOrderModalOpen(false);
             setEditingOrder(null);

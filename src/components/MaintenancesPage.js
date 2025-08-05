@@ -195,7 +195,7 @@ const MaintenancesPage = () => {
       
       // If no history exists, generate some sample data for demonstration
       if (!history || history.length === 0) {
-        console.log('No service history found, generating sample data...');
+
         await maintenanceService.generateSampleServiceRecords(maintenanceId, 3);
         // Fetch again after generating
         const newHistory = await maintenanceService.getServiceHistory(maintenanceId);

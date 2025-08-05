@@ -60,7 +60,7 @@ export default function Dashboard() {
     if (process.env.NODE_ENV === 'development') {
       try {
         const devModules = JSON.parse(localStorage.getItem('devModules') || '[]');
-        console.log('🔧 DevTool: Loaded persistent dev modules:', devModules);
+
         return [...baseModules, ...devModules];
       } catch (error) {
         console.warn('⚠️ DevTool: Error loading dev modules:', error);
@@ -107,7 +107,7 @@ export default function Dashboard() {
       const devModules = updatedModules.filter(m => m.isDevModule);
       localStorage.setItem('devModules', JSON.stringify(devModules));
       
-      console.log('🚀 DevTool: Módulo agregado:', newModule);
+
       alert(`✅ Módulo "${newName}" agregado exitosamente!\n\n🔧 Este módulo se mantendrá en localhost durante el desarrollo.`);
     }
   };
@@ -141,14 +141,14 @@ export default function Dashboard() {
       window.devTools = {
         modules: {
           list: () => {
-            console.log('📋 Current modules:', modules);
+
             return modules;
           },
           clearDev: () => {
             localStorage.removeItem('devModules');
             const baseModules = modules.filter(m => !m.isDevModule);
             setModules(baseModules);
-            console.log('🧹 DevTool: All development modules cleared');
+
             alert('🧹 Todos los módulos de desarrollo fueron eliminados');
           },
           add: (name, description) => {
@@ -167,22 +167,12 @@ export default function Dashboard() {
             setModules(updatedModules);
             const devModules = updatedModules.filter(m => m.isDevModule);
             localStorage.setItem('devModules', JSON.stringify(devModules));
-            console.log('✅ DevTool: Module added via console:', newModule);
+
           }
         }
       };
       
-      console.log(`
-🔧 =================================
-   DEVELOPMENT TOOLS AVAILABLE
-=================================
-
-📋 List modules:          devTools.modules.list()
-➕ Add module:            devTools.modules.add("Name", "Description")  
-🧹 Clear dev modules:     devTools.modules.clearDev()
-
-Current dev modules: ${modules.filter(m => m.isDevModule).length}
-      `);
+      // Development tools info has been commented out for production
     }
   }, [modules]);
 

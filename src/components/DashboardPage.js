@@ -11,7 +11,7 @@ import { useData, useOrders } from '../hooks/useData';
 import { usePermission } from '../hooks/useRBAC';
 
 const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance }) => {
-  console.log('🚀 DashboardPage component is rendering!');
+
   
   // Use database hooks - use useOrders to get orders with items for charts
   const { data: orders = [], loading: ordersLoading } = useOrders();
@@ -29,13 +29,13 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
   const [dashboardData, setDashboardData] = useState(null);
   const [dateRange, setDateRange] = useState(null);
   
-  console.log('📊 Dashboard data loading status:', {
-    ordersLoading,
-    clientsLoading,
-    productsLoading,
-    ordersCount: orders.length,
-    dateRange: dateRange?.filterId
-  });
+  // console.log('📊 Dashboard data loading status:', {
+  //   ordersLoading,
+  //   clientsLoading,
+  //   productsLoading,
+  //   ordersCount: orders.length,
+  //   dateRange: dateRange?.filterId
+  // });
   
   const allLoading = ordersLoading || clientsLoading || productsLoading || 
                    inventoryLoading || invoicesLoading || transactionsLoading;
@@ -158,12 +158,12 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
           };
         });
         
-        console.log('⚠️ Inventory Alerts Debug:', {
-          totalInventoryItems: inventory.length,
-          totalProducts: products.length,
-          alertsFound: inventoryAlerts.length,
-          hasRealData: inventory.length > 0 && products.length > 0
-        });
+        // console.log('⚠️ Inventory Alerts Debug:', {
+        //   totalInventoryItems: inventory.length,
+        //   totalProducts: products.length,
+        //   alertsFound: inventoryAlerts.length,
+        //   hasRealData: inventory.length > 0 && products.length > 0
+        // });
         
         // Only add mock alerts if no real inventory or products data exists
         if (inventoryAlerts.length === 0 && (inventory.length === 0 || products.length === 0)) {
@@ -214,15 +214,15 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
         // Use filtered orders when date range is active, otherwise use all orders
         const ordersForTopItems = dateRange ? filteredOrders : workingOrders;
         
-        console.log('🏆 Top Items Debug:', {
-          dateRange: dateRange?.filterId,
-          totalOrders: workingOrders.length,
-          filteredOrders: ordersForTopItems.length,
-          hasItems: ordersForTopItems.some(o => o.items && o.items.length > 0),
-          ordersWithItems: ordersForTopItems.filter(o => o.items && o.items.length > 0).length,
-          sampleOrder: ordersForTopItems[0],
-          sampleOrderItems: ordersForTopItems[0]?.items
-        });
+        // console.log('🏆 Top Items Debug:', {
+        //   dateRange: dateRange?.filterId,
+        //   totalOrders: workingOrders.length,
+        //   filteredOrders: ordersForTopItems.length,
+        //   hasItems: ordersForTopItems.some(o => o.items && o.items.length > 0),
+        //   ordersWithItems: ordersForTopItems.filter(o => o.items && o.items.length > 0).length,
+        //   sampleOrder: ordersForTopItems[0],
+        //   sampleOrderItems: ordersForTopItems[0]?.items
+        // });
         
         ordersForTopItems.forEach(order => {
           if (order.items && Array.isArray(order.items)) {
@@ -269,17 +269,17 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
             };
           });
 
-        console.log('🏆 Top Items Calculated:', {
-          itemSalesCount: Object.keys(itemSales).length,
-          topItemsCount: topItems.length,
-          hasRealData: topItems.length > 0,
-          itemSalesRaw: itemSales,
-          topItemsFinal: topItems
-        });
+        // console.log('🏆 Top Items Calculated:', {
+        //   itemSalesCount: Object.keys(itemSales).length,
+        //   topItemsCount: topItems.length,
+        //   hasRealData: topItems.length > 0,
+        //   itemSalesRaw: itemSales,
+        //   topItemsFinal: topItems
+        // });
 
         // Force use mock data if topItems is empty (temporary fix for debugging)
         if (topItems.length === 0 || topItems.every(item => item.revenue === 0)) {
-          console.log('🔧 Using mock top items data because no revenue calculated');
+
           // Clear existing items and add mock data
           topItems.length = 0;
           topItems.push(
@@ -437,12 +437,12 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
         // Use filtered orders for category data when date range is active
         const ordersForCategoryChart = dateRange ? filteredOrders : workingOrders;
         
-        console.log('📊 Category Chart Debug:', {
-          dateRange: dateRange?.filterId,
-          totalOrders: workingOrders.length,
-          filteredOrders: ordersForCategoryChart.length,
-          hasItems: ordersForCategoryChart.some(o => o.items && o.items.length > 0)
-        });
+        // console.log('📊 Category Chart Debug:', {
+        //   dateRange: dateRange?.filterId,
+        //   totalOrders: workingOrders.length,
+        //   filteredOrders: ordersForCategoryChart.length,
+        //   hasItems: ordersForCategoryChart.some(o => o.items && o.items.length > 0)
+        // });
         
         ordersForCategoryChart.forEach(order => {
           if (order.items && Array.isArray(order.items)) {
@@ -461,11 +461,11 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
           }
         });
 
-        console.log('📊 Category Sales Calculated:', {
-          categorySales,
-          totalCategorySales,
-          hasRealData: totalCategorySales > 0
-        });
+        // console.log('📊 Category Sales Calculated:', {
+        //   categorySales,
+        //   totalCategorySales,
+        //   hasRealData: totalCategorySales > 0
+        // });
 
         const categoryColors = {
           'Químicos': '#3b82f6',
@@ -503,16 +503,16 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
           });
         }
 
-        console.log('📊 Calculated Dashboard Data:', {
-          salesValue,
-          percentageChange,
-          ordersTotal: workingOrders.length,
-          filteredCount: filteredOrders.length,
-          monthlySales,
-          yearlySales,
-          dateRange: dateRange?.filterId,
-          usingMockData: workingOrders.length > 0 && workingOrders[0].id.includes('mock')
-        });
+        // console.log('📊 Calculated Dashboard Data:', {
+        //   salesValue,
+        //   percentageChange,
+        //   ordersTotal: workingOrders.length,
+        //   filteredCount: filteredOrders.length,
+        //   monthlySales,
+        //   yearlySales,
+        //   dateRange: dateRange?.filterId,
+        //   usingMockData: workingOrders.length > 0 && workingOrders[0].id.includes('mock')
+        // });
 
         return {
           salesSummary: {
@@ -612,15 +612,15 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
   const handleStatCardClick = (page) => {
     // Check permissions before navigation
     if (page === 'reports' && !canViewReports) {
-      console.log('Access denied: Cannot view reports');
+
       return;
     }
     if (page === 'orders' && !canManageOrders) {
-      console.log('Access denied: Cannot manage orders');
+
       return;
     }
     if (page === 'inventory' && !canManageInventory) {
-      console.log('Access denied: Cannot manage inventory');
+
       return;
     }
     

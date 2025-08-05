@@ -13,7 +13,7 @@ const DatabaseTest = () => {
     try {
       // First create a sample client if none exist
       if (clients.length === 0) {
-        console.log('Creating sample client...');
+
         await createClient({
           name: 'Hotel Acapulco Paradise',
           contact: 'Maria Rodriguez',
@@ -103,11 +103,11 @@ const DatabaseTest = () => {
         }
       ];
 
-      console.log('Creating sample orders...');
+
       for (const orderData of sampleOrders) {
         try {
           await createOrder(orderData);
-          console.log(`✅ Created order: ${orderData.order_number}`);
+
         } catch (error) {
           console.error(`❌ Failed to create order ${orderData.order_number}:`, error);
         }

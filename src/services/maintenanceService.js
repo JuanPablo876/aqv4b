@@ -30,7 +30,7 @@ class MaintenanceService {
   async getServiceHistory(maintenanceId) {
     try {
       // Temporarily disabled until service_records table is created
-      console.log('Service records table not available yet');
+
       return [];
       
       /* 
@@ -122,7 +122,7 @@ class MaintenanceService {
   async createServiceRecord(serviceData) {
     try {
       // Temporarily disabled until service_records table is created
-      console.log('Service records functionality not available yet');
+
       return null;
     } catch (error) {
       console.error('Error creating service record:', error);
@@ -297,7 +297,7 @@ class MaintenanceService {
   async generateSampleServiceRecords(maintenanceId, count = 5) {
     try {
       // Temporarily disabled until service_records table is created
-      console.log('Sample service records generation not available yet');
+
       return [];
     } catch (error) {
       console.error('Error generating sample service records:', error);

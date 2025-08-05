@@ -72,7 +72,7 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
     
     // Auto-fill order data if editing
     if (editingOrder && isOpen) {
-      console.log('📝 Loading order for edit:', editingOrder); // Debug log
+// console.log('📝 Loading order for edit:', editingOrder); // Debug log
       
       const orderData = {
         clientId: editingOrder.clientId || editingOrder.client_id || '',
@@ -90,7 +90,7 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
         }
       };
       
-      console.log('📝 Setting order data:', orderData); // Debug log
+// console.log('📝 Setting order data:', orderData); // Debug log
       setNewOrder(orderData);
       setIsDelivery(!!(orderData.delivery.date));
     }
@@ -215,7 +215,7 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
     try {
       // For new orders, validate inventory availability
       if (!editingOrder) {
-        console.log('🔍 Validating inventory availability...');
+
         const validation = await validateInventoryAvailability(newOrder.items);
         
         if (!validation.isValid) {
@@ -235,7 +235,7 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
           return;
         }
         
-        console.log('✅ Inventory validation passed');
+
       }
       
       const subtotal = calculateSubtotal(newOrder.items);
@@ -279,7 +279,7 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
       // Update inventory for new orders only
       if (!editingOrder && newOrder.items.length > 0) {
         try {
-          console.log('📦 Updating inventory for new order...');
+
           const inventoryUpdates = await updateInventoryFromOrder(
             newOrder.items, 
             'reduce', 
@@ -288,7 +288,7 @@ const OrdersAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null, edi
           );
           
           if (inventoryUpdates.length > 0) {
-            console.log(`✅ Inventory updated for ${inventoryUpdates.length} items`);
+
             handleSuccess(`Pedido creado exitosamente. Inventario actualizado: ${inventoryUpdates.length} productos.`);
           } else {
             handleSuccess('Pedido creado exitosamente.');

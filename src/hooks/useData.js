@@ -28,7 +28,7 @@ export const useData = (entity, options = {}) => {
       setLoading(true);
       setError(null);
       
-      console.log(`🔄 Loading data for entity: ${entity}`);
+
       
       let result;
       
@@ -40,7 +40,7 @@ export const useData = (entity, options = {}) => {
         result = await databaseService.getAll(entity);
       }
       
-      console.log(`✅ Loaded ${entity}:`, { count: result?.length || 0, data: result?.slice(0, 2) });
+// console.log(`✅ Loaded ${entity}:`, { count: result?.length || 0, data: result?.slice(0, 2) });
       setData(result);
     } catch (err) {
       console.error(`❌ Error loading ${entity}:`, err);
@@ -358,7 +358,7 @@ export const useOrders = (options) => {
       
       // Get orders with their items
       const ordersResult = await databaseService.getAll('orders');
-      console.log('🔍 useOrders: Loaded', ordersResult?.length || 0, 'orders');
+
       
       // For each order, fetch its items
       const ordersWithItems = await Promise.all(
@@ -375,7 +375,7 @@ export const useOrders = (options) => {
               return { ...order, items: [] };
             }
             
-            console.log(`� Order ${order.order_number}: ${items?.length || 0} items`);
+
             return { ...order, items: items || [] };
           } catch (err) {
             console.error('Error fetching items for order', order.id, ':', err);
@@ -384,7 +384,7 @@ export const useOrders = (options) => {
         })
       );
       
-      console.log('✅ useOrders: All orders loaded with items');
+
       setData(ordersWithItems);
     } catch (err) {
       console.error('Error loading orders:', err);
@@ -403,7 +403,7 @@ export const useOrders = (options) => {
   const create = useCallback(async (newItem) => {
     try {
       setError(null);
-      console.log('🔍 useOrders create: Saving order with items:', newItem);
+
       
       // Extract items from the order data
       const orderItems = newItem.items || [];
@@ -412,11 +412,11 @@ export const useOrders = (options) => {
       
       // Create the order first
       const createdOrder = await databaseService.create('orders', orderData);
-      console.log('✅ Order created:', createdOrder);
+
       
       // If there are items, save them to order_items table
       if (orderItems.length > 0) {
-        console.log('📦 Saving order items:', orderItems.length, 'items');
+
         
         const orderItemsToSave = orderItems.map(item => ({
           order_id: createdOrder.id,
@@ -426,7 +426,7 @@ export const useOrders = (options) => {
           discount: item.discount || 0
         }));
         
-        console.log('📝 Order items to save:', orderItemsToSave);
+
         
         const { data: savedItems, error: itemsError } = await supabase
           .from('order_items')
@@ -437,7 +437,7 @@ export const useOrders = (options) => {
           console.error('❌ Error saving order items:', itemsError);
           // Don't throw error, just log it - order was already created
         } else {
-          console.log('✅ Order items saved:', savedItems);
+
         }
       }
       
@@ -454,7 +454,7 @@ export const useOrders = (options) => {
   const update = useCallback(async (id, updates) => {
     try {
       setError(null);
-      console.log('🔍 useOrders update: Updating order with items:', id, updates);
+
       
       // Extract items from the updates
       const orderItems = updates.items || [];
@@ -463,11 +463,11 @@ export const useOrders = (options) => {
       
       // Update the order first
       const updatedOrder = await databaseService.update('orders', id, orderData);
-      console.log('✅ Order updated:', updatedOrder);
+
       
       // Handle order items update
       if (orderItems.length > 0) {
-        console.log('📦 Updating order items:', orderItems.length, 'items');
+
         
         // First, delete existing order items for this order
         const { error: deleteError } = await supabase
@@ -478,7 +478,7 @@ export const useOrders = (options) => {
         if (deleteError) {
           console.error('❌ Error deleting old order items:', deleteError);
         } else {
-          console.log('🗑️ Deleted old order items');
+
         }
         
         // Then insert the new order items
@@ -490,7 +490,7 @@ export const useOrders = (options) => {
           discount: item.discount || 0
         }));
         
-        console.log('📝 New order items to save:', orderItemsToSave);
+
         
         const { data: savedItems, error: itemsError } = await supabase
           .from('order_items')
@@ -500,7 +500,7 @@ export const useOrders = (options) => {
         if (itemsError) {
           console.error('❌ Error saving updated order items:', itemsError);
         } else {
-          console.log('✅ Updated order items saved:', savedItems);
+
         }
       }
       
@@ -552,7 +552,7 @@ export const useQuotes = (options) => {
       
       // Get quotes with their items
       const quotesResult = await databaseService.getAll('quotes');
-      console.log('🔍 useQuotes: Loaded', quotesResult?.length || 0, 'quotes');
+
       
       // For each quote, fetch its items
       const quotesWithItems = await Promise.all(
@@ -569,7 +569,7 @@ export const useQuotes = (options) => {
               return { ...quote, items: [] };
             }
             
-            console.log(`📋 Quote ${quote.id}: ${items?.length || 0} items`);
+
             return { ...quote, items: items || [] };
           } catch (err) {
             console.error('Error fetching items for quote', quote.id, ':', err);
@@ -578,7 +578,7 @@ export const useQuotes = (options) => {
         })
       );
       
-      console.log('✅ useQuotes: All quotes loaded with items');
+
       setData(quotesWithItems);
     } catch (err) {
       console.error('Error loading quotes:', err);
@@ -597,7 +597,7 @@ export const useQuotes = (options) => {
   const create = useCallback(async (newItem) => {
     try {
       setError(null);
-      console.log('🔍 useQuotes create: Saving quote with items:', newItem);
+
       
       // Extract items from quote
       const { items, ...quoteData } = newItem;
@@ -621,7 +621,7 @@ export const useQuotes = (options) => {
           console.error('❌ Error saving quote items:', itemsError);
           // Don't throw error, just log it - quote was already created
         } else {
-          console.log('✅ Quote items saved:', savedItems);
+
         }
       }
       
@@ -636,7 +636,7 @@ export const useQuotes = (options) => {
   const update = useCallback(async (id, updates) => {
     try {
       setError(null);
-      console.log('🔍 useQuotes update: Updating quote with items:', id, updates);
+
       
       // Extract items from updates
       const { items, ...quoteData } = updates;
@@ -668,7 +668,7 @@ export const useQuotes = (options) => {
             console.error('❌ Error updating quote items:', itemsError);
             // Don't throw error, just log it - quote was already updated
           } else {
-            console.log('✅ Quote items updated:', savedItems);
+
           }
         }
       }

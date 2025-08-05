@@ -42,14 +42,14 @@ export class InvitationService {
 
       // Now try to send actual email via Edge Function
       try {
-        console.log('🚀 Simulating invitation email send for ID:', data.id);
+
         // For now, we'll simulate email sending since Edge Functions aren't configured
         // await EmailService.sendInvitationEmail(data.id);
         
         // Simulate successful email sending
         await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network delay
         
-        console.log('✅ Invitation email simulated successfully');
+
         
         // Show user notification about email simulation
         if (typeof window !== 'undefined' && window.alert) {
@@ -281,9 +281,9 @@ export class InvitationService {
     // This would integrate with your email service (SendGrid, Mailgun, etc.)
     const inviteUrl = `${window.location.origin}/invite/${token}`;
     
-    console.log(`Invitation email would be sent to ${email}`);
-    console.log(`Invite URL: ${inviteUrl}`);
-    console.log(`Message: ${message}`);
+
+
+
     
     // Example implementation:
     // return await emailService.send({

@@ -19,7 +19,7 @@ class EmailNotificationService {
    * Initialize the notification service
    */
   async initialize() {
-    console.log('📧 Initializing Email Notification Service...');
+
     
     // Load settings from localStorage or database
     await this.loadSettings();
@@ -29,7 +29,7 @@ class EmailNotificationService {
       this.startMonitoring();
     }
     
-    console.log('✅ Email Notification Service initialized');
+
   }
 
   /**
@@ -70,7 +70,7 @@ class EmailNotificationService {
       };
       
       localStorage.setItem('lowStockNotificationSettings', JSON.stringify(settings));
-      console.log('✅ Notification settings saved');
+
     } catch (error) {
       console.error('Error saving notification settings:', error);
     }
@@ -81,12 +81,12 @@ class EmailNotificationService {
    */
   startMonitoring() {
     if (this.isRunning) {
-      console.log('⚠️ Monitoring already running');
+
       return;
     }
 
     this.isRunning = true;
-    console.log('🔄 Starting inventory monitoring...');
+
 
     // Check immediately
     this.checkLowStock();
@@ -106,7 +106,7 @@ class EmailNotificationService {
       this.monitoringInterval = null;
     }
     this.isRunning = false;
-    console.log('⏹️ Inventory monitoring stopped');
+
   }
 
   /**
@@ -114,12 +114,12 @@ class EmailNotificationService {
    */
   async checkLowStock() {
     try {
-      console.log('📦 Checking inventory levels...');
+
       
       const lowStockItems = await getLowStockAlerts();
       
       if (lowStockItems && lowStockItems.length > 0) {
-        console.log(`⚠️ Found ${lowStockItems.length} low stock items`);
+
         
         // Check if we should send notification (avoid spam)
         const shouldSend = await this.shouldSendNotification(lowStockItems);
@@ -129,7 +129,7 @@ class EmailNotificationService {
           await this.recordNotificationSent(lowStockItems);
         }
       } else {
-        console.log('✅ All inventory levels are adequate');
+
       }
 
       this.lastCheck = new Date();
@@ -161,7 +161,7 @@ class EmailNotificationService {
         const lastItemIds = lastNotificationItems.map(item => item.productId).sort();
         
         if (JSON.stringify(currentItemIds) === JSON.stringify(lastItemIds)) {
-          console.log('⏭️ Notification already sent today for these items');
+
           return false;
         }
       }
@@ -212,22 +212,22 @@ class EmailNotificationService {
    */
   async sendLowStockNotification(lowStockItems) {
     try {
-      console.log('📧 Simulating low stock notification email...');
+
 
       const emailContent = this.generateLowStockEmailContent(lowStockItems);
       
       // Simulate email sending (Edge Functions not configured for development)
-      console.log('📧 Email Details:', {
-        recipients: this.recipients,
-        subject: `⚠️ Alerta de Stock Bajo - ${lowStockItems.length} productos`,
-        itemCount: lowStockItems.length,
-        items: lowStockItems.map(item => `${item.name} (Stock: ${item.stock})`).join(', ')
-      });
+      // console.log('📧 Email Details:', {
+      //   recipients: this.recipients,
+      //   subject: `⚠️ Alerta de Stock Bajo - ${lowStockItems.length} productos`,
+      //   itemCount: lowStockItems.length,
+      //   items: lowStockItems.map(item => `${item.name} (Stock: ${item.stock})`).join(', ')
+      // });
       
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      console.log('✅ Low stock notification simulated successfully');
+
       return { 
         success: true, 
         data: { 
@@ -442,7 +442,7 @@ ${formatDate(new Date())}
    */
   async testNotification() {
     try {
-      console.log('🧪 Testing notification system...');
+
       
       // Get a few low stock items for testing
       const lowStockItems = await getLowStockAlerts();
@@ -477,7 +477,7 @@ ${formatDate(new Date())}
         await this.sendLowStockNotification(lowStockItems.slice(0, 5)); // Send max 5 for testing
       }
       
-      console.log('✅ Test notification sent');
+
       return { success: true };
     } catch (error) {
       console.error('❌ Error testing notification:', error);

@@ -8,7 +8,7 @@ export const databaseInitService = {
   // Create the reviews table if it doesn't exist
   async createReviewsTable() {
     try {
-      console.log('🗄️ Creating reviews table...');
+
       
       const { error } = await supabase.rpc('exec_sql', {
         sql: `
@@ -64,7 +64,7 @@ export const databaseInitService = {
 
       if (error) {
         // If RPC doesn't exist, try direct SQL execution (fallback)
-        console.log('🔄 RPC not available, attempting direct table creation...');
+
         
         // Simple table creation without foreign key constraints for now
         const { error: createError } = await supabase.from('_temp_init').select('1').limit(1);
@@ -79,7 +79,7 @@ export const databaseInitService = {
         }
       }
 
-      console.log('✅ Reviews table created successfully');
+
       return { success: true, message: 'Reviews table created successfully' };
       
     } catch (error) {
@@ -176,7 +176,7 @@ ON CONFLICT DO NOTHING;
   // Initialize sample reviews data
   async createSampleReviews() {
     try {
-      console.log('📝 Creating sample reviews...');
+
       
       const sampleReviews = [
         {
@@ -233,7 +233,7 @@ ON CONFLICT DO NOTHING;
 
       if (error) throw error;
 
-      console.log('✅ Sample reviews created successfully');
+
       return { success: true, data, count: sampleReviews.length };
       
     } catch (error) {
@@ -245,7 +245,7 @@ ON CONFLICT DO NOTHING;
   // Full database initialization
   async initializeDatabase() {
     try {
-      console.log('🚀 Starting database initialization...');
+
       
       const results = {
         reviewsTable: await this.createReviewsTable(),

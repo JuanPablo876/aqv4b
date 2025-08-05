@@ -29,7 +29,7 @@ class PWAManager {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
       
-      console.log('[PWA] Service Worker registered successfully:', registration);
+
       
       // Listen for updates
       registration.addEventListener('updatefound', () => {
@@ -58,7 +58,7 @@ class PWAManager {
   setupInstallPrompt() {
     // Listen for the beforeinstallprompt event
     window.addEventListener('beforeinstallprompt', (e) => {
-      console.log('[PWA] Install prompt triggered');
+
       
       // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
@@ -72,7 +72,7 @@ class PWAManager {
 
     // Listen for app installed event
     window.addEventListener('appinstalled', () => {
-      console.log('[PWA] App was installed');
+
       this.isInstalled = true;
       this.hideInstallPrompt();
       this.deferredPrompt = null;
@@ -85,14 +85,14 @@ class PWAManager {
   setupConnectivityDetection() {
     // Listen for online/offline events
     window.addEventListener('online', () => {
-      console.log('[PWA] Back online');
+
       this.isOnline = true;
       this.showToast('Connection restored! 🌐', 'success');
       this.syncData();
     });
 
     window.addEventListener('offline', () => {
-      console.log('[PWA] Gone offline');
+
       this.isOnline = false;
       this.showToast('You are now offline. Limited functionality available. 📱', 'warning');
     });
@@ -102,7 +102,7 @@ class PWAManager {
     // Check if app is running in standalone mode (installed)
     if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
       this.isInstalled = true;
-      console.log('[PWA] App is running as installed PWA');
+
     }
   }
 
@@ -140,7 +140,7 @@ class PWAManager {
 
   async installApp() {
     if (!this.deferredPrompt) {
-      console.log('[PWA] No install prompt available');
+
       return;
     }
 
@@ -150,12 +150,12 @@ class PWAManager {
     // Wait for the user to respond to the prompt
     const { outcome } = await this.deferredPrompt.userChoice;
     
-    console.log(`[PWA] User response to install prompt: ${outcome}`);
+
     
     if (outcome === 'accepted') {
-      console.log('[PWA] User accepted the install prompt');
+
     } else {
-      console.log('[PWA] User dismissed the install prompt');
+
     }
 
     // Clear the deferredPrompt

@@ -283,7 +283,7 @@ export default function InvitationManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-primary/10 text-primary">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 dark:bg-gray-700 dark:text-blue-300">
                         {getRoleDisplayName(invitation.role)}
                       </span>
                     </td>
@@ -300,7 +300,7 @@ export default function InvitationManagement() {
                             <button
                               type="button"
                               onClick={() => handleResendInvitation(invitation.id)}
-                              className="text-primary hover:text-primary/80 transition-colors"
+                              className="text-blue-600 hover:text-blue-800 transition-colors dark:text-blue-400 dark:hover:text-blue-300"
                             >
                               Reenviar
                             </button>

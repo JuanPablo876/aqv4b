@@ -7,7 +7,7 @@ export class EmailService {
   // Send invitation email via Edge Function
   static async sendInvitationEmail(invitationId) {
     try {
-      console.log('📧 Sending invitation email for ID:', invitationId);
+
       
       // Validate invitation ID
       if (!invitationId) {
@@ -16,7 +16,7 @@ export class EmailService {
       
       // For now, always use simulation mode to avoid Edge Function errors
       // until Resend API key is properly configured
-      console.log('🔧 Using simulation mode to avoid Edge Function configuration issues');
+
       
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 500));
@@ -28,7 +28,7 @@ export class EmailService {
         mode: 'simulation'
       };
       
-      console.log('✅ Invitation email simulated successfully');
+
       return data;
       
       /* Edge Function call - disabled until Resend API is configured
@@ -39,7 +39,7 @@ export class EmailService {
       if (error) {
         console.error('❌ Edge function error:', error);
         // Fall back to simulation mode if Edge Function fails
-        console.log('🔄 Falling back to simulation mode');
+
         return {
           success: true,
           message: 'Invitation email simulated (Edge Function fallback)',
@@ -48,13 +48,13 @@ export class EmailService {
         };
       }
       
-      console.log('✅ Invitation email sent via Edge Function');
+
       return data;
       */
     } catch (error) {
       console.error('Error sending invitation email:', error);
       // Instead of throwing, return a simulated success to prevent app crashes
-      console.log('🔄 Error occurred, falling back to simulation mode');
+
       return {
         success: true,
         message: 'Invitation email simulated (error fallback)',
@@ -68,12 +68,12 @@ export class EmailService {
   // Send password reset email (simulated for development)
   static async sendPasswordResetEmail(email, resetUrl) {
     try {
-      console.log('📧 Simulating password reset email for:', email);
+
       
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      console.log('✅ Password reset email simulated successfully');
+
       return { 
         success: true, 
         message: 'Password reset email simulated in development mode',
@@ -88,12 +88,12 @@ export class EmailService {
   // Send welcome email after invitation acceptance (simulated for development)
   static async sendWelcomeEmail(userEmail, userName) {
     try {
-      console.log('📧 Simulating welcome email for:', userEmail, userName);
+
       
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
-      console.log('✅ Welcome email simulated successfully');
+
       return { 
         success: true, 
         message: 'Welcome email simulated in development mode',

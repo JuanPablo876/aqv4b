@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 
 export const initializeReviewsTable = async () => {
   try {
-    console.log('Creating reviews table...');
+
     
     // Create the reviews table
     const { data, error } = await supabase.rpc('execute_sql', {
@@ -75,7 +75,7 @@ export const initializeReviewsTable = async () => {
       return false;
     }
 
-    console.log('Reviews table created successfully');
+
 
     // Add sample data
     const sampleReviews = [
@@ -157,7 +157,7 @@ export const initializeReviewsTable = async () => {
       return false;
     }
 
-    console.log('Sample reviews added successfully');
+
     return true;
 
   } catch (error) {

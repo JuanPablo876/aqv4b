@@ -38,7 +38,7 @@ class AIQueryInterface {
         offset = 0
       } = options;
 
-      console.log(`🤖 AI Query: ${table}`, { select, filters, orderBy, limit });
+
 
       // Build the query
       let query = supabase.from(table).select(select);
@@ -275,7 +275,7 @@ class AIQueryInterface {
    */
   static async executeNaturalLanguageQuery(nlQuery) {
     try {
-      console.log(`🤖 Processing natural language query: "${nlQuery}"`);
+
       
       const queryParams = this.translateNaturalLanguage(nlQuery);
       const results = await this.executeQuery(queryParams.table, queryParams);

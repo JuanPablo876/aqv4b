@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { cva } from "class-variance-authority";
 
 import { cn } from "../lib/utils";
@@ -6,10 +6,10 @@ import { cn } from "../lib/utils";
 const badgeVariants = cva(
   "inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
-    variants{
-      variant{
+    variants: {
+      variant: {
         default:
-          "border-transparent bg-primary text-primary-foreground shadow hover:bg-primary/80",
+          "border-transparent bg-blue-600 text-white shadow hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700",
         secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
@@ -17,7 +17,7 @@ const badgeVariants = cva(
         outline: "text-foreground",
       },
     },
-    defaultVariants{
+    defaultVariants: {
       variant: "default",
     },
   },

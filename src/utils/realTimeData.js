@@ -131,7 +131,7 @@ export const useSupabaseSubscription = (table, onUpdate, filter = {}) => {
           ...filter
         }, 
         (payload) => {
-          console.log(`Real-time update on ${table}:`, payload);
+
           onUpdate(payload);
         }
       )

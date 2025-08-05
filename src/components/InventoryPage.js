@@ -118,7 +118,7 @@ const InventoryPage = () => {
   // Handle save new movement from modal
   const handleSaveNewMovement = (movementData) => {
     // Simplified logic: just add the movement to a list (not updating inventory stock here)
-    console.log("Nuevo movimiento registrado:", movementData);
+
     // In a real app, you would update the inventory list based on the movement type and quantity
     setIsMovementModalOpen(false);
   };
@@ -130,14 +130,14 @@ const InventoryPage = () => {
   
   // Handle save new product from modal (placeholder)
   const handleSaveNewProduct = (productData) => {
-    console.log("Nuevo producto agregado:", productData);
+
     // In a real app, you would add the new product to the productsList state
     setIsAddProductModalOpen(false);
   };
   
   // Handle order from inventory alert (placeholder)
   const handleOrderFromInventory = (product) => {
-    console.log(`Simulando creación de pedido de compra para producto: ${product.name}`);
+
     // In a real app, this would navigate to the order creation page
     // or open a modal to create a purchase order for this product.
     handleSuccess(`Funcionalidad "Realizar Pedido" para ${product.name} pendiente de implementar.`);
@@ -145,7 +145,7 @@ const InventoryPage = () => {
   
   // Handle view inventory history
   const handleViewHistory = async (item) => {
-    console.log(`Viendo historial de movimientos para: ${item.product_name}`);
+
     setSelectedHistoryItem(item);
     setIsHistoryModalOpen(true);
     
@@ -175,11 +175,11 @@ const InventoryPage = () => {
         throw error;
       }
       
-      console.log('📦 Movement history loaded:', {
-        productId,
-        movementsCount: data?.length || 0,
-        movements: data
-      });
+      // console.log('📦 Movement history loaded:', {
+      //   productId,
+      //   movementsCount: data?.length || 0,
+      //   movements: data
+      // });
       
       setMovementHistory(data || []);
     } catch (error) {
@@ -457,14 +457,14 @@ const InventoryPage = () => {
                     <div className="text-sm text-gray-900">{item.sku}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{item.location}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{item.location}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 font-medium">{item.quantity}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">{item.quantity}</div>
                     <div className="text-xs text-gray-500">Mín: {item.minStock}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{formatDate(item.last_updated)}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{formatDate(item.last_updated)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -705,7 +705,7 @@ const InventoryPage = () => {
                     {/* Real movement history data */}
                     {movementHistory.map((movement, index) => (
                       <tr key={movement.id || index}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                           {formatDate(movement.movement_date || movement.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

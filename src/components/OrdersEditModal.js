@@ -33,7 +33,7 @@ const OrdersEditModal = ({ isOpen, onClose, onSave, editingOrder = null }) => {
   // Load order data when modal opens
   useEffect(() => {
     if (editingOrder && isOpen) {
-      console.log('📝 Loading order for edit:', editingOrder);
+
       
       const loadedData = {
         clientId: editingOrder.clientId || editingOrder.client_id || '',

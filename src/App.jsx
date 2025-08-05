@@ -55,7 +55,8 @@ export default function App() {
         <Route path="/invite/:token" element={<Navigate to="/accept-invitation" replace />} />
         
         {/* PWA Test Page - accessible for admin users */}
-        <Route path="/admin/pwa-test" element={<PWATestPage />} />
+        {/* Development/Test Routes - Disabled for Production */}
+        {/* <Route path="/admin/pwa-test" element={<PWATestPage />} /> */}
         
         {/* Protected routes - require authentication */}
         <Route 

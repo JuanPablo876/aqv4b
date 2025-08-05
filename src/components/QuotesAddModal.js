@@ -86,29 +86,29 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
   
   // Handle add product to quote
   const handleAddProductToQuote = () => {
-    console.log('🔍 handleAddProductToQuote called', {
-      selectedProductToAdd,
-      productQuantityToAdd,
-      productsList: productsList?.length,
-      productsListSample: productsList?.slice(0, 2)?.map(p => ({ id: p.id, name: p.name }))
-    });
+    // console.log('🔍 handleAddProductToQuote called', {
+    //   selectedProductToAdd,
+    //   productQuantityToAdd,
+    //   productsList: productsList?.length,
+    //   productsListSample: productsList?.slice(0, 2)?.map(p => ({ id: p.id, name: p.name }))
+    // });
     
     if (!selectedProductToAdd || productQuantityToAdd <= 0) {
-      console.log('❌ Validation failed:', { selectedProductToAdd, productQuantityToAdd });
+
       return;
     }
     
     const product = getProductDetails(selectedProductToAdd);
     if (!product) {
-      console.log('❌ Product not found:', {
-        selectedProductToAdd,
-        typeof: typeof selectedProductToAdd,
-        availableProducts: productsList?.map(p => ({ id: p.id, type: typeof p.id, name: p.name }))
-      });
+      // console.log('❌ Product not found:', {
+      //   selectedProductToAdd,
+      //   typeof: typeof selectedProductToAdd,
+      //   availableProducts: productsList?.map(p => ({ id: p.id, type: typeof p.id, name: p.name }))
+      // });
       return;
     }
     
-    console.log('✅ Adding product:', product);
+
     
     const newItem = {
       productId: String(product.id), // Ensure consistent string format
@@ -122,7 +122,7 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
         ...prevQuote,
         items: [...prevQuote.items, newItem]
       };
-      console.log('✅ Updated quote:', updatedQuote);
+
       return updatedQuote;
     });
     

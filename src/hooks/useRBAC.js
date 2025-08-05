@@ -70,14 +70,14 @@ export const useRBAC = () => {
 };
 
 // Hook for permission checking
-export const usePermission = (module, action) => {
+export const usePermission = (moduleOrPermission, action = null) => {
   const { hasPermission, initialized } = useRBAC();
   
   if (!initialized) {
     return true; // Allow access if RBAC not initialized
   }
   
-  return hasPermission(module, action);
+  return hasPermission(moduleOrPermission, action);
 };
 
 // Hook for role checking

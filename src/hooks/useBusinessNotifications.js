@@ -51,7 +51,7 @@ export const useBusinessNotifications = () => {
                 primary: true,
                 handler: () => {
                   // Navigate to order details
-                  console.log('Navigate to order:', order.id);
+
                 }
               }
             ]
@@ -146,7 +146,7 @@ export const useBusinessNotifications = () => {
                     label: 'Ver Inventario',
                     primary: true,
                     handler: () => {
-                      console.log('Navigate to inventory:', product.id);
+
                     }
                   }
                 ]
@@ -203,7 +203,7 @@ export const useBusinessNotifications = () => {
                   label: 'Ver Factura',
                   primary: true,
                   handler: () => {
-                    console.log('Navigate to invoice:', invoice.id);
+
                   }
                 }
               ]
@@ -264,7 +264,7 @@ export const useBusinessNotifications = () => {
                   label: 'Ver Mantenimiento',
                   primary: true,
                   handler: () => {
-                    console.log('Navigate to maintenance:', maintenance.id);
+
                   }
                 }
               ]

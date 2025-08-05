@@ -31,7 +31,7 @@ class DataService {
           const mockData = await import(`../mock/${entity}.js`);
           const data = mockData.default || mockData[entity] || [];
           saveToStorage(entity, data);
-          console.log(`✅ Initialized ${entity} with ${data.length} records`);
+
         } catch (error) {
           console.warn(`⚠️ No mock data found for ${entity}:`, error.message);
           saveToStorage(entity, []);
@@ -40,7 +40,7 @@ class DataService {
     }
     
     this.initialized = true;
-    console.log('🚀 DataService initialized successfully');
+
   }
 
   // Generic CRUD Operations
@@ -74,7 +74,7 @@ class DataService {
     const updatedItems = [...items, newItem];
     saveToStorage(entity, updatedItems);
     
-    console.log(`✅ Created ${entity}:`, newItem.id);
+
     return newItem;
   }
 
@@ -99,7 +99,7 @@ class DataService {
     updatedItems[index] = updatedItem;
     saveToStorage(entity, updatedItems);
     
-    console.log(`✅ Updated ${entity}:`, id);
+
     return updatedItem;
   }
 
@@ -114,7 +114,7 @@ class DataService {
     }
     
     saveToStorage(entity, filteredItems);
-    console.log(`✅ Deleted ${entity}:`, id);
+
     return true;
   }
 
@@ -122,14 +122,14 @@ class DataService {
   bulkCreate(entity, dataArray) {
     this.validateEntity(entity);
     const results = dataArray.map(data => this.create(entity, data));
-    console.log(`✅ Bulk created ${results.length} ${entity} records`);
+
     return results;
   }
 
   bulkUpdate(entity, updates) {
     this.validateEntity(entity);
     const results = updates.map(({ id, data }) => this.update(entity, id, data));
-    console.log(`✅ Bulk updated ${results.length} ${entity} records`);
+
     return results;
   }
 
@@ -140,7 +140,7 @@ class DataService {
     saveToStorage(entity, filteredItems);
     
     const deletedCount = items.length - filteredItems.length;
-    console.log(`✅ Bulk deleted ${deletedCount} ${entity} records`);
+
     return deletedCount;
   }
 
@@ -290,7 +290,7 @@ class DataService {
     this.entities.forEach(entity => {
       saveToStorage(entity, []);
     });
-    console.log('🗑️ All data cleared');
+
   }
 
   // Backup all data
@@ -309,7 +309,7 @@ class DataService {
     const backupKey = `backup_${Date.now()}`;
     localStorage.setItem(backupKey, JSON.stringify(backupData));
     
-    console.log('💾 Data backup created:', backupKey);
+
     return backupKey;
   }
 
@@ -325,7 +325,7 @@ class DataService {
       saveToStorage(entity, data);
     });
     
-    console.log('🔄 Data restored from backup:', backupKey);
+
   }
 }
 

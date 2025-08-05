@@ -16,7 +16,7 @@ export const useDatabaseInit = () => {
         await databaseService.initialize();
         
         setIsInitialized(true);
-        console.log('✅ Database initialized successfully');
+
       } catch (err) {
         console.error('❌ Database initialization failed:', err);
         setError(err.message);

@@ -236,7 +236,7 @@ class EmployeeActivityService {
   async recordActivity(employeeId, activityData) {
     try {
       // This could be expanded to create activity logs in a dedicated table
-      console.log('Recording activity for employee:', employeeId, activityData);
+
       
       // For now, this is a placeholder for future activity logging
       return { success: true, message: 'Activity recorded successfully' };

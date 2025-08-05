@@ -10,7 +10,7 @@ const sendEmail = async (emailData) => {
     // - AWS SES
     // - Your backend email API
     
-    console.log('📧 Email would be sent:', emailData);
+
     
     // Simulate email sending
     await new Promise(resolve => setTimeout(resolve, 1000));

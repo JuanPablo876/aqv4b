@@ -231,7 +231,7 @@ const FinancePageContent = () => {
         // In a real app, you would call a delete API here
         // await deleteTransaction(transactionId);
         handleError(new Error('Funcionalidad pendiente de implementar'), 'delete transaction', 'Funcionalidad "Eliminar Transacción" pendiente de implementar en la API');
-        console.log('Deleting transaction:', transactionId);
+
       }, 'Error al eliminar la transacción');
     }
   };

@@ -46,7 +46,8 @@ class RBACService {
     try {
       if (!this.currentUser) return;
 
-      const { data: userRoles, error } = await supabase
+      // Load user roles with role information
+      const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
         .select(`
           *,
@@ -55,38 +56,55 @@ class RBACService {
         .eq('user_id', this.currentUser.id)
         .eq('is_active', true);
 
-      if (error) {
-        console.error('Error loading user roles:', error);
+      if (rolesError) {
+        console.error('Error loading user roles:', rolesError);
         return;
       }
 
       this.userRoles = userRoles || [];
-      this.userPermissions = this.aggregatePermissions();
+
+      // Load permissions for the user's roles
+      if (this.userRoles.length > 0) {
+        const roleIds = this.userRoles.map(ur => ur.role_id);
+        
+        const { data: permissions, error: permissionsError } = await supabase
+          .from('role_permissions')
+          .select(`
+            permission:permissions(name, resource, action)
+          `)
+          .in('role_id', roleIds);
+
+        if (permissionsError) {
+          console.error('Error loading permissions:', permissionsError);
+          this.userPermissions = {};
+        } else {
+          this.userPermissions = this.aggregatePermissions(permissions || []);
+
+        }
+      } else {
+        this.userPermissions = {};
+      }
     } catch (error) {
       console.error('Error in loadUserRoles:', error);
     }
   }
 
   // Aggregate permissions from all user roles
-  aggregatePermissions() {
+  aggregatePermissions(permissionsData = []) {
     const permissions = {};
 
-    this.userRoles.forEach(userRole => {
-      if (userRole.role && userRole.role.permissions) {
-        const rolePermissions = userRole.role.permissions;
+    permissionsData.forEach(rolePermission => {
+      if (rolePermission.permission) {
+        const perm = rolePermission.permission;
+        const module = perm.resource || 'general';
         
-        Object.keys(rolePermissions).forEach(module => {
-          if (!permissions[module]) {
-            permissions[module] = new Set();
-          }
-          
-          const modulePermissions = rolePermissions[module];
-          if (Array.isArray(modulePermissions)) {
-            modulePermissions.forEach(permission => {
-              permissions[module].add(permission);
-            });
-          }
-        });
+        if (!permissions[module]) {
+          permissions[module] = new Set();
+        }
+        
+        // Add both the permission name and action
+        permissions[module].add(perm.action);
+        permissions[module].add(perm.name);
       }
     });
 
@@ -99,17 +117,29 @@ class RBACService {
   }
 
   // Check if user has a specific permission
-  hasPermission(module, action) {
+  hasPermission(moduleOrPermission, action = null) {
     if (!this.initialized) {
       console.warn('RBAC not initialized, allowing access');
       return true; // Allow access if RBAC is not initialized (fallback)
     }
 
-    if (!this.userPermissions[module]) {
+    // If action is null, treat moduleOrPermission as a permission name
+    if (action === null) {
+      // Search through all modules for the permission name
+      for (const module in this.userPermissions) {
+        if (this.userPermissions[module].includes(moduleOrPermission)) {
+          return true;
+        }
+      }
       return false;
     }
 
-    return this.userPermissions[module].includes(action);
+    // Traditional module/action check
+    if (!this.userPermissions[moduleOrPermission]) {
+      return false;
+    }
+
+    return this.userPermissions[moduleOrPermission].includes(action);
   }
 
   // Check if user has any of the specified roles

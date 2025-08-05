@@ -6,28 +6,9 @@ import { useNotifications } from '../hooks/useNotifications';
 const DashboardInventoryAlerts = ({ alerts, onOrderFromInventory, onViewInventory }) => {
   const { 
     settings: notificationSettings, 
-    testNotification,
     checkLowStockNow,
     loading: notificationLoading 
   } = useNotifications();
-  
-  const [testingEmail, setTestingEmail] = useState(false);
-
-  const handleTestNotification = async () => {
-    setTestingEmail(true);
-    try {
-      const result = await testNotification();
-      if (result.success) {
-        alert('✅ Notificación de prueba enviada exitosamente');
-      } else {
-        alert('❌ Error al enviar notificación: ' + (result.error || 'Error desconocido'));
-      }
-    } catch (error) {
-      alert('❌ Error: ' + error.message);
-    } finally {
-      setTestingEmail(false);
-    }
-  };
 
   const handleCheckNow = async () => {
     try {
@@ -68,17 +49,9 @@ const DashboardInventoryAlerts = ({ alerts, onOrderFromInventory, onViewInventor
         {alerts.length > 0 && (
           <div className="flex items-center space-x-2">
             <button 
-              onClick={handleTestNotification}
-              disabled={testingEmail}
-              className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-secondary text-secondary-foreground border border-border hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-dark-600 dark:text-dark-200 dark:border-dark-500 dark:hover:bg-dark-500"
-            >
-              <span className="mr-1.5">{testingEmail ? '📧' : '✉️'}</span>
-              {testingEmail ? 'Enviando...' : 'Probar Email'}
-            </button>
-            <button 
               onClick={handleCheckNow}
               disabled={notificationLoading}
-              className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-dark-600 dark:text-dark-200 dark:border-dark-500 dark:hover:bg-dark-500"
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-md bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors dark:bg-gray-700 dark:text-blue-300 dark:border-gray-600 dark:hover:bg-gray-600"
             >
               <span className="mr-1.5">{notificationLoading ? '⏳' : '🔄'}</span>
               {notificationLoading ? 'Verificando...' : 'Verificar Ahora'}

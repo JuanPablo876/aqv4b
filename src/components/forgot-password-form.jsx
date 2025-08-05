@@ -1,4 +1,4 @@
-Ôªø
+
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -36,20 +36,20 @@ export function ForgotPasswordForm() {
       <div className="max-w-md w-full space-y-8 relative z-10">
         {success ? (
           <div className="text-center">
-            <div className="text-6xl mb-6">üìß</div>
+            <div className="text-6xl mb-6">??</div>
             <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
               Revisa tu Email
             </h2>
             <div className="bg-card/90 backdrop-blur-sm py-8 px-6 shadow-xl rounded-lg border border-border/20 mt-8">
               <p className="text-sm text-muted-foreground text-center">
-                Si el email est√° registrado en nuestro sistema, recibir√°s las instrucciones para restablecer tu contrase√±a.
+                Si el email est· registrado en nuestro sistema, recibir·s las instrucciones para restablecer tu contraseÒa.
               </p>
               <div className="mt-6 text-center">
                 <Link 
                   to="/login" 
-                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                  className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                 >
-                  ‚Üê Volver al inicio de sesi√≥n
+                  ? Volver al inicio de sesiÛn
                 </Link>
               </div>
             </div>
@@ -57,9 +57,9 @@ export function ForgotPasswordForm() {
         ) : (
           <>
             <div className="text-center">
-              <div className="text-6xl mb-6">üîë</div>
+              <div className="text-6xl mb-6">??</div>
               <h2 className="mt-6 text-center text-3xl font-extrabold text-foreground">
-                Restablecer Contrase√±a
+                Restablecer ContraseÒa
               </h2>
               <p className="mt-4 text-center text-sm text-muted-foreground">
                 Ingresa tu email para recibir las instrucciones de restablecimiento
@@ -80,7 +80,7 @@ export function ForgotPasswordForm() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-border placeholder-muted-foreground text-foreground rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary sm:text-sm"
+                    className="mt-1 appearance-none relative block w-full px-3 py-2 border border-border placeholder-muted-foreground text-foreground rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:focus:ring-blue-400 dark:focus:border-blue-400"
                     placeholder="tu@email.com"
                   />
                 </div>
@@ -94,7 +94,7 @@ export function ForgotPasswordForm() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-600 dark:hover:bg-blue-700"
                 >
                   {isLoading ? "Enviando..." : "Enviar Email de Restablecimiento"}
                 </button>
@@ -103,9 +103,9 @@ export function ForgotPasswordForm() {
               <div className="mt-6 text-center">
                 <Link 
                   to="/login" 
-                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                  className="font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
                 >
-                  ‚Üê Volver al inicio de sesi√≥n
+                  ? Volver al inicio de sesiÛn
                 </Link>
               </div>
             </div>

@@ -150,7 +150,7 @@ export default function ClientsPageImproved() {
       // Filter orders for this specific client
       const clientOrders = (ordersList || []).filter(order => order.client_id === client.id);
       
-      console.log(`📊 Loading order history for ${client.name}:`, {
+// console.log(`📊 Loading order history for ${client.name}:`, {
         clientId: client.id,
         totalOrders: ordersList?.length || 0,
         clientOrders: clientOrders.length,

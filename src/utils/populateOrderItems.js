@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient';
 
 export const populateOrderItems = async () => {
   try {
-    console.log('🔧 Starting to populate order items...');
+
     
     // First, get all orders
     const { data: orders, error: ordersError } = await supabase
@@ -15,7 +15,7 @@ export const populateOrderItems = async () => {
       return;
     }
     
-    console.log('📋 Found orders:', orders?.length || 0);
+
     
     // Check which orders already have items
     const { data: existingItems, error: existingError } = await supabase
@@ -30,11 +30,11 @@ export const populateOrderItems = async () => {
     const ordersWithItems = new Set(existingItems?.map(item => item.order_id) || []);
     const ordersNeedingItems = orders?.filter(order => !ordersWithItems.has(order.id)) || [];
     
-    console.log('📋 Orders that already have items:', ordersWithItems.size);
-    console.log('📋 Orders needing items:', ordersNeedingItems.length);
+
+
     
     if (ordersNeedingItems.length === 0) {
-      console.log('✅ All orders already have items');
+
       return [];
     }
     
@@ -49,10 +49,10 @@ export const populateOrderItems = async () => {
       return;
     }
     
-    console.log('📦 Found products:', products?.length || 0);
+
     
     if (!ordersNeedingItems?.length || !products?.length) {
-      console.log('❌ No orders needing items or no products found');
+
       return;
     }
     
@@ -79,7 +79,7 @@ export const populateOrderItems = async () => {
       }
     });
     
-    console.log('📝 Order items to insert:', orderItemsToInsert.length);
+
     
     // Insert the order items
     const { data: insertedItems, error: insertError } = await supabase
@@ -92,8 +92,8 @@ export const populateOrderItems = async () => {
       return;
     }
     
-    console.log('✅ Successfully inserted order items:', insertedItems?.length || 0);
-    console.log(`🎉 Created ${insertedItems?.length || 0} order items for ${ordersNeedingItems.length} orders`);
+
+
     
     return insertedItems;
     
