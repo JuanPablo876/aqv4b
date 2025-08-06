@@ -439,9 +439,9 @@ const EmployeesPageContent = () => {
                     <div>
                       <p className="text-sm text-gray-500">Dirección</p>
                       <p className="text-blue-800">{selectedEmployee.address}</p>
-                      {selectedEmployee.googleMapsLink && (
+                      {selectedEmployee.google_maps_link && (
                         <a 
-                          href={selectedEmployee.googleMapsLink} 
+                          href={selectedEmployee.google_maps_link} 
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="text-blue-600 hover:underline text-sm"
@@ -582,8 +582,8 @@ const EmployeesPageContent = () => {
                   </label>
                   <input
                     type="text"
-                    name="googleMapsLink"
-                    value={newEmployee.googleMapsLink}
+                    name="google_maps_link"
+                    value={newEmployee.google_maps_link}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />

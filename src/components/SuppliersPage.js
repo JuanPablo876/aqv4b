@@ -24,12 +24,12 @@ const SuppliersPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSupplier, setNewSupplier] = useState({
     name: '',
-    contact_person: '', // Updated to match database field name
+    contact: '', // Fixed: use 'contact' to match database field name
     email: '',
     phone: '',
     address: '',
-    lead_time: '', // Updated to match database field name
-    payment_terms: '', // Updated to match database field name
+    lead_time: '', // Fixed: use 'lead_time' to match database field name
+    payment_terms: '', // Fixed: use 'payment_terms' to match database field name
     notes: '',
     status: 'active'
   });
@@ -93,7 +93,7 @@ const SuppliersPage = () => {
   
   // Filter and sort suppliers
   const filteredSuppliers = sortByField(
-    filterBySearchTerm(suppliersList, searchTerm, ['name', 'contact_person', 'email', 'notes']), // Updated field references
+    filterBySearchTerm(suppliersList, searchTerm, ['name', 'contact', 'email', 'notes']), // Fixed field references
     sortConfig.field,
     sortConfig.direction
   );
@@ -162,7 +162,7 @@ const SuppliersPage = () => {
         setIsAddModalOpen(false);
         setNewSupplier({
           name: '',
-          contact_person: '',
+          contact: '',
           email: '',
           phone: '',
           address: '',
@@ -449,11 +449,11 @@ const SuppliersPage = () => {
                 <th 
                   scope="col" 
                   className="px-6 py-3 text-left text-xs font-medium text-blue-800 dark:text-gray-300 uppercase tracking-wider cursor-pointer"
-                  onClick={() => handleSort('contact_person')}
+                  onClick={() => handleSort('contact')}
                 >
                   <div className="flex items-center">
                     Contacto
-                    {sortConfig.field === 'contact_person' && (
+                    {sortConfig.field === 'contact' && (
                       <svg 
                         xmlns="http://www.w3.org/2000/svg" 
                         className={`ml-1 h-4 w-4 ${sortConfig.direction === 'asc' ? 'transform rotate-180' : ''}`} 
@@ -512,7 +512,7 @@ const SuppliersPage = () => {
                     <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{supplier.name}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-gray-100">{supplier.contact_person}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{supplier.contact}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 dark:text-gray-100">{supplier.email}</div>
@@ -577,7 +577,7 @@ const SuppliersPage = () => {
                   <div className="space-y-3">
                     <div>
                       <span className="text-gray-500">Contacto:</span>
-                      <p className="text-blue-800 font-medium">{selectedSupplier.contact_person}</p>
+                      <p className="text-blue-800 font-medium">{selectedSupplier.contact}</p>
                     </div>
                     
                     <div>
@@ -750,8 +750,8 @@ const SuppliersPage = () => {
                   </label>
                   <input
                     type="text"
-                    name="contact_person"
-                    value={newSupplier.contact_person}
+                    name="contact"
+                    value={newSupplier.contact}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -906,8 +906,8 @@ const SuppliersPage = () => {
                   </label>
                   <input
                     type="text"
-                    name="contact_person"
-                    value={editingSupplier.contact_person || ''}
+                    name="contact"
+                    value={editingSupplier.contact || ''}
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
@@ -1063,7 +1063,7 @@ const SuppliersPage = () => {
                   <span className="font-medium">Proveedor:</span> {selectedHistorySupplier.name}
                 </p>
                 <p className="text-sm text-gray-600">
-                  <span className="font-medium">Contacto:</span> {selectedHistorySupplier.contact_person}
+                  <span className="font-medium">Contacto:</span> {selectedHistorySupplier.contact}
                 </p>
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Teléfono:</span> {selectedHistorySupplier.phone}
