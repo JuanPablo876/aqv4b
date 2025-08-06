@@ -222,7 +222,17 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
         notes: newQuote.notes
       };
       
-      const result = await sendQuoteEmail(quoteData, client, newQuote.items);
+      // Transform newQuote.items to include product names for email
+      const transformedItems = (newQuote.items || []).map(item => {
+        const product = productsList.find(p => p.id === item.product_id);
+        return {
+          ...item,
+          product_name: product?.name || 'Producto Desconocido',
+          sku: product?.sku || 'N/A'
+        };
+      });
+      
+      const result = await sendQuoteEmail(quoteData, client, transformedItems);
       if (result.success) {
         alert('✅ Email enviado exitosamente');
       } else {

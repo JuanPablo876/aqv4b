@@ -255,14 +255,27 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
     setSendingEmail(true);
     try {
       const quoteData = {
+        id: quote.id,
         quote_number: quote.quote_number,
         date: quote.date,
+        created_at: quote.created_at,
+        valid_until: quote.valid_until,
         total: quote.total,
         notes: quote.notes,
         status: quote.status
       };
 
-      const result = await sendQuoteEmail(quoteData, client, quote.items || []);
+      // Transform quote items to include product names for email
+      const transformedItems = (quote.items || []).map(item => {
+        const product = productsList.find(p => p.id === item.product_id);
+        return {
+          ...item,
+          product_name: product?.name || 'Producto Desconocido',
+          sku: product?.sku || 'N/A'
+        };
+      });
+
+      const result = await sendQuoteEmail(quoteData, client, transformedItems);
       if (result.success) {
         alert('✅ Email enviado exitosamente');
       } else {
