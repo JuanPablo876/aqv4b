@@ -15,11 +15,31 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
+    console.log('🔧 Handling CORS preflight request');
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
     console.log('📧 Processing quote email request...');
+    console.log('🔧 Method:', req.method);
+    console.log('🔧 URL:', req.url);
+    
+    // Check if we have the required environment variables first
+    console.log('🔧 Checking environment variables...');
+    console.log('🔧 RESEND_API_KEY exists:', !!RESEND_API_KEY);
+    console.log('🔧 FROM_EMAIL:', FROM_EMAIL);
+    
+    if (!RESEND_API_KEY) {
+      console.error('❌ RESEND_API_KEY not found in environment variables');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Email service not configured - missing RESEND_API_KEY',
+        timestamp: new Date().toISOString()
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
     
     const { 
       clientEmail, 
@@ -29,13 +49,23 @@ serve(async (req) => {
     } = await req.json()
 
     if (!clientEmail) {
-      throw new Error('Client email is required')
+      console.error('❌ Client email is required');
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Client email is required',
+        timestamp: new Date().toISOString()
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
-    if (!RESEND_API_KEY) {
-      console.error('❌ RESEND_API_KEY not found in environment variables')
-      throw new Error('Email service not configured')
-    }
+    console.log('🔧 Request data received:', {
+      clientEmail: clientEmail ? 'provided' : 'missing',
+      clientName: clientName ? 'provided' : 'missing',
+      quote: quote ? 'provided' : 'missing',
+      quoteItems: Array.isArray(quoteItems) ? `${quoteItems.length} items` : 'missing'
+    });
 
     // Generate quote items HTML
     const formatCurrency = (amount) => {
