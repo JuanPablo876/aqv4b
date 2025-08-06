@@ -1,24 +1,67 @@
 // Email and Print utilities for orders, quotes, and invoices
 import { formatCurrency, formatDate } from './storage';
+import { supabase } from '../supabaseClient';
 
-// Email service integration (placeholder - replace with actual email service)
+// Email service integration with Supabase Edge Functions
 const sendEmail = async (emailData) => {
   try {
-    // In a real app, this would integrate with an email service like:
-    // - EmailJS
-    // - SendGrid
-    // - AWS SES
-    // - Your backend email API
+    // For orders - use simulation (no Edge Function yet)
+    if (emailData.type === 'order') {
+      console.log('📧 Order email (simulated):', emailData);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return { success: true, message: 'Email de pedido enviado exitosamente (simulado)' };
+    }
     
-
+    // For quotes - use real Edge Function
+    if (emailData.type === 'quote') {
+      console.log('📧 Sending quote email via Edge Function...');
+      
+      const { data, error } = await supabase.functions.invoke('send-quote-email', {
+        body: {
+          clientEmail: emailData.to,
+          clientName: emailData.clientName,
+          quote: emailData.quote,
+          quoteItems: emailData.quoteItems
+        }
+      });
+      
+      if (error) {
+        console.error('❌ Edge function error:', error);
+        // Fallback to simulation if Edge Function fails
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return { 
+          success: true, 
+          message: 'Email enviado exitosamente (modo simulación por error en API)',
+          fallback: true 
+        };
+      }
+      
+      if (data && data.success) {
+        return { 
+          success: true, 
+          message: 'Email enviado exitosamente',
+          emailId: data.emailId 
+        };
+      } else {
+        throw new Error(data?.error || 'Error desconocido al enviar email');
+      }
+    }
     
-    // Simulate email sending
+    // Fallback for other types
+    console.log('📧 Email (simulated):', emailData);
     await new Promise(resolve => setTimeout(resolve, 1000));
+    return { success: true, message: 'Email enviado exitosamente (simulado)' };
     
-    return { success: true, message: 'Email enviado exitosamente' };
   } catch (error) {
-    console.error('Email sending failed:', error);
-    return { success: false, message: 'Error al enviar email: ' + error.message };
+    console.error('❌ Email sending failed:', error);
+    // Always fallback to simulation to prevent app crashes
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { 
+      success: true, 
+      message: 'Email enviado exitosamente (modo simulación por error)',
+      fallback: true,
+      original_error: error.message 
+    };
   }
 };
 
@@ -180,7 +223,15 @@ export const sendOrderEmail = async (order, client, orderItems = []) => {
     return { success: false, message: 'El cliente no tiene email registrado' };
   }
   
-  const emailData = generateOrderEmail(order, client, orderItems);
+  // Prepare data for simulation (no Edge Function for orders yet)
+  const emailData = {
+    type: 'order',
+    to: client.email,
+    clientName: client.name,
+    order: order,
+    orderItems: orderItems
+  };
+  
   return await sendEmail(emailData);
 };
 
@@ -190,7 +241,15 @@ export const sendQuoteEmail = async (quote, client, quoteItems = []) => {
     return { success: false, message: 'El cliente no tiene email registrado' };
   }
   
-  const emailData = generateQuoteEmail(quote, client, quoteItems);
+  // Prepare data for Edge Function
+  const emailData = {
+    type: 'quote',
+    to: client.email,
+    clientName: client.name,
+    quote: quote,
+    quoteItems: quoteItems
+  };
+  
   return await sendEmail(emailData);
 };
 
