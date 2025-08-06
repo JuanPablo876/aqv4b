@@ -156,8 +156,16 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
     setSaving(true);
     try {
       const quoteData = {
-        ...newQuote,
-        google_maps_link: newQuote.google_maps_link // Ensure google_maps_link is included
+        client_id: newQuote.client_id,
+        date: newQuote.date,
+        valid_until: newQuote.validUntil, // Convert camelCase to snake_case
+        status: newQuote.status,
+        notes: newQuote.notes,
+        google_maps_link: newQuote.google_maps_link,
+        // Note: clientName, clientEmail, clientPhone, clientAddress are not saved to quotes table
+        // They are only used for display and email/print functionality for custom clients
+        // The items will be saved separately to quote_items table
+        items: newQuote.items // Include items for processing
       };
 
       await onSave(quoteData);

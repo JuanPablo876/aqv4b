@@ -13,3 +13,4 @@ ALTER TABLE quotes ADD COLUMN IF NOT EXISTS google_maps_link TEXT;
 -- - EmployeesPage: googleMapsLink -> google_maps_link  
 -- - MaintenancesAddModal: camelCase fields -> snake_case fields
 -- - QuotesAddModal: google_maps_link field added to both app and database
+-- - QuotesAddModal: Fixed to only send valid database fields (not clientName, clientEmail, etc.)
