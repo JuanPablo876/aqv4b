@@ -7,12 +7,21 @@ class EmailNotificationService {
   constructor() {
     this.recipients = [
       'compras@hotelacapulco.com',
-      'admin@aqualiquim.com'
+      'admin@aqualiquim.mx'
     ];
     this.enabled = true;
     this.checkInterval = 1000 * 60 * 60 * 6; // Check every 6 hours
     this.lastCheck = null;
     this.isRunning = false;
+    
+    // Default notification types
+    this.notificationTypes = {
+      lowStock: { enabled: true, label: 'Stock Bajo', description: 'Productos con stock por debajo del mínimo' },
+      outOfStock: { enabled: true, label: 'Sin Stock', description: 'Productos completamente agotados' },
+      expiredProducts: { enabled: false, label: 'Productos Vencidos', description: 'Productos que han pasado su fecha de vencimiento' },
+      maintenanceDue: { enabled: false, label: 'Mantenimiento Vencido', description: 'Equipos que requieren mantenimiento' },
+      orderReminders: { enabled: false, label: 'Recordatorios de Pedidos', description: 'Recordatorios de pedidos pendientes' }
+    };
   }
 
   /**
@@ -33,46 +42,144 @@ class EmailNotificationService {
   }
 
   /**
-   * Load notification settings
+   * Load notification settings from database
    */
   async loadSettings() {
     try {
-      // Try to load from localStorage first
-      const savedSettings = localStorage.getItem('lowStockNotificationSettings');
-      if (savedSettings) {
-        const settings = JSON.parse(savedSettings);
-        this.recipients = settings.recipients || this.recipients;
-        this.enabled = settings.enabled !== undefined ? settings.enabled : this.enabled;
-        this.checkInterval = settings.checkInterval || this.checkInterval;
+      console.log('📥 Loading notification settings from database...');
+      
+      // Try to load from database first
+      const { data: settings, error } = await supabase
+        .from('notification_settings')
+        .select('*')
+        .eq('setting_key', 'low_stock_alerts')
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found" error
+        console.error('❌ Error loading settings from database:', error);
+        throw error;
       }
 
-      // You could also load from database here if needed
-      // const { data: settings } = await supabase
-      //   .from('notification_settings')
-      //   .select('*')
-      //   .eq('type', 'low_stock')
-      //   .single();
+      if (settings) {
+        console.log('✅ Settings loaded from database:', settings);
+        
+        this.recipients = Array.isArray(settings.recipients) ? settings.recipients : this.recipients;
+        this.enabled = settings.enabled !== undefined ? settings.enabled : this.enabled;
+        this.checkInterval = settings.check_interval || this.checkInterval;
+        this.lastCheck = settings.last_check ? new Date(settings.last_check) : null;
+        
+        // Load notification types if available
+        if (settings.notification_types) {
+          this.notificationTypes = { ...this.notificationTypes, ...settings.notification_types };
+        }
+        
+        console.log('✅ Settings applied successfully:', {
+          recipients: this.recipients,
+          enabled: this.enabled,
+          checkInterval: this.checkInterval,
+          notificationTypes: this.notificationTypes,
+          lastCheck: this.lastCheck
+        });
+      } else {
+        console.log('ℹ️ No settings found in database, using defaults and creating initial record...');
+        // Create initial record with defaults
+        await this.saveSettings();
+      }
+
+      // Fallback: try localStorage if database fails
+      if (!settings) {
+        const savedSettings = localStorage.getItem('lowStockNotificationSettings');
+        if (savedSettings) {
+          const localSettings = JSON.parse(savedSettings);
+          console.log('📥 Loading from localStorage as fallback:', localSettings);
+          
+          this.recipients = Array.isArray(localSettings.recipients) ? localSettings.recipients : this.recipients;
+          this.enabled = localSettings.enabled !== undefined ? localSettings.enabled : this.enabled;
+          this.checkInterval = localSettings.checkInterval || this.checkInterval;
+          
+          if (localSettings.notificationTypes) {
+            this.notificationTypes = { ...this.notificationTypes, ...localSettings.notificationTypes };
+          }
+          
+          // Migrate to database
+          await this.saveSettings();
+        }
+      }
 
     } catch (error) {
-      console.error('Error loading notification settings:', error);
+      console.error('❌ Error loading notification settings:', error);
+      // Continue with defaults if loading fails
     }
   }
 
   /**
-   * Save notification settings
+   * Save notification settings to database
    */
   async saveSettings() {
     try {
+      console.log('💾 Saving notification settings to database...');
+      
       const settings = {
+        setting_key: 'low_stock_alerts',
+        setting_name: 'Alertas de Stock Bajo',
+        description: 'Configuración para notificaciones automáticas de productos con stock bajo',
+        enabled: this.enabled,
+        recipients: this.recipients,
+        check_interval: this.checkInterval,
+        notification_types: this.notificationTypes,
+        last_check: this.lastCheck,
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('� Saving settings:', settings);
+
+      // Use upsert to insert or update
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .upsert(settings, { 
+          onConflict: 'setting_key',
+          returning: 'minimal'
+        });
+
+      if (error) {
+        console.error('❌ Error saving settings to database:', error);
+        throw error;
+      }
+
+      console.log('✅ Settings saved to database successfully');
+
+      // Also save to localStorage as backup
+      const localSettings = {
         recipients: this.recipients,
         enabled: this.enabled,
-        checkInterval: this.checkInterval
+        checkInterval: this.checkInterval,
+        notificationTypes: this.notificationTypes,
+        lastSaved: new Date().toISOString()
       };
-      
-      localStorage.setItem('lowStockNotificationSettings', JSON.stringify(settings));
+
+      localStorage.setItem('lowStockNotificationSettings', JSON.stringify(localSettings));
+      console.log('✅ Settings also saved to localStorage as backup');
 
     } catch (error) {
-      console.error('Error saving notification settings:', error);
+      console.error('❌ Error saving notification settings:', error);
+      
+      // Fallback to localStorage if database save fails
+      try {
+        const localSettings = {
+          recipients: this.recipients,
+          enabled: this.enabled,
+          checkInterval: this.checkInterval,
+          notificationTypes: this.notificationTypes,
+          lastSaved: new Date().toISOString(),
+          error: 'Database save failed - stored locally'
+        };
+
+        localStorage.setItem('lowStockNotificationSettings', JSON.stringify(localSettings));
+        console.log('⚠️ Saved to localStorage as fallback due to database error');
+      } catch (localError) {
+        console.error('❌ Failed to save to localStorage as well:', localError);
+        throw new Error('Failed to save settings to both database and localStorage');
+      }
     }
   }
 
@@ -208,6 +315,42 @@ class EmailNotificationService {
   }
 
   /**
+   * Log notification to database for audit purposes
+   */
+  async logNotificationToDatabase(type, recipients, subject, emailId, status = 'sent', itemCount = 0, errorMessage = null) {
+    try {
+      console.log('📝 Logging notification to database...');
+      
+      const logEntry = {
+        setting_key: 'low_stock_alerts',
+        notification_type: type,
+        recipients: recipients,
+        subject: subject,
+        email_id: emailId,
+        status: status,
+        error_message: errorMessage,
+        item_count: itemCount,
+        sent_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('notification_logs')
+        .insert(logEntry);
+
+      if (error) {
+        console.error('❌ Error logging notification to database:', error);
+        // Don't throw here as logging failure shouldn't break notification
+      } else {
+        console.log('✅ Notification logged to database successfully');
+      }
+
+    } catch (error) {
+      console.error('❌ Error logging notification:', error);
+      // Don't throw here as logging failure shouldn't break notification
+    }
+  }
+
+  /**
    * Send low stock notification email
    */
   async sendLowStockNotification(lowStockItems) {
@@ -216,6 +359,16 @@ class EmailNotificationService {
         itemCount: lowStockItems.length,
         recipients: this.recipients
       });
+
+      // Validate recipients before sending
+      if (!this.recipients || this.recipients.length === 0) {
+        console.warn('⚠️ No recipients configured for low stock notifications');
+        return { 
+          success: false, 
+          error: 'No recipients configured. Please add email addresses in notification settings.',
+          mode: 'validation-error'
+        };
+      }
 
       const emailContent = this.generateLowStockEmailContent(lowStockItems);
       
@@ -232,6 +385,18 @@ class EmailNotificationService {
 
       if (error) {
         console.error('❌ Edge function error:', error);
+        
+        // Log failed notification to database
+        await this.logNotificationToDatabase(
+          'low_stock',
+          this.recipients,
+          `⚠️ Alerta de Stock Bajo - ${lowStockItems.length} productos`,
+          null,
+          'failed',
+          lowStockItems.length,
+          error.message
+        );
+        
         // Fall back to simulation mode if Edge Function fails
         console.log('🔄 Falling back to simulation mode...');
         await new Promise(resolve => setTimeout(resolve, 300));
@@ -241,10 +406,21 @@ class EmailNotificationService {
             message: 'Email simulated (Edge Function fallback)',
             itemCount: lowStockItems.length,
             recipients: this.recipients,
-            mode: 'fallback'
+            mode: 'fallback',
+            originalError: error.message
           } 
         };
       }
+
+      // Log successful notification to database
+      await this.logNotificationToDatabase(
+        'low_stock',
+        this.recipients,
+        `⚠️ Alerta de Stock Bajo - ${lowStockItems.length} productos`,
+        data?.emailId,
+        'sent',
+        lowStockItems.length
+      );
 
       console.log('✅ Low stock email sent successfully via Edge Function');
       return { 
@@ -260,6 +436,18 @@ class EmailNotificationService {
 
     } catch (error) {
       console.error('❌ Error in sendLowStockNotification:', error);
+      
+      // Log failed notification to database
+      await this.logNotificationToDatabase(
+        'low_stock',
+        this.recipients,
+        `⚠️ Alerta de Stock Bajo - ${lowStockItems.length} productos`,
+        null,
+        'failed',
+        lowStockItems.length,
+        error.message
+      );
+      
       // Instead of throwing, return a fallback simulation to prevent app crashes
       console.log('🔄 Error occurred, falling back to simulation...');
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -441,12 +629,27 @@ ${formatDate(new Date())}
   /**
    * Update notification settings
    */
-  updateSettings(newSettings) {
-    if (newSettings.recipients) this.recipients = newSettings.recipients;
-    if (newSettings.enabled !== undefined) this.enabled = newSettings.enabled;
-    if (newSettings.checkInterval) this.checkInterval = newSettings.checkInterval;
+  async updateSettings(newSettings) {
+    console.log('📝 Updating notification settings:', newSettings);
     
-    this.saveSettings();
+    if (newSettings.recipients && Array.isArray(newSettings.recipients)) {
+      this.recipients = [...newSettings.recipients]; // Create a copy to avoid reference issues
+      console.log('✅ Recipients updated:', this.recipients);
+    }
+    if (newSettings.enabled !== undefined) {
+      this.enabled = newSettings.enabled;
+      console.log('✅ Enabled updated:', this.enabled);
+    }
+    if (newSettings.checkInterval) {
+      this.checkInterval = newSettings.checkInterval;
+      console.log('✅ Check interval updated:', this.checkInterval);
+    }
+    if (newSettings.notificationTypes) {
+      this.notificationTypes = { ...this.notificationTypes, ...newSettings.notificationTypes };
+      console.log('✅ Notification types updated:', this.notificationTypes);
+    }
+    
+    await this.saveSettings();
     
     // Restart monitoring if settings changed
     if (this.isRunning) {
@@ -455,6 +658,8 @@ ${formatDate(new Date())}
         this.startMonitoring();
       }
     }
+    
+    console.log('✅ Settings saved successfully');
   }
 
   /**
@@ -466,8 +671,26 @@ ${formatDate(new Date())}
       enabled: this.enabled,
       checkInterval: this.checkInterval,
       isRunning: this.isRunning,
-      lastCheck: this.lastCheck
+      lastCheck: this.lastCheck,
+      notificationTypes: this.notificationTypes
     };
+  }
+
+  /**
+   * Get available notification types
+   */
+  getNotificationTypes() {
+    return this.notificationTypes;
+  }
+
+  /**
+   * Update notification type settings
+   */
+  updateNotificationType(typeKey, enabled) {
+    if (this.notificationTypes[typeKey]) {
+      this.notificationTypes[typeKey].enabled = enabled;
+      this.saveSettings();
+    }
   }
 
   /**
@@ -475,7 +698,20 @@ ${formatDate(new Date())}
    */
   async testNotification() {
     try {
+      console.log('🧪 Testing notification system...');
+      
+      // Validate recipients first
+      if (!this.recipients || this.recipients.length === 0) {
+        console.warn('⚠️ No recipients configured for test');
+        return { 
+          success: false, 
+          error: { 
+            message: 'No recipients configured. Please add email addresses before testing.' 
+          } 
+        };
+      }
 
+      console.log('📧 Recipients configured:', this.recipients);
       
       // Get a few low stock items for testing
       const lowStockItems = await getLowStockAlerts();
@@ -505,13 +741,15 @@ ${formatDate(new Date())}
           }
         ];
         
-        await this.sendLowStockNotification(mockItems);
+        console.log('🔬 Using mock data for testing');
+        const result = await this.sendLowStockNotification(mockItems);
+        return result;
       } else {
-        await this.sendLowStockNotification(lowStockItems.slice(0, 5)); // Send max 5 for testing
+        console.log('📦 Using real low stock data for testing');
+        const result = await this.sendLowStockNotification(lowStockItems.slice(0, 5)); // Send max 5 for testing
+        return result;
       }
-      
 
-      return { success: true };
     } catch (error) {
       console.error('❌ Error testing notification:', error);
       return { success: false, error };

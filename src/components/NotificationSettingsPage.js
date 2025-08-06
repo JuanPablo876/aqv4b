@@ -8,7 +8,14 @@ const NotificationSettingsPage = () => {
     enabled: true,
     checkInterval: 6 * 60 * 60 * 1000, // 6 hours in milliseconds
     isRunning: false,
-    lastCheck: null
+    lastCheck: null,
+    notificationTypes: {
+      lowStock: { enabled: true, label: 'Stock Bajo', description: 'Productos con stock por debajo del mínimo' },
+      outOfStock: { enabled: true, label: 'Sin Stock', description: 'Productos completamente agotados' },
+      expiredProducts: { enabled: false, label: 'Productos Vencidos', description: 'Productos que han pasado su fecha de vencimiento' },
+      maintenanceDue: { enabled: false, label: 'Mantenimiento Vencido', description: 'Equipos que requieren mantenimiento' },
+      orderReminders: { enabled: false, label: 'Recordatorios de Pedidos', description: 'Recordatorios de pedidos pendientes' }
+    }
   });
   
   const [newRecipient, setNewRecipient] = useState('');
@@ -30,11 +37,18 @@ const NotificationSettingsPage = () => {
     setMessage({ type: '', text: '' });
 
     try {
-      emailNotificationService.updateSettings(settings);
+      console.log('💾 Saving notification settings...', settings);
+      
+      // Use updateSettings which will also call saveSettings internally
+      await emailNotificationService.updateSettings(settings);
+      
+      console.log('✅ Settings saved successfully');
       setMessage({ type: 'success', text: 'Configuración guardada exitosamente' });
-      loadSettings(); // Reload to get updated state
+      
+      // Reload to get updated state
+      loadSettings(); 
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error('❌ Error saving settings:', error);
       setMessage({ type: 'error', text: 'Error al guardar configuración: ' + error.message });
     } finally {
       setLoading(false);
@@ -74,6 +88,17 @@ const NotificationSettingsPage = () => {
     } finally {
       setTesting(false);
     }
+  };
+
+  const handleNotificationTypeChange = (typeKey, enabled) => {
+    const updatedTypes = {
+      ...settings.notificationTypes,
+      [typeKey]: {
+        ...settings.notificationTypes[typeKey],
+        enabled
+      }
+    };
+    setSettings({ ...settings, notificationTypes: updatedTypes });
   };
 
   const formatInterval = (milliseconds) => {
@@ -323,6 +348,63 @@ const NotificationSettingsPage = () => {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </VenetianTile>
+
+        {/* Notification Types */}
+        <VenetianTile className="lg:col-span-2">
+          <div className="p-6">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
+              <span className="mr-2">🔔</span>
+              Tipos de Notificaciones
+            </h3>
+            
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              Selecciona qué tipos de notificaciones quieres recibir por email
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {settings.notificationTypes && Object.entries(settings.notificationTypes).map(([key, type]) => (
+                <div key={key} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex items-center mt-1">
+                      <input
+                        type="checkbox"
+                        id={`notification-${key}`}
+                        checked={type.enabled || false}
+                        onChange={(e) => handleNotificationTypeChange(key, e.target.checked)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <label htmlFor={`notification-${key}`} className="block text-sm font-medium text-gray-900 dark:text-white cursor-pointer">
+                        {type.label}
+                      </label>
+                      {type.description && (
+                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {type.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+              <div className="flex items-start">
+                <span className="text-yellow-500 mr-2 mt-0.5">⚠️</span>
+                <div>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
+                    Nota sobre tipos de notificaciones
+                  </p>
+                  <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                    Actualmente solo están implementadas las notificaciones de "Stock Bajo" y "Sin Stock". 
+                    Los demás tipos se habilitarán en futuras actualizaciones.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </VenetianTile>
