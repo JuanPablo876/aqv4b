@@ -20,7 +20,8 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
     validUntil: '',
     status: 'pending',
     items: [],
-    notes: ''
+    notes: '',
+    google_maps_link: '' // Added google_maps_link field
   });
   const [selectedProductToAdd, setSelectedProductToAdd] = useState('');
   const [productQuantityToAdd, setProductQuantityToAdd] = useState(1);
@@ -148,34 +149,22 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
       newQuote.client_id;
       
     if (!hasValidClient || newQuote.items.length === 0 || !newQuote.validUntil) {
-      alert('Por favor, completa la información del cliente, agrega al menos un producto y define la fecha de validez.');
+      alert('Por favor, completa todos los campos obligatorios antes de guardar.');
       return;
     }
     
     setSaving(true);
     try {
-      const subtotal = calculateSubtotal(newQuote.items);
-      const discount = calculateDiscount(newQuote.items);
-      const tax = calculateTax(subtotal, discount);
-      const total = subtotal - discount + tax;
-      
-      const quoteToSave = {
-        client_id: newQuote.client_id,
-        date: newQuote.date,
-        valid_until: newQuote.validUntil,
-        status: newQuote.status,
-        quote_number: generateNextQuoteNumber(),
-        subtotal,
-        discount,
-        tax,
-        total,
-        notes: newQuote.notes
+      const quoteData = {
+        ...newQuote,
+        google_maps_link: newQuote.google_maps_link // Ensure google_maps_link is included
       };
-      
-      await onSave(quoteToSave);
-      onClose();
+
+      await saveQuoteToDatabase(quoteData); // Assuming saveQuoteToDatabase handles the API call
+      alert('Cotización guardada exitosamente.');
+      onSave();
     } catch (error) {
-      console.error('❌ Error saving quote:', error);
+      console.error('Error al guardar la cotización:', error);
       alert('Error al guardar la cotización: ' + error.message);
     } finally {
       setSaving(false);
@@ -445,6 +434,20 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
                 </div>
               </>
             )}
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Google Maps Link
+              </label>
+              <input
+                type="url"
+                name="google_maps_link"
+                value={newQuote.google_maps_link}
+                onChange={handleInputChange}
+                placeholder="https://maps.google.com/..."
+                className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100"
+              />
+            </div>
             
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
