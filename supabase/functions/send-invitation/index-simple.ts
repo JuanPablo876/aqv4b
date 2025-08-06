@@ -15,7 +15,7 @@ serve(async (req) => {
   try {
     const { email, role } = await req.json()
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-    const APP_URL = Deno.env.get('APP_URL') || 'http://localhost:3000'
+    const APP_URL = Deno.env.get('APP_URL') || 'http://www.aqualiquim.mx'
 
     // Simple email with Resend
     const emailData = {

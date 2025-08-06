@@ -41,29 +41,29 @@ const LoginComponent = () => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="bg-white shadow-2xl rounded-2xl px-8 py-8 w-full max-w-md border border-gray-100">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
-          <p className="text-gray-600">Sign in to your account</p>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8">
+      <div className="bg-white shadow-2xl rounded-2xl px-4 sm:px-8 py-6 sm:py-8 w-full max-w-md border border-gray-100">
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
+          <p className="text-gray-600 text-sm sm:text-base">Sign in to your account</p>
         </div>
 
         {errorMessage && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-3 rounded-lg mb-4 sm:mb-6 text-xs sm:text-sm">
             {errorMessage}
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-6">
+        <form onSubmit={handleLogin} className="space-y-4 sm:space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="email" className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
               Email Address
             </label>
             <input
               id="email"
               type="email"
               placeholder="you@example.com"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm sm:text-base"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
@@ -72,12 +72,12 @@ const LoginComponent = () => {
 
           <div>
             <div className="flex justify-between items-center mb-2">
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700">
                 Password
               </label>
               <Link 
                 to="/forgot-password" 
-                className="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                className="text-xs sm:text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
               >
                 ¿Olvidaste tu contraseña?
               </Link>
@@ -86,7 +86,7 @@ const LoginComponent = () => {
               id="password"
               type="password"
               placeholder="••••••••"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="w-full px-3 sm:px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-sm sm:text-base"
               value={password}
               onChange={e => setPassword(e.target.value)}
               required

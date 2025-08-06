@@ -64,6 +64,7 @@ body {
   }
 
   .dark {
+  /* Force horizontal scrollbar when viewport shrinks below 640px (~200% zoom) */
     /* Dark theme colors */
     --background: 17 24 39; /* gray-900 */
     --foreground: 243 244 246; /* gray-100 */
@@ -654,5 +655,11 @@ body {
   
   .hover\:bg-primary\/20:hover {
     background-color: rgba(var(--primary), 0.2) !important;
+  }
+  
+  /* Touch target for mobile devices */
+  .touch-target {
+    min-height: 44px; /* iOS recommended touch target size */
+    min-width: 44px;
   }
 }

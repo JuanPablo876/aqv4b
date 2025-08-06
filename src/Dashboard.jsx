@@ -33,7 +33,11 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // On mobile, start with sidebar collapsed (hidden)
+    // On desktop, start with sidebar expanded (visible)
+    return typeof window !== 'undefined' && window.innerWidth < 640;
+  });
   
   // Initialize database when dashboard loads
   const { isInitialized, isLoading, error } = useDatabaseInit();
@@ -112,6 +116,10 @@ export default function Dashboard() {
 
   const handleSidebarToggle = (collapsed) => {
     setSidebarCollapsed(collapsed);
+  };
+
+  const handleMobileMenuToggle = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
   };
 
   // Page title mapping
@@ -309,11 +317,20 @@ export default function Dashboard() {
       )}
       
       {/* Sidebar */}
+      {/* Mobile sidebar overlay */}
+      {!sidebarCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
+          onClick={handleMobileMenuToggle}
+        />
+      )}
+
       <LayoutSidebar 
         activePage={activePage} 
         setActivePage={setActivePage}
         session={session}
         onSidebarToggle={handleSidebarToggle}
+        mobileMenuOpen={!sidebarCollapsed}
       />
       
       {/* Header */}
@@ -321,11 +338,12 @@ export default function Dashboard() {
         title={pageTitles[activePage]} 
         session={session} 
         setActivePage={setActivePage}
+        onMobileMenuToggle={handleMobileMenuToggle}
       />
       
       {/* Main Content */}
-      <div className={`fixed top-16 right-0 bottom-0 overflow-auto transition-all duration-300 ${sidebarCollapsed ? 'left-16' : 'left-64'}`}>
-        <div className="p-6 max-w-full content-wrapper">
+      <div className={`fixed top-14 sm:top-16 right-0 bottom-0 overflow-auto transition-all duration-300 ${sidebarCollapsed ? 'left-0 sm:left-16' : 'left-0 sm:left-64'}`}>
+        <div className="p-3 sm:p-6 max-w-full content-wrapper">
           <div className="max-w-7xl mx-auto">
             {renderPageContent()}
           </div>
