@@ -6,14 +6,16 @@ import { sendQuoteEmail, printQuote } from '../utils/emailPrint';
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
 import { cleanFormData } from '../utils/formValidation';
 import { generateUniqueOrderNumber } from '../utils/orderNumberGenerator';
+import { useIsAdmin } from '../hooks/useRBAC';
 import VenetianTile from './VenetianTile';
 import QuotesAddModal from './QuotesAddModal'; // Import the new modal
 
 const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSelectedClientForQuote }) => {
-  const { data: quotesList, loading: quotesLoading, error: quotesError, update: updateQuote, create: createQuote } = useQuotes();
+  const { data: quotesList, loading: quotesLoading, error: quotesError, update: updateQuote, create: createQuote, delete: deleteQuote } = useQuotes();
   const { data: clientsList, loading: clientsLoading } = useClients();
   const { data: productsList, loading: productsLoading } = useProducts();
   const { data: ordersList, create: createOrder } = useOrders();
+  const isAdmin = useIsAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'created_at', direction: 'desc' });
   const [statusFilter, setStatusFilter] = useState('');
@@ -30,6 +32,24 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
       setIsAddQuoteModalOpen(true);
     }
   }, [preSelectedClient]);
+  
+  // Handle delete quote
+  const handleDeleteQuote = async (quote) => {
+    if (!isAdmin) {
+      alert('Solo los administradores pueden eliminar cotizaciones.');
+      return;
+    }
+    
+    if (window.confirm(`¿Estás seguro de que deseas eliminar la cotización ${quote.quote_number}? Esta acción no se puede deshacer.`)) {
+      try {
+        await deleteQuote(quote.id);
+        handleSuccess('Cotización eliminada exitosamente');
+        setSelectedQuote(null);
+      } catch (error) {
+        handleError('Error al eliminar cotización', error);
+      }
+    }
+  };
   
   if (quotesLoading || clientsLoading || productsLoading) {
     return <div className="p-6">Cargando cotizaciones...</div>;
@@ -541,7 +561,7 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
                       Ver
                     </button>
                     <button 
-                      className="text-gray-600 hover:text-gray-900"
+                      className="text-gray-600 hover:text-gray-900 mr-3"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditQuote(quote);
@@ -549,6 +569,17 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
                     >
                       Editar
                     </button>
+                    {isAdmin && (
+                      <button 
+                        className="text-red-600 hover:text-red-900"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteQuote(quote);
+                        }}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -761,6 +792,18 @@ const QuotesPage = ({ showModal, setShowModal, preSelectedClient = null, setSele
                       </>
                     )}
                   </button>
+                  
+                  {isAdmin && (
+                    <button 
+                      onClick={() => handleDeleteQuote(selectedQuote)}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center space-x-2"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                      <span>Eliminar</span>
+                    </button>
+                  )}
                 </div>
                 
                 {selectedQuote.status === 'pending' && (

@@ -349,45 +349,41 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
   
   // Handle save new client
   const handleSaveClient = async () => {
-    await handleFormSubmission(
-      async () => {
-        // Validate form data
-        const validation = validateFormData(newClient, formSchemas.client);
-        if (!validation.isValid) {
-          setFormErrors(validation.errors);
-          throw new Error('Por favor corrige los errores en el formulario');
-        }
+    await handleFormSubmission(async () => {
+      // Validate form data
+      const validation = validateFormData(newClient, formSchemas.client);
+      if (!validation.isValid) {
+        setFormErrors(validation.errors);
+        throw new Error('Por favor corrige los errores en el formulario');
+      }
 
-        // Clean and prepare data
-        const cleanedData = cleanFormData(validation.data);
-        const clientData = {
-          ...cleanedData,
-          last_purchase: new Date().toISOString().split('T')[0],
-          total_spent: 0
-        };
-        
-        await create(clientData);
-        
-        // Reset form and close modal
-        setIsAddModalOpen(false);
-        setNewClient({
-          name: '',
-          contact: '',
-          email: '',
-          phone: '',
-          address: '',
-          google_maps_link: '',
-          type: '',
-          status: 'active',
-          rfc: ''
-        });
-        setFormErrors({});
-        
-        handleSuccess('Cliente creado exitosamente');
-      },
-      setIsSubmitting,
-      'create client'
-    );
+      // Clean and prepare data
+      const cleanedData = cleanFormData(validation.data);
+      const clientData = {
+        ...cleanedData,
+        last_purchase: new Date().toISOString().split('T')[0],
+        total_spent: 0
+      };
+      
+      await create(clientData);
+      
+      // Reset form and close modal
+      setIsAddModalOpen(false);
+      setNewClient({
+        name: '',
+        contact: '',
+        email: '',
+        phone: '',
+        address: '',
+        google_maps_link: '',
+        type: '',
+        status: 'active',
+        rfc: ''
+      });
+      setFormErrors({});
+      
+      return 'Cliente creado exitosamente';
+    });
   };
   
   // Handle close client details
@@ -397,29 +393,25 @@ const ClientsPage = ({ setActivePage, setSelectedClientForQuote, setSelectedClie
 
   // Handle save edited client
   const handleSaveEditedClient = async () => {
-    await handleFormSubmission(
-      async () => {
-        // Validate form data
-        const validation = validateFormData(editingClient, formSchemas.client);
-        if (!validation.isValid) {
-          setFormErrors(validation.errors);
-          throw new Error('Por favor corrige los errores en el formulario');
-        }
+    await handleFormSubmission(async () => {
+      // Validate form data
+      const validation = validateFormData(editingClient, formSchemas.client);
+      if (!validation.isValid) {
+        setFormErrors(validation.errors);
+        throw new Error('Por favor corrige los errores en el formulario');
+      }
 
-        // Clean and update data
-        const cleanedData = cleanFormData(validation.data);
-        await update(editingClient.id, cleanedData);
-        
-        // Reset form and close modal
-        setIsEditModalOpen(false);
-        setEditingClient(null);
-        setFormErrors({});
-        
-        handleSuccess('Cliente actualizado exitosamente');
-      },
-      setIsSubmitting,
-      'update client'
-    );
+      // Clean and update data
+      const cleanedData = cleanFormData(validation.data);
+      await update(editingClient.id, cleanedData);
+      
+      // Reset form and close modal
+      setIsEditModalOpen(false);
+      setEditingClient(null);
+      setFormErrors({});
+      
+      return 'Cliente actualizado exitosamente';
+    });
   };
 
   // Handle input change for editing client

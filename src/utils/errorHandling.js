@@ -126,39 +126,20 @@ export const withErrorHandling = async (operation, context, successMessage, erro
 /**
  * Form submission wrapper with error handling
  * @param {Function} submitFn - Form submission function
- * @param {Object} formData - Form data
- * @param {string} context - Context description
- * @param {string} successMessage - Success message
- * @param {Function} onSuccess - Success callback
- * @param {Function} onError - Error callback
+ * @param {string} context - Optional context description
  */
-export const handleFormSubmission = async (
-  submitFn, 
-  formData, 
-  context, 
-  successMessage, 
-  onSuccess, 
-  onError
-) => {
+export const handleFormSubmission = async (submitFn, context = 'operation') => {
   try {
-    const result = await submitFn(formData);
+    const result = await submitFn();
     
-    if (successMessage) {
-      handleSuccess(successMessage, context);
-    }
-    
-    if (onSuccess) {
-      onSuccess(result);
+    // If the result is a string, treat it as a success message
+    if (typeof result === 'string') {
+      handleSuccess(result, context);
     }
     
     return result;
   } catch (error) {
-    const errorMessage = handleError(error, context, `Error en ${context}`, false);
-    
-    if (onError) {
-      onError(error, errorMessage);
-    }
-    
+    handleError(error, context, `Error en ${context}`);
     throw error;
   }
 };

@@ -4,6 +4,7 @@ import { formatCurrency, formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
 import { cleanFormData } from '../utils/formValidation';
+import { useIsAdmin } from '../hooks/useRBAC';
 import maintenanceService from '../services/maintenanceService';
 import VenetianTile from './VenetianTile';
 import MaintenancesAddModal from './MaintenancesAddModal';
@@ -16,6 +17,9 @@ const MaintenancesPage = () => {
   
   const { data: clientsList = [], loading: clientsLoading } = useData('clients');
   const { data: employeesList = [], loading: employeesLoading } = useData('employees');
+  
+  // RBAC for admin permissions
+  const isAdmin = useIsAdmin();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'next_service_date', direction: 'asc' });
@@ -147,6 +151,23 @@ const MaintenancesPage = () => {
   const handleEditMaintenance = (maintenance) => {
     setEditingMaintenance({ ...maintenance });
     setIsEditModalOpen(true);
+  };
+
+  // Handle delete maintenance (admin only)
+  const handleDeleteMaintenance = async (maintenanceId) => {
+    if (!isAdmin) {
+      handleError('No tienes permisos para eliminar mantenimientos');
+      return;
+    }
+
+    if (window.confirm('¿Estás seguro de que deseas eliminar este mantenimiento? Esta acción no se puede deshacer.')) {
+      await handleFormSubmission(async () => {
+        await maintenanceService.deleteMaintenance(maintenanceId);
+        await loadMaintenances(); // Reload data
+        await loadMaintenanceStats(); // Update stats
+        return 'Mantenimiento eliminado exitosamente';
+      });
+    }
   };
 
   // Handle save edited maintenance
@@ -506,6 +527,14 @@ const MaintenancesPage = () => {
                       >
                         Historial
                       </button>
+                      {isAdmin && (
+                        <button
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-200"
+                          onClick={() => handleDeleteMaintenance(maintenance.id)}
+                        >
+                          Eliminar
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -615,27 +644,43 @@ const MaintenancesPage = () => {
                   </select>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setIsEditModalOpen(false);
-                    }}
-                    className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSaveEditedMaintenance();
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
-                  >
-                    Guardar Cambios
-                  </button>
+                <div className="flex justify-between pt-4">
+                  <div>
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsEditModalOpen(false);
+                          handleDeleteMaintenance(editingMaintenance.id);
+                        }}
+                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200"
+                      >
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setIsEditModalOpen(false);
+                      }}
+                      className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleSaveEditedMaintenance();
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-200"
+                    >
+                      Guardar Cambios
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   table_name VARCHAR(100) NOT NULL,
   record_id UUID,
   action VARCHAR(20) NOT NULL CHECK (action IN ('CREATE', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT')),
-  user_id UUID REFERENCES employees(id),
+  user_id UUID REFERENCES employees(id) ON DELETE SET NULL,
   user_email VARCHAR(255),
   user_name VARCHAR(255),
   old_values JSONB,

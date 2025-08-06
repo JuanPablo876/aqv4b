@@ -28,8 +28,26 @@ class AuditService {
       
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        // Try to find corresponding employee record by email
+        let employeeId = null;
+        try {
+          const { data: employee } = await supabase
+            .from('employees')
+            .select('id')
+            .eq('email', user.email)
+            .single();
+          
+          if (employee) {
+            employeeId = employee.id;
+          }
+        } catch (error) {
+          // Employee not found, continue without employee ID
+          console.log('No employee record found for auth user:', user.email);
+        }
+
         this.currentUser = {
-          id: user.id,
+          id: employeeId, // Use employee ID if found, otherwise null
+          auth_id: user.id, // Keep auth ID for reference
           email: user.email,
           name: user.user_metadata?.name || user.email
         };
@@ -76,7 +94,7 @@ class AuditService {
         table_name: tableName,
         record_id: recordId,
         action: action.toUpperCase(),
-        user_id: this.currentUser?.id,
+        user_id: this.currentUser?.id || null, // Will be null if no employee record found
         user_email: this.currentUser?.email,
         user_name: this.currentUser?.name,
         old_values: oldValues,
@@ -88,7 +106,8 @@ class AuditService {
         description: description || this.generateDescription(action, tableName, changedFields),
         metadata: {
           ...metadata,
-          client_timestamp: clientInfo.timestamp
+          client_timestamp: clientInfo.timestamp,
+          auth_user_id: this.currentUser?.auth_id // Keep auth ID for reference
         }
       };
 
@@ -98,7 +117,10 @@ class AuditService {
 
       if (error) {
         console.error('Error creating audit log:', error);
+        console.error('Failed audit log data:', auditLog);
         // Don't throw error to avoid breaking the main operation
+      } else {
+        console.log('Audit log created successfully for:', action, tableName);
       }
 
       return auditLog;

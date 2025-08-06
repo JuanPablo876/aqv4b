@@ -4,6 +4,7 @@ import { formatDate } from '../utils/storage';
 import { filterBySearchTerm, sortByField, getStatusColorClass } from '../utils/helpers';
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
 import { cleanFormData } from '../utils/formValidation';
+import { useIsAdmin } from '../hooks/useRBAC';
 import VenetianTile from './VenetianTile';
 import ProtectedRoute from './ProtectedRoute';
 import { employeeActivityService } from '../services/employeeActivityService';
@@ -16,7 +17,10 @@ import {
 } from '../utils/employeeActivityUtils';
 
 const EmployeesPageContent = () => {
-  const { data: employeesList, loading: employeesLoading, create: createEmployee, update: updateEmployee } = useEmployees();
+  const { data: employeesList, loading: employeesLoading, create: createEmployee, update: updateEmployee, delete: deleteEmployee } = useEmployees();
+  
+  // RBAC for admin permissions
+  const isAdmin = useIsAdmin();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
@@ -164,6 +168,21 @@ const EmployeesPageContent = () => {
     setSelectedEmployee(null);
     setActivityData(null);
     setLoadingActivity(false);
+  };
+
+  // Handle delete employee (admin only)
+  const handleDeleteEmployee = async (employeeId) => {
+    if (!isAdmin) {
+      handleError('No tienes permisos para eliminar empleados');
+      return;
+    }
+
+    if (window.confirm('¿Estás seguro de que deseas eliminar este empleado? Esta acción no se puede deshacer.')) {
+      await handleFormSubmission(async () => {
+        await deleteEmployee(employeeId);
+        return 'Empleado eliminado exitosamente';
+      });
+    }
   };
   
   return (
@@ -358,7 +377,7 @@ const EmployeesPageContent = () => {
                       Ver
                     </button>
                     <button 
-                      className="text-gray-600 hover:text-gray-900"
+                      className="text-gray-600 hover:text-gray-900 mr-3"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditEmployee(employee);
@@ -366,6 +385,17 @@ const EmployeesPageContent = () => {
                     >
                       Editar
                     </button>
+                    {isAdmin && (
+                      <button 
+                        className="text-red-600 hover:text-red-900"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteEmployee(employee.id);
+                        }}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -770,34 +800,50 @@ const EmployeesPageContent = () => {
                 />
               </div>
               
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleCloseEditModal();
-                  }}
-                  className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Cancelar
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    await handleFormSubmission(async () => {
-                      const cleanedData = cleanFormData(newEmployee);
-                      await updateEmployee(selectedEmployee.id, cleanedData);
-                      setIsEditModalOpen(false);
-                      setSelectedEmployee(null);
-                      return 'Empleado actualizado exitosamente';
-                    });
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Actualizar Empleado
-                </button>
+              <div className="flex justify-between pt-4">
+                <div>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleCloseEditModal();
+                        handleDeleteEmployee(selectedEmployee.id);
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    >
+                      Eliminar
+                    </button>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleCloseEditModal();
+                    }}
+                    className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    Cancelar
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      await handleFormSubmission(async () => {
+                        const cleanedData = cleanFormData(newEmployee);
+                        await updateEmployee(selectedEmployee.id, cleanedData);
+                        setIsEditModalOpen(false);
+                        setSelectedEmployee(null);
+                        return 'Empleado actualizado exitosamente';
+                      });
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    Actualizar Empleado
+                  </button>
+                </div>
               </div>
             </div>
           </VenetianTile>

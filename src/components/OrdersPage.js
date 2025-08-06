@@ -5,6 +5,7 @@ import { filterBySearchTerm, sortByField, getStatusColorClass, getOrderNumber, g
 import { alertNewOrder } from '../utils/alerts'; // Import alert utility
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
 import { cleanFormData } from '../utils/formValidation';
+import { useIsAdmin } from '../hooks/useRBAC';
 import VenetianTile from './VenetianTile';
 import PaginatedTable from './PaginatedTable';
 import OrdersAddModal from './OrdersAddModal'; // Import the new modal
@@ -24,6 +25,9 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
   const { data: clientsList, loading: clientsLoading, error: clientsError } = useClients();
   const { data: productsList, loading: productsLoading, error: productsError } = useProducts();
   const { data: employeesList, loading: employeesLoading, error: employeesError } = useEmployees();
+  
+  // RBAC for admin permissions
+  const isAdmin = useIsAdmin();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'date', direction: 'desc' });
@@ -187,15 +191,18 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
     setIsEditOrderModalOpen(true);
   };
 
-  // Handle delete order
+  // Handle delete order (admin only)
   const handleDeleteOrder = async (orderId) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta orden?')) {
-      try {
-        await remove(orderId);
-        handleSuccess('Orden eliminada exitosamente');
-      } catch (error) {
-        handleError(error, 'Error al eliminar la orden');
-      }
+    if (!isAdmin) {
+      handleError('No tienes permisos para eliminar órdenes');
+      return;
+    }
+
+    if (window.confirm('¿Estás seguro de que deseas eliminar esta orden? Esta acción no se puede deshacer.')) {
+      await handleFormSubmission(async () => {
+        await deleteOrder(orderId);
+        return 'Orden eliminada exitosamente';
+      });
     }
   };
   
@@ -384,16 +391,18 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
             >
               ✏️
             </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteOrder(item.id);
-              }}
-              className={`${getTouchOptimizedClasses('sm')} text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded p-1`}
-              title="Eliminar"
-            >
-              🗑️
-            </button>
+            {isAdmin && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteOrder(item.id);
+                }}
+                className={`${getTouchOptimizedClasses('sm')} text-red-600 hover:text-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded p-1`}
+                title="Eliminar"
+              >
+                🗑️
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -410,7 +419,7 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
     }
 
     return baseColumns;
-  }, [isMobile]);
+  }, [isMobile, isAdmin]);
 
   // Show loading state
   if (loading) {
@@ -655,7 +664,7 @@ const OrdersPage = ({ preSelectedClient = null, setSelectedClientForOrder }) => 
               item={order}
               columns={tableColumns}
               onEdit={() => handleEditOrder(order)}
-              onDelete={() => handleDeleteOrder(order.id)}
+              onDelete={isAdmin ? () => handleDeleteOrder(order.id) : undefined}
               onView={() => handleSelectOrder(order)}
               className="hover:shadow-md transition-shadow"
             />

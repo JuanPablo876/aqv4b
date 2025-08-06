@@ -4,12 +4,16 @@ import { formatCurrency, formatDate } from '../utils/storage'; // Import formatC
 import { filterBySearchTerm, sortByField } from '../utils/helpers';
 import { validateFormData, formSchemas, cleanFormData } from '../utils/formValidation';
 import { handleError, handleSuccess, handleFormSubmission } from '../utils/errorHandling';
+import { useIsAdmin } from '../hooks/useRBAC';
 import { supabase } from '../supabaseClient';
 import VenetianTile from './VenetianTile';
 
 const SuppliersPage = () => {
   const { data: suppliersList, loading: suppliersLoading, error: suppliersError, create, update, delete: deleteSupplier } = useSuppliers();
   const { data: productsList, loading: productsLoading, error: productsError } = useProducts();
+  
+  // RBAC for admin permissions
+  const isAdmin = useIsAdmin();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ field: 'name', direction: 'asc' });
   const [selectedSupplier, setSelectedSupplier] = useState(null);
@@ -235,6 +239,21 @@ const SuppliersPage = () => {
   // Handle close supplier details
   const handleCloseDetails = () => {
     setSelectedSupplier(null);
+  };
+
+  // Handle delete supplier (admin only)
+  const handleDeleteSupplier = async (supplierId) => {
+    if (!isAdmin) {
+      handleError('No tienes permisos para eliminar proveedores');
+      return;
+    }
+
+    if (window.confirm('¿Estás seguro de que deseas eliminar este proveedor? Esta acción no se puede deshacer.')) {
+      await handleFormSubmission(async () => {
+        await deleteSupplier(supplierId);
+        return 'Proveedor eliminado exitosamente';
+      });
+    }
   };
   
   // Fetch purchase history for a supplier
@@ -535,7 +554,7 @@ const SuppliersPage = () => {
                       Ver
                     </button>
                     <button 
-                      className="text-gray-600 hover:text-gray-900"
+                      className="text-gray-600 hover:text-gray-900 mr-3"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEditSupplier(supplier);
@@ -543,6 +562,17 @@ const SuppliersPage = () => {
                     >
                       Editar
                     </button>
+                    {isAdmin && (
+                      <button 
+                        className="text-red-600 hover:text-red-900"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSupplier(supplier.id);
+                        }}
+                      >
+                        Eliminar
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -685,7 +715,13 @@ const SuppliersPage = () => {
               
               <div className="flex justify-between items-center">
                 <div className="flex space-x-3">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                  <button 
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                    onClick={() => {
+                      handleCloseDetails();
+                      handleEditSupplier(selectedSupplier);
+                    }}
+                  >
                     Editar Proveedor
                   </button>
                   
@@ -697,7 +733,13 @@ const SuppliersPage = () => {
                   </button>
                 </div>
                 
-                <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                <button 
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  onClick={() => {
+                    // TODO: Implement add product functionality for this supplier
+                    alert('Funcionalidad de agregar producto aún no implementada');
+                  }}
+                >
                   Agregar Producto
                 </button>
               </div>
@@ -992,30 +1034,46 @@ const SuppliersPage = () => {
                 </div>
               </div>
               
-              <div className="mt-6 flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setIsEditModalOpen(false);
-                    setEditingSupplier(null);
-                  }}
-                  className="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Cancelar
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleSaveEditedSupplier(e);
-                  }}
-                  disabled={isSubmitting}
-                  className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {isSubmitting ? 'Actualizando...' : 'Actualizar Proveedor'}
-                </button>
+              <div className="mt-6 flex justify-between">
+                <div>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditModalOpen(false);
+                        handleDeleteSupplier(editingSupplier.id);
+                      }}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                    >
+                      Eliminar
+                    </button>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setIsEditModalOpen(false);
+                      setEditingSupplier(null);
+                    }}
+                    className="px-4 py-2 rounded-lg text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  >
+                    Cancelar
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSaveEditedSupplier(e);
+                    }}
+                    disabled={isSubmitting}
+                    className={`px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {isSubmitting ? 'Actualizando...' : 'Actualizar Proveedor'}
+                  </button>
+                </div>
               </div>
             </div>
           </VenetianTile>

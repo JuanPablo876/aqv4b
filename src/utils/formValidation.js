@@ -3,21 +3,36 @@ import { z } from 'zod';
 
 // Common validation rules
 export const validationRules = {
-  email: z.string().email('Email inválido'),
-  phone: z.string().min(10, 'Teléfono debe tener al menos 10 dígitos').optional().or(z.literal('')),
+  email: z.union([z.string().email('Email inválido'), z.literal(''), z.null()]).optional(),
+  phone: z.union([z.string(), z.literal(''), z.null()]).optional().refine(
+    (val) => {
+      if (!val || val === '' || val === null) return true; // Allow empty values
+      return val.length >= 10; // Minimum 10 digits when provided
+    },
+    { message: 'Teléfono debe tener al menos 10 dígitos' }
+  ),
   required: (fieldName) => z.string().min(1, `${fieldName} es requerido`),
-  optionalString: z.string().optional().or(z.literal('')),
+  optionalString: z.union([z.string(), z.literal(''), z.null()]).optional(),
+  optionalStringOrNumber: z.union([z.string(), z.number(), z.literal(''), z.null()]).optional().transform((val) => {
+    // Convert numbers to strings for consistency
+    if (typeof val === 'number') return val.toString();
+    return val;
+  }),
   positiveNumber: z.number().positive('Debe ser un número positivo'),
   nonNegativeNumber: z.number().min(0, 'No puede ser negativo'),
   date: z.string().min(1, 'Fecha es requerida'),
-  url: z.string().url('URL inválida').optional().or(z.literal(''))
+  url: z.union([
+    z.string().url('URL inválida'),
+    z.literal(''),
+    z.null()
+  ]).optional()
 };
 
 // Standard field validation schemas
 export const fieldSchemas = {
   // Client fields
   clientName: validationRules.required('Nombre del cliente'),
-  clientEmail: validationRules.email.optional().or(z.literal('')),
+  clientEmail: validationRules.email,
   clientPhone: validationRules.phone,
   clientAddress: validationRules.optionalString,
   
@@ -61,6 +76,7 @@ export const fieldSchemas = {
 export const formSchemas = {
   client: z.object({
     name: fieldSchemas.clientName,
+    contact: validationRules.optionalString,
     email: fieldSchemas.clientEmail,
     phone: fieldSchemas.clientPhone,
     address: fieldSchemas.clientAddress,
@@ -138,14 +154,14 @@ export const formSchemas = {
   
   supplier: z.object({
     name: validationRules.required('Nombre del proveedor'),
-    contact_person: validationRules.optionalString,
+    contact: validationRules.optionalString,
     email: fieldSchemas.clientEmail,
     phone: fieldSchemas.clientPhone,
     address: fieldSchemas.clientAddress,
-    lead_time: validationRules.optionalString,
+    lead_time: validationRules.optionalStringOrNumber,
     payment_terms: validationRules.optionalString,
-    notes: fieldSchemas.notes,
-    status: fieldSchemas.status.default('active')
+    notes: fieldSchemas.notes
+    // Removed status field - it doesn't exist in suppliers table schema
   })
 };
 
@@ -157,6 +173,23 @@ export const formSchemas = {
  */
 export const validateFormData = (data, schema) => {
   try {
+    // Check if data and schema are provided
+    if (!data) {
+      return {
+        isValid: false,
+        errors: { general: 'No data provided for validation' },
+        data: null
+      };
+    }
+    
+    if (!schema) {
+      return {
+        isValid: false,
+        errors: { general: 'No schema provided for validation' },
+        data: null
+      };
+    }
+
     const validatedData = schema.parse(data);
     return {
       isValid: true,
@@ -164,12 +197,19 @@ export const validateFormData = (data, schema) => {
       data: validatedData
     };
   } catch (error) {
+    console.error('Validation error:', error);
+    
     if (error instanceof z.ZodError) {
       const errors = {};
-      error.errors.forEach(err => {
-        const path = err.path.join('.');
-        errors[path] = err.message;
-      });
+      // Check if error.errors exists and is an array
+      if (error.errors && Array.isArray(error.errors)) {
+        error.errors.forEach(err => {
+          const path = err.path ? err.path.join('.') : 'unknown';
+          errors[path] = err.message;
+        });
+      } else {
+        errors.general = 'Validation error occurred';
+      }
       
       return {
         isValid: false,

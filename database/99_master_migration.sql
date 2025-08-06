@@ -140,5 +140,11 @@ SELECT
 FROM invoices
 WHERE status = 'pending';
 
+-- ============================================================================
+-- FIX AUDIT LOGS CONSTRAINTS
+-- ============================================================================
+\echo 'Fixing audit logs user_id constraints...'
+\i fix_audit_logs_user_id.sql
+
 \echo 'Migration completed successfully!'
 \echo 'Database is ready for the AquaPool application.'
