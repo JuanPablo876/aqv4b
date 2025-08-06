@@ -160,9 +160,9 @@ const QuotesAddModal = ({ isOpen, onClose, onSave, preSelectedClient = null }) =
         google_maps_link: newQuote.google_maps_link // Ensure google_maps_link is included
       };
 
-      await saveQuoteToDatabase(quoteData); // Assuming saveQuoteToDatabase handles the API call
+      await onSave(quoteData);
       alert('Cotización guardada exitosamente.');
-      onSave();
+      onClose();
     } catch (error) {
       console.error('Error al guardar la cotización:', error);
       alert('Error al guardar la cotización: ' + error.message);

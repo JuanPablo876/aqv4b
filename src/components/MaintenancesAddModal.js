@@ -59,9 +59,15 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
     }
     
     const maintenanceToSave = {
-      ...newMaintenance,
-      id: Date.now(), // Simple ID generation
-      last_service_employee_id: newMaintenance.last_service_employee_id ? parseInt(newMaintenance.last_service_employee_id) : null
+      client_id: newMaintenance.client_id,
+      address: newMaintenance.address,
+      google_maps_link: newMaintenance.googleMapsLink, // Convert to snake_case
+      service_type: newMaintenance.serviceType, // Convert to snake_case
+      frequency: newMaintenance.frequency,
+      last_service_date: newMaintenance.lastServiceDate, // Convert to snake_case
+      last_service_employee_id: newMaintenance.last_service_employee_id ? parseInt(newMaintenance.last_service_employee_id) : null,
+      status: newMaintenance.status,
+      notes: newMaintenance.notes
     };
     
     onSave(maintenanceToSave);
