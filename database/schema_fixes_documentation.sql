@@ -10,7 +10,10 @@ ALTER TABLE quotes ADD COLUMN IF NOT EXISTS google_maps_link TEXT;
 
 -- Note: The application code has been updated to match the existing database schema:
 -- - SuppliersPage: contact_person -> contact
+-- - SuppliersPage: Removed status field (doesn't exist in suppliers table)
 -- - EmployeesPage: googleMapsLink -> google_maps_link  
 -- - MaintenancesAddModal: camelCase fields -> snake_case fields
+-- - MaintenancesAddModal: Fixed last_service_employee_id UUID handling (don't parse as integer)
 -- - QuotesAddModal: google_maps_link field added to both app and database
 -- - QuotesAddModal: Fixed to only send valid database fields (not clientName, clientEmail, etc.)
+-- - useData.js: Fixed quote_items mapping (productId -> product_id)

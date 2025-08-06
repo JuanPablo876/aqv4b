@@ -30,8 +30,8 @@ const SuppliersPage = () => {
     address: '',
     lead_time: '', // Fixed: use 'lead_time' to match database field name
     payment_terms: '', // Fixed: use 'payment_terms' to match database field name
-    notes: '',
-    status: 'active'
+    notes: ''
+    // Removed status field - it doesn't exist in suppliers table schema
   });
 
   // Combined loading state
@@ -168,8 +168,8 @@ const SuppliersPage = () => {
           address: '',
           lead_time: '',
           payment_terms: '',
-          notes: '',
-          status: 'active'
+          notes: ''
+          // Removed status field - it doesn't exist in suppliers table schema
         });
         setFormErrors({});
         
@@ -976,21 +976,6 @@ const SuppliersPage = () => {
                     onChange={handleEditInputChange}
                     className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Estado
-                  </label>
-                  <select
-                    name="status"
-                    value={editingSupplier.status || 'active'}
-                    onChange={handleEditInputChange}
-                    className="w-full px-3 py-2 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="active">Activo</option>
-                    <option value="inactive">Inactivo</option>
-                  </select>
                 </div>
                 
                 <div className="md:col-span-2">

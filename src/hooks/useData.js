@@ -608,8 +608,11 @@ export const useQuotes = (options) => {
       // Then create the quote items using direct Supabase query
       if (items && items.length > 0) {
         const quoteItems = items.map(item => ({
-          ...item,
-          quote_id: createdQuote.id
+          quote_id: createdQuote.id,
+          product_id: item.productId, // Convert camelCase to snake_case
+          quantity: item.quantity,
+          price: item.price,
+          discount: item.discount || 0
         }));
         
         const { data: savedItems, error: itemsError } = await supabase

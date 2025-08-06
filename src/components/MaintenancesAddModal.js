@@ -65,7 +65,7 @@ const MaintenancesAddModal = ({ isOpen, onClose, onSave }) => {
       service_type: newMaintenance.serviceType, // Convert to snake_case
       frequency: newMaintenance.frequency,
       last_service_date: newMaintenance.lastServiceDate, // Convert to snake_case
-      last_service_employee_id: newMaintenance.last_service_employee_id ? parseInt(newMaintenance.last_service_employee_id) : null,
+      last_service_employee_id: newMaintenance.last_service_employee_id || null, // Keep as UUID string, don't parse as integer
       status: newMaintenance.status,
       notes: newMaintenance.notes
     };
