@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { usePermission } from '../hooks/useRBAC';
+import { useAuthManager } from '../hooks/useAuthManager';
 import rbacService from '../services/rbacService';
 
 const RBACDebugPage = () => {
   const { session } = useAuth();
+  const { user: authUser, loading: authLoading } = useAuthManager();
   const [debugInfo, setDebugInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -15,19 +17,20 @@ const RBACDebugPage = () => {
 
   useEffect(() => {
     const loadDebugInfo = async () => {
-      if (!session?.user) {
+      if (!authUser || authLoading) {
         setLoading(false);
         return;
       }
 
       try {
-        // Force re-initialize RBAC
-        await rbacService.initialize();
+        // RBAC will auto-initialize via AuthManager subscription
+        // Just wait a moment for it to complete
+        await new Promise(resolve => setTimeout(resolve, 100));
         
         const info = {
           user: {
-            id: session.user.id,
-            email: session.user.email,
+            id: authUser.id,
+            email: authUser.email,
           },
           rbacInitialized: rbacService.initialized,
           userRoles: rbacService.userRoles,
@@ -49,10 +52,11 @@ const RBACDebugPage = () => {
     };
 
     loadDebugInfo();
-  }, [session]);
+  }, [authUser, authLoading]);
 
   const refreshRBAC = async () => {
     setLoading(true);
+    // Force refresh RBAC via AuthManager refresh
     await rbacService.initialize();
     window.location.reload(); // Force reload to refresh hooks
   };

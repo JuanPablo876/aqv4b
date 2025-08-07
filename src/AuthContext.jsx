@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import authManager from './services/authManager'
 
 const AuthContext = createContext({ session: null })
 
@@ -8,37 +9,71 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-// console.log('🔄 AuthContext: Getting initial session...')
-    supabase.auth.getSession().then(({ data, error }) => {
-// console.log('📋 AuthContext: Initial session result:', { session: data.session, error })
-      setSession(data.session)
+    console.log('🔄 AuthContext: Initializing with AuthManager...')
+    
+    // Subscribe to AuthManager state changes
+    const unsubscribe = authManager.subscribe((user, session) => {
+      console.log('📋 AuthContext: Auth state updated via AuthManager:', { user: user?.email, hasSession: !!session })
+      setSession(session)
       setLoading(false)
     })
     
-// console.log('👂 AuthContext: Setting up auth state listener...')
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-// console.log('🔔 AuthContext: Auth state changed:', { event, session })
-      setSession(session)
+    // Setup the auth listener through AuthManager
+    const authSubscription = authManager.setupAuthListener()
+    
+    // Initialize AuthManager
+    authManager.initialize().then(() => {
+      setLoading(false)
+    }).catch((error) => {
+      console.error('AuthManager initialization failed:', error)
+      setLoading(false)
     })
     
     return () => { 
-// console.log('🧹 AuthContext: Cleaning up listener...')
-      listener.subscription.unsubscribe() 
+      console.log('🧹 AuthContext: Cleaning up listeners...')
+      unsubscribe()
+      authSubscription?.unsubscribe()
     }
   }, [])
 
-  // wrap supabase.auth.signInWithPassword
-  const signIn = (email, password) =>
-    supabase.auth.signInWithPassword({ email, password })
+  // wrap supabase.auth.signInWithPassword but refresh AuthManager after
+  const signIn = async (email, password) => {
+    const result = await supabase.auth.signInWithPassword({ email, password })
+    if (result.data?.session) {
+      // Force refresh AuthManager to update cache
+      await authManager.refresh()
+    }
+    return result
+  }
 
-  const signUp = (email, password) =>
-    supabase.auth.signUp({ email, password })
+  const signUp = async (email, password) => {
+    const result = await supabase.auth.signUp({ email, password })
+    if (result.data?.session) {
+      await authManager.refresh()
+    }
+    return result
+  }
 
-  const signOut = () =>
-    supabase.auth.signOut()
+  const signOut = async () => {
+    const result = await supabase.auth.signOut()
+    authManager.resetState()
+    return result
+  }
 
   return (
-    <AuthContext.Provider value={{ session, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ 
+      session, 
+      loading, 
+      signIn, 
+      signUp, 
+      signOut,
+      // Expose AuthManager methods for advanced usage
+      getCurrentUser: authManager.getCurrentUser.bind(authManager),
+      isAuthenticated: authManager.isAuthenticated.bind(authManager),
+      refreshAuth: authManager.refresh.bind(authManager),
+      // Debugging helpers
+      authManager: authManager // For direct access if needed
+    }}>
       {children}
     </AuthContext.Provider>
   )

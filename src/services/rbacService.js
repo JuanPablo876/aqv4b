@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../supabaseClient';
+import authManager from './authManager';
 
 class RBACService {
   constructor() {
@@ -11,10 +12,38 @@ class RBACService {
     this.userRoles = [];
     this.userPermissions = {};
     this.initialized = false;
+    this.initializationPromise = null;
+
+    // Subscribe to auth changes to auto-reinitialize
+    authManager.subscribe((user, session) => {
+      if (user && user.id !== this.currentUser?.id) {
+        // User changed, reinitialize
+        this.resetRBAC();
+        this.initialize();
+      } else if (!user) {
+        // User logged out
+        this.resetRBAC();
+      }
+    });
   }
 
   // Initialize RBAC for current user
   async initialize() {
+    // Prevent multiple simultaneous initializations
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    this.initializationPromise = this._performInitialization();
+    
+    try {
+      return await this.initializationPromise;
+    } finally {
+      this.initializationPromise = null;
+    }
+  }
+
+  async _performInitialization() {
     try {
       if (!supabase || !supabase.auth) {
         console.error('Supabase client not available for RBAC - check environment variables');
@@ -23,16 +52,8 @@ class RBACService {
         return false;
       }
 
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        // Only log error if it's not a session missing error (which is normal when not logged in)
-        if (userError.name !== 'AuthSessionMissingError') {
-          console.error('Error getting user in RBAC:', userError);
-        }
-        this.resetRBAC();
-        return false;
-      }
+      // Use AuthManager instead of direct supabase.auth.getUser()
+      const user = await authManager.getCurrentUser();
       
       if (!user) {
         // User not logged in - this is normal, don't log as warning
@@ -87,6 +108,13 @@ class RBACService {
       if (rolesError) {
         console.error('Error loading user roles:', rolesError);
         console.error('Database tables might not exist or RLS policies blocking access');
+        
+        // Try alternative approach - look up by email in employees table
+        if (rolesError.code === 'PGRST116' || rolesError.message?.includes('does not exist')) {
+          console.log('🔄 RBAC: Trying alternative user lookup by email...');
+          return await this.tryAlternativeRoleLookup();
+        }
+        
         this.userRoles = [];
         this.userPermissions = {};
         return;
@@ -94,6 +122,12 @@ class RBACService {
 
       this.userRoles = userRoles || [];
       console.log('Loaded user roles:', this.userRoles.map(r => r.role?.name));
+
+      // If no roles found, try alternative lookup
+      if (this.userRoles.length === 0) {
+        console.log('🔄 RBAC: No roles found by user ID, trying alternative lookup...');
+        await this.tryAlternativeRoleLookup();
+      }
 
       // Load permissions for the user's roles
       if (this.userRoles.length > 0) {
@@ -121,6 +155,57 @@ class RBACService {
       console.error('Error in loadUserRoles:', error);
       this.userRoles = [];
       this.userPermissions = {};
+    }
+  }
+
+  /**
+   * Try alternative role lookup when primary method fails
+   */
+  async tryAlternativeRoleLookup() {
+    try {
+      if (!this.currentUser?.email) return;
+
+      console.log('🔍 RBAC: Attempting alternative role lookup for:', this.currentUser.email);
+
+      // Look up user in employees table
+      const { data: employee, error: empError } = await supabase
+        .from('employees')
+        .select('id, email, role')
+        .eq('email', this.currentUser.email)
+        .single();
+
+      if (empError) {
+        console.log('No employee record found for user');
+        return;
+      }
+
+      if (employee) {
+        console.log('📋 RBAC: Found employee record:', employee);
+        
+        // If employee has a role field, try to find matching role
+        if (employee.role) {
+          const { data: role, error: roleError } = await supabase
+            .from('roles')
+            .select('*')
+            .eq('name', employee.role)
+            .single();
+
+          if (!roleError && role) {
+            console.log('✅ RBAC: Found role from employee record:', role.name);
+            
+            // Create a pseudo user-role entry
+            this.userRoles = [{
+              role_id: role.id,
+              role: role,
+              user_id: this.currentUser.id,
+              is_active: true,
+              source: 'employee_table'
+            }];
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Alternative role lookup failed:', error);
     }
   }
 

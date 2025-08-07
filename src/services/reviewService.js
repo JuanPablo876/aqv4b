@@ -1,5 +1,6 @@
 // Review Service - Handles all review-related operations
 import { supabase } from '../supabaseClient';
+import authManager from './authManager';
 
 export const reviewService = {
   // Get all reviews with optional filters
@@ -132,7 +133,8 @@ export const reviewService = {
   // Create a new review
   async createReview(reviewData) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Use AuthManager instead of direct supabase.auth.getUser()
+      const user = await authManager.getCurrentUser();
       
       const newReview = {
         ...reviewData,
@@ -194,7 +196,8 @@ export const reviewService = {
   // Respond to a review
   async respondToReview(id, response) {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Use AuthManager instead of direct supabase.auth.getUser()
+      const user = await authManager.getCurrentUser();
       
       const { data, error } = await supabase
         .from('reviews')

@@ -2,8 +2,78 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
+}
+
+// Global variables for token caching and reuse
+let cachedAuthHeaders: Record<string, string> | null = null
+let authCacheTimestamp = 0
+const AUTH_CACHE_DURATION = 3600000 // 1 hour in milliseconds
+
+// Initialize authentication headers and cache them
+const initializeAuth = () => {
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+  const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@aqualiquim.mx'
+  
+  if (!RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is required')
+  }
+
+  // Cache the auth headers for reuse
+  cachedAuthHeaders = {
+    'Authorization': `Bearer ${RESEND_API_KEY}`,
+    'Content-Type': 'application/json',
+  }
+  
+  authCacheTimestamp = Date.now()
+  
+  console.log('🔧 Auth initialized and cached:', {
+    hasResendKey: !!RESEND_API_KEY,
+    fromEmail: FROM_EMAIL,
+    cacheTime: new Date(authCacheTimestamp).toISOString()
+  })
+
+  return { RESEND_API_KEY, FROM_EMAIL }
+}
+
+// Get cached auth headers or initialize if needed
+const getAuthHeaders = () => {
+  const now = Date.now()
+  
+  // Check if cache is still valid
+  if (cachedAuthHeaders && (now - authCacheTimestamp) < AUTH_CACHE_DURATION) {
+    console.log('✅ Using cached auth headers')
+    return cachedAuthHeaders
+  }
+  
+  console.log('🔄 Auth cache expired or not initialized, refreshing...')
+  initializeAuth()
+  return cachedAuthHeaders!
+}
+
+// Reusable API client for making authenticated requests
+const makeAuthenticatedRequest = async (url: string, data: any, method = 'POST') => {
+  const headers = getAuthHeaders()
+  
+  console.log(`📡 Making ${method} request to:`, url)
+  
+  const response = await fetch(url, {
+    method,
+    headers,
+    body: JSON.stringify(data)
+  })
+
+  const result = await response.json()
+  
+  if (!response.ok) {
+    console.error(`❌ API request failed:`, result)
+    throw new Error(`API request failed: ${result.message || 'Unknown error'}`)
+  }
+
+  return { response, result }
 }
 
 serve(async (req) => {
@@ -21,17 +91,13 @@ serve(async (req) => {
   try {
     console.log('📧 Processing quote email request')
     
-    // Get environment variables
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-    const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@aqualiquim.mx'
-    
-    console.log('🔧 Environment check:', {
-      hasResendKey: !!RESEND_API_KEY,
-      fromEmail: FROM_EMAIL
-    })
-
-    if (!RESEND_API_KEY) {
-      console.error('❌ Missing RESEND_API_KEY')
+    // Initialize or get cached auth - this only happens once per cache period
+    let FROM_EMAIL: string
+    try {
+      const authConfig = initializeAuth()
+      FROM_EMAIL = authConfig.FROM_EMAIL
+    } catch (error) {
+      console.error('❌ Auth initialization failed:', error.message)
       return new Response(JSON.stringify({
         success: false,
         error: 'Email service not configured'

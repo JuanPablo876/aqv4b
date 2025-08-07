@@ -4,11 +4,28 @@
  */
 
 import { supabase } from '../supabaseClient';
+import authManager from './authManager';
 
 class AuditService {
   constructor() {
     this.sessionId = this.generateSessionId();
     this.currentUser = null;
+    this.userDataCache = null;
+    this.lastUserUpdate = null;
+    this.USER_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+    // Subscribe to auth changes to update user data
+    authManager.subscribe((user, session) => {
+      if (user) {
+        this.initializeUser();
+      } else {
+        this.currentUser = null;
+        this.userDataCache = null;
+        this.lastUserUpdate = null;
+      }
+    });
+
+    // Initial user setup
     this.initializeUser();
   }
 
@@ -20,13 +37,16 @@ class AuditService {
   // Initialize current user information
   async initializeUser() {
     try {
-      // Check if supabase and auth are available
-      if (!supabase || !supabase.auth) {
-        console.warn('Supabase client not properly initialized for audit service');
+      // Check if we have valid cached user data
+      if (this.userDataCache && this.lastUserUpdate && 
+          (Date.now() - this.lastUserUpdate) < this.USER_CACHE_DURATION) {
+        this.currentUser = this.userDataCache;
         return;
       }
+
+      // Use AuthManager instead of direct supabase.auth.getUser()
+      const user = await authManager.getCurrentUser();
       
-      const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         // Try to find corresponding employee record by email
         let employeeId = null;
@@ -45,17 +65,26 @@ class AuditService {
           console.log('No employee record found for auth user:', user.email);
         }
 
-        this.currentUser = {
+        this.userDataCache = {
           id: employeeId, // Use employee ID if found, otherwise null
           auth_id: user.id, // Keep auth ID for reference
           email: user.email,
           name: user.user_metadata?.name || user.email
         };
+        
+        this.currentUser = this.userDataCache;
+        this.lastUserUpdate = Date.now();
+      } else {
+        this.currentUser = null;
+        this.userDataCache = null;
+        this.lastUserUpdate = null;
       }
     } catch (error) {
       console.error('Error initializing audit user:', error);
       // Don't fail the entire application if audit initialization fails
       this.currentUser = null;
+      this.userDataCache = null;
+      this.lastUserUpdate = null;
     }
   }
 
