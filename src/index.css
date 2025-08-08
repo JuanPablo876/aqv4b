@@ -9,11 +9,15 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Prevent excessive text scaling on mobile devices */
-  -webkit-text-size-adjust: 133%;
-  -moz-text-size-adjust: 133%;
-  text-size-adjust: 133%;
+  /* Replaced 133% scaling with pixel-based cap */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-size: clamp(14px, 3.8vw, 16px); /* Pixel cap at 16px, min 14px on very small screens */
 }
+
+/* Root font-size (used by rem). Ensures no growth beyond 16px while still responsive downwards */
+html { font-size: clamp(14px, 1.2vw + 10px, 16px); }
 
 /* CSS Custom Properties for Theme System */
 @layer base {
@@ -662,4 +666,17 @@ body {
     min-height: 44px; /* iOS recommended touch target size */
     min-width: 44px;
   }
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 640px) {
+  .hide-on-mobile { display: none !important; }
+  .mobile-full-width { width: 100% !important; }
+  .mobile-px { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+  .mobile-scroll-y { overflow-y: auto !important; -webkit-overflow-scrolling: touch; }
+  .mobile-sticky-bottom { position: sticky; bottom: 0; }
+  .card, .venetian-tile { border-radius: 0.75rem !important; }
+  .touch-target, button, a { min-height: 44px; }
+  .table-container th, .table-container td { padding: 0.4rem; }
+  .truncate-mobile { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }

@@ -2,7 +2,7 @@ import React, { Fragment, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useRBAC } from '../hooks/useRBAC';
 
-const LayoutSidebar = ({ activePage, setActivePage, session, onSidebarToggle }) => {
+const LayoutSidebar = ({ activePage, setActivePage, session, onSidebarToggle, mobileMenuOpen }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { isAdmin } = useRBAC();
   
@@ -128,10 +128,13 @@ const LayoutSidebar = ({ activePage, setActivePage, session, onSidebarToggle }) 
   ];
   
   return (
-    <div className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-16' : 'w-64'} venetian-bg shadow-lg transition-all duration-300 flex flex-col`}
-      style={{
-        borderRight: '1px solid var(--venetian-border)'
-      }}
+    <div
+      className={`fixed left-0 top-0 h-full z-50 sm:z-auto venetian-bg shadow-lg transition-all duration-300 flex flex-col
+        ${isCollapsed ? 'sm:w-16' : 'sm:w-64'}
+        w-64 sm:translate-x-0
+        ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}
+      `}
+      style={{ borderRight: '1px solid var(--venetian-border)' }}
     >
       {/* Header */}
       <div className="p-4 border-b venetian-border flex items-center space-x-2 flex-shrink-0">
@@ -238,7 +241,8 @@ LayoutSidebar.propTypes = {
   activePage: PropTypes.string,
   setActivePage: PropTypes.func,
   session: PropTypes.object,
-  onSidebarToggle: PropTypes.func
+  onSidebarToggle: PropTypes.func,
+  mobileMenuOpen: PropTypes.bool
 };
 
 export default LayoutSidebar;

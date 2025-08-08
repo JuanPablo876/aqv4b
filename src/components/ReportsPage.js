@@ -5,6 +5,7 @@ import { handleError, handleSuccess } from '../utils/errorHandling';
 import reportsService from '../services/reportsService';
 import VenetianTile from './VenetianTile';
 import ProtectedRoute from './ProtectedRoute';
+import CustomReportBuilder from './CustomReportBuilder';
 
 const ReportsPageContent = () => {
   const { data: invoicesList, loading: invoicesLoading } = useData('invoices');
@@ -15,6 +16,7 @@ const ReportsPageContent = () => {
   const [reportType, setReportType] = useState('sales');
   const [dateRange, setDateRange] = useState('month');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [tab, setTab] = useState('standard');
   
   // Real data states
   const [reportsData, setReportsData] = useState(null);
@@ -138,6 +140,10 @@ const ReportsPageContent = () => {
   
   // Render different report content based on type
   const renderReportContent = () => {
+    if (tab === 'custom') {
+      return <CustomReportBuilder />;
+    }
+
     switch (reportType) {
       case 'sales':
         return (
@@ -505,8 +511,10 @@ const ReportsPageContent = () => {
           </button>
         </div>
       </div>
-
-      {/* Report Content */}
+      <div className="mb-4 flex gap-2 border-b">
+        <button onClick={() => setTab('standard')} className={`px-4 py-2 text-sm border-b-2 ${tab==='standard' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}>Estándar</button>
+        <button onClick={() => setTab('custom')} className={`px-4 py-2 text-sm border-b-2 ${tab==='custom' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}>Personalizados</button>
+      </div>
       <div className="space-y-6">
         {renderReportContent()}
       </div>

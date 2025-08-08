@@ -6,7 +6,7 @@ import ThemeToggle from './ThemeToggle';
 import { useNotifications } from '../contexts/NotificationContext';
 import NotificationDropdown from './NotificationDropdown';
 
-const LayoutHeader = ({ title, session, setActivePage, onMobileMenuToggle }) => {
+const LayoutHeader = ({ title, session, setActivePage, onMobileMenuToggle, sidebarCollapsed }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
@@ -74,9 +74,11 @@ const LayoutHeader = ({ title, session, setActivePage, onMobileMenuToggle }) => 
   }, []);
 
   return (
-    <header className="h-14 sm:h-16 fixed top-0 right-0 left-0 sm:left-64 z-30 header-bg venetian-shadow transition-colors" style={{
-      borderBottom: '1px solid var(--venetian-border)'
-    }}>
+    <header
+      className={`h-14 sm:h-16 fixed top-0 right-0 left-0 z-30 header-bg venetian-shadow transition-all
+        ${sidebarCollapsed ? 'sm:left-16' : 'sm:left-64'}`}
+      style={{ borderBottom: '1px solid var(--venetian-border)' }}
+    >
       <div className="h-full px-3 sm:px-6 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           {/* Mobile menu button - only show on mobile */}

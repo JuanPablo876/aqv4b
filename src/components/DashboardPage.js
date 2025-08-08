@@ -9,6 +9,7 @@ import DashboardInventoryAlerts from './DashboardInventoryAlerts';
 import DashboardDateFilter from './DashboardDateFilter';
 import { useData, useOrders } from '../hooks/useData';
 import { usePermission } from '../hooks/useRBAC';
+import { getReportsSummary } from '../services/reportsSummaryService';
 
 const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance }) => {
 
@@ -28,7 +29,39 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
 
   const [dashboardData, setDashboardData] = useState(null);
   const [dateRange, setDateRange] = useState(null);
-  
+  const [summaryData, setSummaryData] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState(null);
+
+  // Fetch consolidated summary on date range changes
+  useEffect(() => {
+    let cancelled = false;
+    const fetchSummary = async () => {
+      try {
+        setSummaryLoading(true);
+        setSummaryError(null);
+        const toIso = (d) => {
+          if (!d) return undefined;
+          if (typeof d === 'string') return d;
+          try { return d.toISOString(); } catch { return undefined; }
+        };
+        const params = {
+          metrics: ['sales', 'orders', 'top_products', 'inventory_alerts', 'top_clients'],
+          limits: { top_products: 5, top_clients: 5 },
+          dateRange: dateRange ? { startDate: toIso(dateRange.startDate), endDate: toIso(dateRange.endDate) } : undefined,
+        };
+        const res = await getReportsSummary(params);
+        if (!cancelled) setSummaryData(res);
+      } catch (e) {
+        if (!cancelled) setSummaryError(e?.message || 'Error al cargar resumen');
+      } finally {
+        if (!cancelled) setSummaryLoading(false);
+      }
+    };
+    fetchSummary();
+    return () => { cancelled = true; };
+  }, [dateRange]);
+
   // console.log('📊 Dashboard data loading status:', {
   //   ordersLoading,
   //   clientsLoading,
@@ -38,12 +71,92 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
   // });
   
   const allLoading = ordersLoading || clientsLoading || productsLoading || 
-                   inventoryLoading || invoicesLoading || transactionsLoading;
+                   inventoryLoading || invoicesLoading || transactionsLoading || summaryLoading;
 
   // Calculate dashboard data when data or date range changes
   useEffect(() => {
     if (!allLoading) {
       const calculateDashboardData = () => {
+        // Fast path: if summary data from Edge Function is available, use it
+        if (summaryData?.success) {
+          const salesToday = summaryData.sales?.today || 0;
+          const salesYesterday = summaryData.sales?.yesterday || 0;
+          const monthlySales = summaryData.sales?.month || 0;
+          const yearlySales = summaryData.sales?.year || 0;
+          let percentageChange = '0.0%';
+          if (salesYesterday > 0) {
+            const change = (((salesToday - salesYesterday) / salesYesterday) * 100).toFixed(1);
+            percentageChange = Number(change) > 0 ? `+${change}%` : `${change}%`;
+          } else if (salesToday > 0) {
+            percentageChange = '+100.0%';
+          }
+
+          const inventoryAlerts = (summaryData.inventory_alerts || []).map(it => ({
+            id: it.product_id,
+            name: it.name || 'Producto',
+            stock: it.stock,
+            minStock: it.min_stock,
+            status: it.status,
+          }));
+
+          const topItems = (summaryData.top_products || []).map(p => ({
+            id: p.product_id,
+            name: p.name || 'Producto',
+            quantity: p.quantity,
+            revenue: p.revenue,
+            image: null,
+          }));
+
+          const topClients = (summaryData.top_clients || []).map(c => ({
+            id: c.client_id,
+            name: c.name || 'Cliente',
+            orderCount: c.order_count,
+            totalValue: c.total_value,
+            email: undefined,
+          }));
+
+          return {
+            salesSummary: {
+              daily: salesToday,
+              monthly: monthlySales,
+              yearly: yearlySales,
+              dailyChange: percentageChange,
+            },
+            ordersSummary: {
+              total: (summaryData.orders?.count_year ?? 0),
+              pending: 0,
+              completed: 0,
+              filtered: (summaryData.orders?.count_today ?? 0),
+            },
+            clientsSummary: {
+              total: 0,
+              active: 0,
+            },
+            productsSummary: {
+              total: 0,
+              lowStock: inventoryAlerts.length,
+            },
+            inventoryAlerts,
+            recentActivity: [],
+            topItems,
+            topClients,
+            salesByMonth: [
+              { month: 'Ene', sales: 65000 },
+              { month: 'Feb', sales: 59000 },
+              { month: 'Mar', sales: 80000 },
+              { month: 'Abr', sales: 81000 },
+              { month: 'May', sales: 56000 },
+              { month: 'Jun', sales: 75000 }
+            ],
+            salesByCategory: [
+              { category: 'Químicos', sales: 45000, percentage: 39.1, color: '#3b82f6' },
+              { category: 'Equipos', sales: 32000, percentage: 27.8, color: '#10b981' },
+              { category: 'Mantenimiento', sales: 23000, percentage: 20.0, color: '#f59e0b' },
+              { category: 'Otros', sales: 15000, percentage: 13.1, color: '#ef4444' }
+            ],
+          };
+        }
+
         // Use real orders if available, mock data otherwise
         let workingOrders = orders && orders.length > 0 ? orders : [];
         
@@ -549,7 +662,7 @@ const DashboardPage = ({ setActivePage, setSelectedOrder, setSelectedMaintenance
     }
   }, [orders, clients, products, inventory, invoices, transactions, 
       ordersLoading, clientsLoading, productsLoading, inventoryLoading, 
-      invoicesLoading, transactionsLoading, dateRange]);
+      invoicesLoading, transactionsLoading, dateRange, summaryData, summaryLoading]);
   
   // Get sales title based on date range
   const getSalesTitle = () => {

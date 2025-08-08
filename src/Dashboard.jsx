@@ -33,11 +33,10 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { session } = useAuth();
   const [activePage, setActivePage] = useState('dashboard');
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    // On mobile, start with sidebar collapsed (hidden)
-    // On desktop, start with sidebar expanded (visible)
-    return typeof window !== 'undefined' && window.innerWidth < 640;
-  });
+  // Desktop collapse state only (sm and up)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Mobile menu drawer open state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Initialize database when dashboard loads
   const { isInitialized, isLoading, error } = useDatabaseInit();
@@ -119,9 +118,20 @@ export default function Dashboard() {
   };
 
   const handleMobileMenuToggle = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
+    setMobileMenuOpen(prev => !prev);
   };
 
+  // Close mobile menu automatically when resizing to desktop
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 640 && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [mobileMenuOpen]);
+  
   // Page title mapping
   const pageTitles = {
     dashboard: 'Dashboard',
@@ -318,27 +328,28 @@ export default function Dashboard() {
       
       {/* Sidebar */}
       {/* Mobile sidebar overlay */}
-      {!sidebarCollapsed && (
-        <div 
+      {mobileMenuOpen && (
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden"
           onClick={handleMobileMenuToggle}
         />
       )}
 
-      <LayoutSidebar 
-        activePage={activePage} 
+      <LayoutSidebar
+        activePage={activePage}
         setActivePage={setActivePage}
         session={session}
         onSidebarToggle={handleSidebarToggle}
-        mobileMenuOpen={!sidebarCollapsed}
+        mobileMenuOpen={mobileMenuOpen}
       />
       
       {/* Header */}
-      <LayoutHeader 
-        title={pageTitles[activePage]} 
-        session={session} 
+      <LayoutHeader
+        title={pageTitles[activePage]}
+        session={session}
         setActivePage={setActivePage}
         onMobileMenuToggle={handleMobileMenuToggle}
+        sidebarCollapsed={sidebarCollapsed}
       />
       
       {/* Main Content */}

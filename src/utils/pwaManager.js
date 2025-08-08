@@ -23,6 +23,16 @@ class PWAManager {
     
     // Check if app is already installed
     this.checkInstallStatus();
+
+    // Listen for SW messages
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data?.type === 'CACHES_PURGED') {
+          // After purge, hard reload to get fresh app
+          window.location.reload();
+        }
+      });
+    }
   }
 
   async registerServiceWorker() {
@@ -181,8 +191,20 @@ class PWAManager {
         if (registration && registration.waiting) {
           // Tell the waiting service worker to skip waiting
           registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } else if (navigator.serviceWorker.controller) {
+          // Ask active worker to purge caches and then reload
+          navigator.serviceWorker.controller.postMessage({ type: 'PURGE_CACHES' });
         }
       });
+    }
+  }
+
+  // Programmatic hard-refresh that purges caches
+  forceRefresh() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({ type: 'PURGE_CACHES' });
+    } else {
+      window.location.reload(true);
     }
   }
 
